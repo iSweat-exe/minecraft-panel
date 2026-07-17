@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
+import { useConsoleStore } from '../store/consoleStore';
 
 export const ServerControls: React.FC = () => {
     const { serviceStatus, setServiceStatus, mcPing, setMcPing } = useConnectionStore();
+    const clearConsole = useConsoleStore((s) => s.clear);
 
     const fetchStatus = async () => {
         try {
@@ -26,6 +28,7 @@ export const ServerControls: React.FC = () => {
 
     const doAction = async (action: 'start' | 'stop' | 'restart') => {
         try {
+            clearConsole();
             await tauriBridge.serviceAction(action);
             setTimeout(fetchStatus, 2000);
         } catch (e) {

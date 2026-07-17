@@ -86,7 +86,7 @@ const LogLine: React.FC<{ line: string }> = React.memo(({ line }) => {
 });
 
 export const ConsolePanel: React.FC = () => {
-    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex } = useConsoleStore();
+    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear } = useConsoleStore();
     const [command, setCommand] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -160,7 +160,14 @@ export const ConsolePanel: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                 </div>
-                <span className="text-xs text-zinc-500 ml-2 font-mono">minecraft@server — tail -F logs/latest.log</span>
+                <span className="text-xs text-zinc-500 ml-2 font-mono flex-1">minecraft@server — tail -F logs/latest.log</span>
+                <button
+                    onClick={() => clear()}
+                    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors font-mono"
+                    title="Clear console"
+                >
+                    clear
+                </button>
             </div>
 
             {/* Log output */}
