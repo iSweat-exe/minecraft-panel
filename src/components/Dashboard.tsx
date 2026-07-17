@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { ServerControls } from './ServerControls';
+import { OverviewPanel } from './OverviewPanel';
 import { ConsolePanel } from './ConsolePanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
-import { Terminal, FolderSync, Settings, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Terminal, FolderSync, Settings, LogOut, PanelLeftClose, PanelLeftOpen, Activity } from 'lucide-react';
 
-type Tab = 'dashboard' | 'sftp' | 'config';
+type Tab = 'overview' | 'dashboard' | 'sftp' | 'config';
 
 const NAV_ITEMS: { id: Tab; label: string; icon: typeof Terminal }[] = [
+    { id: 'overview', label: 'Overview', icon: Activity },
     { id: 'dashboard', label: 'Console', icon: Terminal },
     { id: 'sftp', label: 'Files', icon: FolderSync },
     { id: 'config', label: 'Config', icon: Settings },
@@ -15,7 +17,7 @@ const NAV_ITEMS: { id: Tab; label: string; icon: typeof Terminal }[] = [
 
 export const Dashboard: React.FC = () => {
     const { setSshStatus } = useConnectionStore();
-    const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+    const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [collapsed, setCollapsed] = useState(false);
 
     const disconnect = async () => {
@@ -79,6 +81,10 @@ export const Dashboard: React.FC = () => {
 
             {/* Main */}
             <main className="flex-1 overflow-hidden p-4">
+                {activeTab === 'overview' && (
+                    <OverviewPanel />
+                )}
+
                 {activeTab === 'dashboard' && (
                     <div className="flex gap-4 h-full">
                         <div className="w-64 shrink-0">

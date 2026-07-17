@@ -15,6 +15,14 @@ export interface McPing {
     latency_ms: number | null;
 }
 
+export interface SystemMetrics {
+    cpu_percent: number;
+    ram_used_mb: number;
+    ram_total_mb: number;
+    disk_used_gb: number;
+    disk_total_gb: number;
+}
+
 export const tauriBridge = {
     sshConnect: (host: string, port: number, username: string, keyPath: string) =>
         invoke<void>('ssh_connect', { host, port, username, keyPath }),
@@ -26,6 +34,7 @@ export const tauriBridge = {
     serviceStatus: () => invoke<ServiceState>('service_status'),
     
     mcPing: () => invoke<McPing>('mc_ping'),
+    systemMetrics: () => invoke<SystemMetrics>('system_metrics'),
 
     consoleSubscribe: () => invoke<void>('console_subscribe'),
     consoleSendCommand: (cmd: string) => invoke<void>('console_send_command', { cmd }),

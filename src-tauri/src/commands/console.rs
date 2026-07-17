@@ -6,35 +6,40 @@ use tauri::Emitter;
 
 #[tauri::command]
 pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>) -> Result<(), AppError> {
-    // Abort any previous console subscription to avoid duplicate lines
-    {
-        let mut task_guard = state.console_task.lock().await;
-        if let Some(handle) = task_guard.take() {
-            handle.abort();
-        }
+    // Hold the task lock for the ENTIRE operation to prevent races with
+    // React StrictMode double-mounting.
+    let mut task_guard = state.console_task.lock().await;
+
+    // Abort any previous subscription
+    if let Some(handle) = task_guard.take() {
+        handle.abort();
     }
 
-    let mut guard = state.session.lock().await;
-    let session = guard.as_mut().ok_or_else(|| AppError::Message("Not connected".into()))?;
-    
+    // Open a new channel while still holding task_guard (prevents a second
+    // call from starting before we store the handle).
+    let mut session_guard = state.session.lock().await;
+    let session = session_guard.as_mut().ok_or_else(|| AppError::Message("Not connected".into()))?;
+
     let mut channel = session.channel_open_session().await?;
     channel.exec(true, "tail -F -n 200 /minecraft/logs/latest.log").await?;
-    
+    drop(session_guard);
+
     let handle = tauri::async_runtime::spawn(async move {
         while let Some(msg) = channel.wait().await {
             if let russh::ChannelMsg::Data { data } = msg {
-                let text = String::from_utf8_lossy(&data).to_string();
-                let _ = app.emit("console-line", text);
+                let text = String::from_utf8_lossy(&data);
+                // Split chunks into individual lines so the frontend
+                // receives one event per log line, not one per TCP packet.
+                for line in text.lines() {
+                    if !line.is_empty() {
+                        let _ = app.emit("console-line", line);
+                    }
+                }
             }
         }
     });
 
-    // Store the handle so we can abort it on the next subscribe call
-    {
-        let mut task_guard = state.console_task.lock().await;
-        *task_guard = Some(handle);
-    }
-
+    *task_guard = Some(handle);
     Ok(())
 }
 

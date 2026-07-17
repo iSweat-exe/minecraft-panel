@@ -22,6 +22,7 @@ pub fn run() {
             commands::console::console_subscribe,
             commands::console::console_send_command,
             commands::ping::mc_ping,
+            commands::metrics::system_metrics,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
