@@ -30,7 +30,7 @@ pub struct ServiceState {
 
 #[tauri::command]
 pub async fn service_action(action: ServiceAction, state: State<'_, SshState>) -> Result<(), AppError> {
-    run_exec(&state, &format!("systemctl --user {}", action.verb())).await?;
+    run_exec(&state, &format!("systemctl --user {} minecraft", action.verb())).await?;
     Ok(())
 }
 

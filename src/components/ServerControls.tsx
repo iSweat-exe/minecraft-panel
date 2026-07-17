@@ -3,12 +3,16 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 
 export const ServerControls: React.FC = () => {
-    const { serviceStatus, setServiceStatus } = useConnectionStore();
+    const { serviceStatus, setServiceStatus, mcPing, setMcPing } = useConnectionStore();
 
     const fetchStatus = async () => {
         try {
-            const status = await tauriBridge.serviceStatus();
+            const [status, ping] = await Promise.all([
+                tauriBridge.serviceStatus(),
+                tauriBridge.mcPing(),
+            ]);
             setServiceStatus(status);
+            setMcPing(ping);
         } catch (e) {
             console.error("Failed to fetch status:", e);
         }
@@ -16,41 +20,94 @@ export const ServerControls: React.FC = () => {
 
     useEffect(() => {
         fetchStatus();
-        const interval = setInterval(fetchStatus, 5000);
+        const interval = setInterval(fetchStatus, 10_000);
         return () => clearInterval(interval);
     }, []);
 
     const doAction = async (action: 'start' | 'stop' | 'restart') => {
         try {
             await tauriBridge.serviceAction(action);
-            setTimeout(fetchStatus, 1000);
+            setTimeout(fetchStatus, 2000);
         } catch (e) {
             console.error(e);
-            alert(`Failed to ${action}: ${e}`);
         }
     };
 
+    const isActive = serviceStatus?.active_state === 'active';
+    const isOnline = mcPing?.online ?? false;
+
     return (
-        <div className="bg-zinc-900 p-4 rounded shadow border border-zinc-800">
-            <h2 className="text-xl font-bold mb-4 text-white">Server Controls</h2>
-            <div className="mb-6 space-y-2 text-zinc-300">
-                <div className="flex justify-between border-b border-zinc-800 pb-2">
-                    <span>State</span>
-                    <span className={`font-bold ${serviceStatus?.active_state === 'active' ? 'text-green-500' : 'text-red-500'}`}>
-                        {serviceStatus?.active_state || 'Unknown'}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-5">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Server</h2>
+
+            {/* Status rows */}
+            <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Service</span>
+                    <span className={`text-sm font-medium px-2.5 py-0.5 rounded-md ${
+                        isActive
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-red-500/15 text-red-400'
+                    }`}>
+                        {serviceStatus?.active_state ?? '—'}
                     </span>
                 </div>
-                <div className="flex justify-between">
-                    <span>Sub State</span>
-                    <span className="font-bold text-zinc-400">
-                        {serviceStatus?.sub_state || 'Unknown'}
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Process</span>
+                    <span className="text-sm text-zinc-300">
+                        {serviceStatus?.sub_state ?? '—'}
                     </span>
                 </div>
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-zinc-400">Minecraft</span>
+                    <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
+                        <span className="text-sm text-zinc-300">
+                            {isOnline ? 'Online' : 'Offline'}
+                        </span>
+                    </div>
+                </div>
+                {isOnline && mcPing?.players_online != null && (
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Players</span>
+                        <span className="text-sm text-zinc-300">
+                            {mcPing.players_online} / {mcPing.players_max}
+                        </span>
+                    </div>
+                )}
+                {isOnline && mcPing?.latency_ms != null && (
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm text-zinc-400">Ping</span>
+                        <span className="text-sm text-zinc-300">
+                            {mcPing.latency_ms} ms
+                        </span>
+                    </div>
+                )}
             </div>
-            <div className="flex flex-col gap-2">
-                <button onClick={() => doAction('start')} className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded w-full transition-colors">Start Server</button>
-                <button onClick={() => doAction('restart')} className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded w-full transition-colors">Restart Server</button>
-                <button onClick={() => doAction('stop')} className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded w-full transition-colors mt-4">Stop Server</button>
+
+            {/* Divider */}
+            <div className="border-t border-zinc-800" />
+
+            {/* Actions */}
+            <div className="space-y-2">
+                <button
+                    onClick={() => doAction('start')}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                >
+                    Start
+                </button>
+                <button
+                    onClick={() => doAction('restart')}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors"
+                >
+                    Restart
+                </button>
+                <button
+                    onClick={() => doAction('stop')}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-red-600/80 text-zinc-400 hover:text-white border border-zinc-700 hover:border-red-500 transition-colors"
+                >
+                    Stop
+                </button>
             </div>
         </div>
     );

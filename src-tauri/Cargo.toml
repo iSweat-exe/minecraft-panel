@@ -33,4 +33,5 @@ anyhow = "1.0.103"
 tauri-plugin-store = "2.4.3"
 tauri-plugin-notification = "2.3.3"
 async-trait = "0.1.89"
+tauri-plugin-dialog = "2.7.1"
 

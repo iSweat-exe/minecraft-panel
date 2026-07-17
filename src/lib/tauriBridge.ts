@@ -8,6 +8,13 @@ export interface ServiceState {
     sub_state: string;
 }
 
+export interface McPing {
+    online: boolean;
+    players_online: number | null;
+    players_max: number | null;
+    latency_ms: number | null;
+}
+
 export const tauriBridge = {
     sshConnect: (host: string, port: number, username: string, keyPath: string) =>
         invoke<void>('ssh_connect', { host, port, username, keyPath }),
@@ -18,6 +25,8 @@ export const tauriBridge = {
         invoke<void>('service_action', { action }),
     serviceStatus: () => invoke<ServiceState>('service_status'),
     
+    mcPing: () => invoke<McPing>('mc_ping'),
+
     consoleSubscribe: () => invoke<void>('console_subscribe'),
     consoleSendCommand: (cmd: string) => invoke<void>('console_send_command', { cmd }),
     

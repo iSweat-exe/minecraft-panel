@@ -26,7 +26,7 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
 #[tauri::command]
 pub async fn console_send_command(cmd: String, state: State<'_, SshState>) -> Result<(), AppError> {
     let escaped_cmd = cmd.replace("'", "'\\''");
-    let screen_cmd = format!("screen -S minecraft -p 0 -X stuff '{}'\\015", escaped_cmd);
+    let screen_cmd = format!("screen -S minecraft -p 0 -X stuff '{}\\r'", escaped_cmd);
     run_exec(&state, &screen_cmd).await?;
     Ok(())
 }

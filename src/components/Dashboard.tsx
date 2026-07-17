@@ -1,11 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ServerControls } from './ServerControls';
 import { ConsolePanel } from './ConsolePanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
+import { Terminal, FolderSync, Settings, LogOut } from 'lucide-react';
+
+type Tab = 'dashboard' | 'sftp' | 'config';
+
+const NAV_ITEMS: { id: Tab; label: string; icon: typeof Terminal }[] = [
+    { id: 'dashboard', label: 'Console', icon: Terminal },
+    { id: 'sftp', label: 'Files', icon: FolderSync },
+    { id: 'config', label: 'Config', icon: Settings },
+];
 
 export const Dashboard: React.FC = () => {
     const { setSshStatus } = useConnectionStore();
+    const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
     const disconnect = async () => {
         try {
@@ -17,27 +27,66 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-zinc-950 p-6 text-zinc-200">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <div className="flex justify-between items-center">
-                    <h1 className="text-3xl font-bold text-white">Minecraft Manager</h1>
-                    <button 
+        <div className="flex h-screen bg-zinc-950 text-zinc-200">
+            {/* Sidebar */}
+            <aside className="w-56 bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0">
+                <div className="px-5 py-4 border-b border-zinc-800">
+                    <span className="text-sm font-bold text-zinc-200 tracking-wide">MC Panel</span>
+                </div>
+
+                <nav className="flex-1 py-2">
+                    {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+                        <button
+                            key={id}
+                            onClick={() => setActiveTab(id)}
+                            className={`w-full flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${
+                                activeTab === id
+                                    ? 'text-white bg-zinc-800 border-r-2 border-indigo-500'
+                                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
+                            }`}
+                        >
+                            <Icon size={16} />
+                            {label}
+                        </button>
+                    ))}
+                </nav>
+
+                <div className="p-3 border-t border-zinc-800">
+                    <button
                         onClick={disconnect}
-                        className="bg-zinc-800 hover:bg-zinc-700 text-white py-2 px-4 rounded border border-zinc-700 transition-colors"
+                        className="w-full flex items-center justify-center gap-2 text-sm text-zinc-500 hover:text-red-400 py-2 rounded-md hover:bg-zinc-800 transition-colors"
                     >
+                        <LogOut size={14} />
                         Disconnect
                     </button>
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-1">
-                        <ServerControls />
+            </aside>
+
+            {/* Main */}
+            <main className="flex-1 overflow-hidden p-4">
+                {activeTab === 'dashboard' && (
+                    <div className="flex gap-4 h-full">
+                        <div className="w-64 shrink-0">
+                            <ServerControls />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <ConsolePanel />
+                        </div>
                     </div>
-                    <div className="md:col-span-2">
-                        <ConsolePanel />
+                )}
+
+                {activeTab === 'sftp' && (
+                    <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+                        File manager — coming soon
                     </div>
-                </div>
-            </div>
+                )}
+
+                {activeTab === 'config' && (
+                    <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+                        Configuration — coming soon
+                    </div>
+                )}
+            </main>
         </div>
     );
 };
