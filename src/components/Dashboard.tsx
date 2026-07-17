@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ServerControls } from './ServerControls';
 import { OverviewPanel } from './OverviewPanel';
 import { ConsolePanel } from './ConsolePanel';
@@ -16,9 +16,28 @@ const NAV_ITEMS: { id: Tab; label: string; icon: typeof Terminal }[] = [
 ];
 
 export const Dashboard: React.FC = () => {
-    const { setSshStatus } = useConnectionStore();
+    const { setSshStatus, setServiceStatus, setMcPing } = useConnectionStore();
     const [activeTab, setActiveTab] = useState<Tab>('overview');
     const [collapsed, setCollapsed] = useState(false);
+
+    useEffect(() => {
+        const fetchStatus = async () => {
+            try {
+                const [status, ping] = await Promise.all([
+                    tauriBridge.serviceStatus(),
+                    tauriBridge.mcPing(),
+                ]);
+                setServiceStatus(status);
+                setMcPing(ping);
+            } catch (e) {
+                console.error("Failed to fetch status:", e);
+            }
+        };
+
+        fetchStatus();
+        const interval = setInterval(fetchStatus, 10_000);
+        return () => clearInterval(interval);
+    }, [setServiceStatus, setMcPing]);
 
     const disconnect = async () => {
         try {

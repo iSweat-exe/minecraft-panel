@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { useConsoleStore } from '../store/consoleStore';
@@ -20,11 +20,7 @@ export const ServerControls: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 10_000);
-        return () => clearInterval(interval);
-    }, []);
+
 
     const doAction = async (action: 'start' | 'stop' | 'restart') => {
         try {
