@@ -95,19 +95,22 @@ export const ServerControls: React.FC = () => {
             <div className="space-y-2">
                 <button
                     onClick={() => doAction('start')}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                    disabled={isActive}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-emerald-600"
                 >
                     Start
                 </button>
                 <button
                     onClick={() => doAction('restart')}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors"
+                    disabled={!isActive}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-700"
                 >
                     Restart
                 </button>
                 <button
                     onClick={() => doAction('stop')}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-red-600/80 text-zinc-400 hover:text-white border border-zinc-700 hover:border-red-500 transition-colors"
+                    disabled={!isActive}
+                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-red-600/80 text-zinc-400 hover:text-white border border-zinc-700 hover:border-red-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400 disabled:hover:border-zinc-700"
                 >
                     Stop
                 </button>

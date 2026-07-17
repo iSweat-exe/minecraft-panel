@@ -31,12 +31,15 @@ export const Dashboard: React.FC = () => {
         <div className="flex h-screen bg-zinc-950 text-zinc-200">
             {/* Sidebar */}
             <aside className={`${collapsed ? 'w-12' : 'w-48'} bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200`}>
-                {/* Collapse toggle */}
+                {/* Header */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className="px-3 py-3 text-zinc-500 hover:text-zinc-300 border-b border-zinc-800 flex items-center justify-center transition-colors"
+                    className={`py-3 text-zinc-400 hover:text-zinc-200 border-b border-zinc-800 flex items-center transition-colors overflow-hidden whitespace-nowrap ${
+                        collapsed ? 'justify-center px-0' : 'justify-between px-4'
+                    }`}
                     title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
+                    {!collapsed && <span className="text-sm font-semibold text-zinc-300">Uwu Server</span>}
                     {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
                 </button>
 
