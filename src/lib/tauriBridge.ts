@@ -1,0 +1,29 @@
+import { invoke } from '@tauri-apps/api/core';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
+
+export type ConnectionState = 'connected' | 'disconnected' | 'reconnecting';
+
+export interface ServiceState {
+    active_state: string;
+    sub_state: string;
+}
+
+export const tauriBridge = {
+    sshConnect: (host: string, port: number, username: string, keyPath: string) =>
+        invoke<void>('ssh_connect', { host, port, username, keyPath }),
+    sshStatus: () => invoke<ConnectionState>('ssh_status'),
+    sshDisconnect: () => invoke<void>('ssh_disconnect'),
+    
+    serviceAction: (action: 'start' | 'stop' | 'restart') =>
+        invoke<void>('service_action', { action }),
+    serviceStatus: () => invoke<ServiceState>('service_status'),
+    
+    consoleSubscribe: () => invoke<void>('console_subscribe'),
+    consoleSendCommand: (cmd: string) => invoke<void>('console_send_command', { cmd }),
+    
+    onConsoleLine: (callback: (line: string) => void): Promise<UnlistenFn> =>
+        listen<string>('console-line', (event) => callback(event.payload)),
+    
+    onHostKeyVerificationNeeded: (callback: (fingerprint: string) => void): Promise<UnlistenFn> =>
+        listen<string>('host-key-verification-needed', (event) => callback(event.payload)),
+};
