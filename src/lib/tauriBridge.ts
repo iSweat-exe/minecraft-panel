@@ -58,6 +58,7 @@ export const tauriBridge = {
     sftpReadFile: (path: string) => invoke<string>('sftp_read_file', { path }),
     sftpReadFileBase64: (path: string) => invoke<string>('sftp_read_file_base64', { path }),
     rconExecuteMulti: (cmds: string[], port: number, password: string) => invoke<string[]>('rcon_execute_multi', { cmds, port, password }),
+    getPlayersList: () => invoke<any[]>('get_players_list'),
     sftpWriteFile: (path: string, content: string) => invoke<void>('sftp_write_file', { path, content }),
     sftpDelete: (path: string, is_dir: boolean) => invoke<void>('sftp_delete', { path, isDir: is_dir }),
     sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),

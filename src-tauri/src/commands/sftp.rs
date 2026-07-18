@@ -17,7 +17,7 @@ pub fn sanitize_path(path: &str) -> Result<String, AppError> {
     Ok(path.to_string())
 }
 
-async fn get_sftp_session(state: &SshState) -> Result<Arc<SftpSession>, AppError> {
+pub(crate) async fn get_sftp_session(state: &SshState) -> Result<Arc<SftpSession>, AppError> {
     let mut sftp_lock = state.sftp.lock().await;
     if let Some(sftp) = sftp_lock.as_ref() {
         return Ok(sftp.clone());

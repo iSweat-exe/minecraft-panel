@@ -5,3 +5,4 @@ pub mod ping;
 pub mod metrics;
 pub mod sftp;
 pub mod rcon;
+pub mod players;

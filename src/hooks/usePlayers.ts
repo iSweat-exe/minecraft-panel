@@ -22,59 +22,16 @@ export function usePlayers() {
     const fetchPlayers = useCallback(async () => {
         setLoading(true);
         try {
-            // Read JSON files
-            const readJson = async (path: string) => {
-                try {
-                    const content = await tauriBridge.sftpReadFile(path);
-                    return JSON.parse(content);
-                } catch {
-                    return [];
-                }
-            };
-
-            const [usercache, ops, banned, whitelist] = await Promise.all([
-                readJson('/minecraft/usercache.json'),
-                readJson('/minecraft/ops.json'),
-                readJson('/minecraft/banned-players.json'),
-                readJson('/minecraft/whitelist.json')
-            ]);
-
-            const opUuids = new Set(ops.map((p: any) => p.uuid));
-            const bannedUuids = new Set(banned.map((p: any) => p.uuid));
-            const whitelistUuids = new Set(whitelist.map((p: any) => p.uuid));
+            const rawPlayers = await tauriBridge.getPlayersList();
             
-            // We use usercache as the source of truth for all players who ever joined
-            const allPlayers: PlayerInfo[] = usercache.map((p: any) => ({
+            const allPlayers: PlayerInfo[] = rawPlayers.map(p => ({
                 uuid: p.uuid,
                 name: p.name,
-                isOp: opUuids.has(p.uuid),
-                isBanned: bannedUuids.has(p.uuid),
-                isWhitelisted: whitelistUuids.has(p.uuid),
+                isOp: p.isOp,
+                isBanned: p.isBanned,
+                isWhitelisted: p.isWhitelisted,
                 isOnline: mcPing?.sample?.some(s => s.id.replace(/-/g, '') === p.uuid.replace(/-/g, '')) ?? false
             }));
-
-            // Include ops/banned/whitelist that might not be in usercache
-            const allUuids = new Set(allPlayers.map(p => p.uuid));
-            
-            const addMissing = (list: any[], isOp: boolean, isBanned: boolean, isWhitelisted: boolean) => {
-                for (const p of list) {
-                    if (!allUuids.has(p.uuid)) {
-                        allPlayers.push({
-                            uuid: p.uuid,
-                            name: p.name,
-                            isOp,
-                            isBanned,
-                            isWhitelisted,
-                            isOnline: false
-                        });
-                        allUuids.add(p.uuid);
-                    }
-                }
-            };
-
-            addMissing(ops, true, false, false);
-            addMissing(banned, false, true, false);
-            addMissing(whitelist, false, false, true);
 
             setPlayers(allPlayers);
         } catch (error) {

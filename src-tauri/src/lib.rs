@@ -39,7 +39,8 @@ pub fn run() {
             transfer::download::sftp_download_file,
             transfer::cancel_backup,
             commands::rcon::rcon_execute,
-            commands::rcon::rcon_execute_multi
+            commands::rcon::rcon_execute_multi,
+            commands::players::get_players_list
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
