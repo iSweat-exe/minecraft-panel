@@ -28,11 +28,17 @@ export function useServerStats() {
         // Subscribe to streaming metrics (opens a pe.rsistent SSH channel)
         tauriBridge.metricsSubscribe().catch(e => console.error('Failed to subscribe to metrics:', e));
 
-        // Listen for metric events pushed from the backend
-        const unlistenPromise = tauriBridge.onMetricsUpdate(handleMetrics);
+        let unlisten: (() => void) | undefined;
+        let isMounted = true;
+
+        tauriBridge.onMetricsUpdate(handleMetrics).then(fn => {
+            if (!isMounted) fn();
+            else unlisten = fn;
+        });
 
         return () => {
-            unlistenPromise.then(unlisten => unlisten());
+            isMounted = false;
+            if (unlisten) unlisten();
         };
     }, [handleMetrics]);
 
