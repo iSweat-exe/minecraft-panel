@@ -3,6 +3,7 @@ pub mod error;
 pub mod ssh;
 pub mod state;
 pub mod models;
+pub mod transfer;
 
 use state::SshState;
 
@@ -32,10 +33,10 @@ pub fn run() {
             commands::sftp::sftp_rename,
             commands::sftp::sftp_mkdir,
             commands::sftp::ssh_copy,
-            commands::sftp::sftp_upload_file,
             commands::sftp::sftp_read_file_base64,
-            commands::sftp::sftp_download_file,
-            commands::sftp::cancel_backup,
+            transfer::upload::sftp_upload_file,
+            transfer::download::sftp_download_file,
+            transfer::cancel_backup,
             commands::rcon::rcon_execute,
             commands::rcon::rcon_execute_multi
         ])
