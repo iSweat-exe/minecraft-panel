@@ -1,26 +1,10 @@
 use crate::error::AppError;
 use crate::state::SshState;
-use serde::Serialize;
+
 use tauri::Emitter;
 use tauri::State;
 
-#[derive(Serialize, Clone)]
-pub struct SystemMetrics {
-    /// CPU usage percentage (0-100)
-    pub cpu_percent: f64,
-    /// RAM used in MB
-    pub ram_used_mb: u64,
-    /// RAM total in MB
-    pub ram_total_mb: u64,
-    /// Disk used in GB
-    pub disk_used_gb: f64,
-    /// Disk total in GB
-    pub disk_total_gb: f64,
-    /// Network RX bytes per second
-    pub network_rx_bps: u64,
-    /// Network TX bytes per second
-    pub network_tx_bps: u64,
-}
+use crate::models::SystemMetrics;
 
 /// Opens a persistent SSH channel that runs a bash loop emitting metrics
 /// every 500ms. Each line is parsed and emitted as a `metrics-update` event.

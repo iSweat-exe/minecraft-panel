@@ -2,6 +2,7 @@ pub mod commands;
 pub mod error;
 pub mod ssh;
 pub mod state;
+pub mod models;
 
 use state::SshState;
 

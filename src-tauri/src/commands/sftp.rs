@@ -1,19 +1,13 @@
 use crate::error::AppError;
 use crate::state::SshState;
-use serde::Serialize;
+
 use tauri::State;
 use russh_sftp::client::SftpSession;
 use russh_sftp::protocol::OpenFlags;
 use tokio::io::AsyncWriteExt;
 use std::sync::Arc;
 
-#[derive(Serialize)]
-pub struct FileEntry {
-    pub name: String,
-    pub is_dir: bool,
-    pub size: u64,
-    pub modified: u64,
-}
+use crate::models::{FileEntry, TransferProgress};
 
 fn sanitize_path(path: &str) -> Result<String, AppError> {
     // Basic path traversal prevention
@@ -244,16 +238,9 @@ pub async fn sftp_upload_file(
         written += n as u64;
 
         if last_emit.elapsed().as_millis() > 125 {
-            #[derive(serde::Serialize, Clone)]
-            struct UploadProgress {
-                filename: String,
-                written: u64,
-                total: u64,
-            }
-
             let _ = app.emit(
                 "upload-progress",
-                UploadProgress {
+                TransferProgress {
                     filename: filename.clone(),
                     written,
                     total,
@@ -264,15 +251,9 @@ pub async fn sftp_upload_file(
     }
 
     // Final emit to guarantee 100%
-    #[derive(serde::Serialize, Clone)]
-    struct FinalUploadProgress {
-        filename: String,
-        written: u64,
-        total: u64,
-    }
     let _ = app.emit(
         "upload-progress",
-        FinalUploadProgress {
+        TransferProgress {
             filename: filename.clone(),
             written,
             total,
@@ -400,16 +381,9 @@ pub async fn sftp_download_file(
                 written += data.len() as u64;
 
                 if last_emit.elapsed().as_millis() > 125 {
-                    #[derive(serde::Serialize, Clone)]
-                    struct DownloadProgress {
-                        filename: String,
-                        written: u64,
-                        total: u64,
-                    }
-
                     let _ = app.emit(
                         "download-progress",
-                        DownloadProgress {
+                        TransferProgress {
                             filename: filename.clone(),
                             written,
                             total,
@@ -429,15 +403,9 @@ pub async fn sftp_download_file(
     }
 
     // Final emit to guarantee 100%
-    #[derive(serde::Serialize, Clone)]
-    struct FinalDownloadProgress {
-        filename: String,
-        written: u64,
-        total: u64,
-    }
     let _ = app.emit(
         "download-progress",
-        FinalDownloadProgress {
+        TransferProgress {
             filename: filename.clone(),
             written,
             total,

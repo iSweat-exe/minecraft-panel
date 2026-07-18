@@ -4,14 +4,7 @@ use crate::ssh::connection::SshHandler;
 use russh::client::Config;
 use std::sync::Arc;
 use tauri::State;
-use serde::Serialize;
-
-#[derive(Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ConnectionState {
-    Connected,
-    Disconnected,
-}
+use crate::models::ConnectionState;
 
 #[tauri::command]
 pub async fn ssh_connect(

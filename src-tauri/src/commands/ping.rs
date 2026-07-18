@@ -1,25 +1,12 @@
 use crate::error::AppError;
 use crate::state::SshState;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tauri::State;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::time::{Instant, Duration};
 use std::io::{Read, Write};
 
-#[derive(Serialize, Deserialize)]
-pub struct McPingSample {
-    pub id: String,
-    pub name: String,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct McPing {
-    pub online: bool,
-    pub players_online: Option<u32>,
-    pub players_max: Option<u32>,
-    pub latency_ms: Option<u64>,
-    pub sample: Option<Vec<McPingSample>>,
-}
+use crate::models::{McPing, McPingSample};
 
 fn write_varint(mut val: u32, buf: &mut Vec<u8>) {
     loop {

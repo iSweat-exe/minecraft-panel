@@ -2,31 +2,7 @@ use crate::error::AppError;
 use crate::state::SshState;
 use crate::ssh::exec::run_exec;
 use tauri::State;
-use serde::{Deserialize, Serialize};
-
-#[derive(Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ServiceAction {
-    Start,
-    Stop,
-    Restart,
-}
-
-impl ServiceAction {
-    fn verb(&self) -> &'static str {
-        match self {
-            Self::Start => "start",
-            Self::Stop => "stop",
-            Self::Restart => "restart",
-        }
-    }
-}
-
-#[derive(Serialize)]
-pub struct ServiceState {
-    pub active_state: String,
-    pub sub_state: String,
-}
+use crate::models::{ServiceAction, ServiceState};
 
 #[tauri::command]
 pub async fn service_action(action: ServiceAction, state: State<'_, SshState>) -> Result<(), AppError> {
