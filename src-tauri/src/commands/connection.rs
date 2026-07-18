@@ -11,7 +11,6 @@ use serde::Serialize;
 pub enum ConnectionState {
     Connected,
     Disconnected,
-    Reconnecting,
 }
 
 #[tauri::command]

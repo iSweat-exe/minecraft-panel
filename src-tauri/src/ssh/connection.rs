@@ -1,4 +1,3 @@
-use russh::client::{Handle, Session};
 use tauri::Emitter;
 
 #[derive(Clone)]
