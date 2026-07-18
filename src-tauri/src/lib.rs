@@ -4,6 +4,7 @@ pub mod ssh;
 pub mod state;
 pub mod models;
 pub mod transfer;
+pub mod protocol;
 
 use state::SshState;
 
