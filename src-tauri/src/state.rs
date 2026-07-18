@@ -3,7 +3,7 @@ use std::sync::atomic::AtomicBool;
 use tokio::sync::Mutex;
 use russh::client::Handle;
 use russh_sftp::client::SftpSession;
-use crate::ssh::connection::SshHandler;
+use crate::ssh::handler::SshHandler;
 
 pub struct SshState {
     pub session: Arc<Mutex<Option<Handle<SshHandler>>>>,

@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::state::SshState;
-use crate::ssh::connection::SshHandler;
+use crate::ssh::handler::SshHandler;
 use russh::client::Config;
 use std::sync::Arc;
 use tauri::State;
