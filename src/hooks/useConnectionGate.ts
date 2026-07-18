@@ -9,6 +9,7 @@ export function useConnectionGate() {
     const [port, setPort] = useState(22);
     const [username, setUsername] = useState('minecraft');
     const [keyPath, setKeyPath] = useState('~/.ssh/id_ed25519');
+    const [expectedFingerprint, setExpectedFingerprint] = useState<string | undefined>(localStorage.getItem('ssh_fingerprint') || undefined);
     
     const [verifyingKey, setVerifyingKey] = useState<string | null>(null);
 
@@ -24,15 +25,18 @@ export function useConnectionGate() {
         };
     }, [setSshStatus]);
 
-    const connect = async () => {
+    const connect = async (overrideFingerprint?: string) => {
         try {
             setSshStatus('reconnecting');
-            await tauriBridge.sshConnect(host, port, username, keyPath);
+            const targetFingerprint = overrideFingerprint || expectedFingerprint;
+            await tauriBridge.sshConnect(host, port, username, keyPath, targetFingerprint);
             setStoreHost(host);
             setSshStatus('connected');
         } catch (err) {
             console.error(err);
             setSshStatus('disconnected');
+            // If the error is just the key rejection, we don't need to alert if verifyingKey will be set
+            // But we can just alert anyway, or suppress if it's a known error.
             alert(`Connection failed: ${err}`);
         }
     };
@@ -56,6 +60,16 @@ export function useConnectionGate() {
         setSshStatus('disconnected');
     };
 
+    const acceptFingerprint = () => {
+        if (verifyingKey) {
+            localStorage.setItem('ssh_fingerprint', verifyingKey);
+            setExpectedFingerprint(verifyingKey);
+            const keyToAccept = verifyingKey;
+            setVerifyingKey(null);
+            connect(keyToAccept);
+        }
+    };
+
     return {
         sshStatus,
         host,
@@ -69,6 +83,7 @@ export function useConnectionGate() {
         verifyingKey,
         connect,
         pickKeyFile,
-        dismissKeyVerification
+        dismissKeyVerification,
+        acceptFingerprint
     };
 }

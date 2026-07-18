@@ -34,8 +34,8 @@ export interface FileEntry {
 }
 
 export const tauriBridge = {
-    sshConnect: (host: string, port: number, username: string, keyPath: string) =>
-        invoke<void>('ssh_connect', { host, port, username, keyPath }),
+    sshConnect: (host: string, port: number, username: string, keyPath: string, expectedFingerprint?: string) =>
+        invoke<void>('ssh_connect', { host, port, username, keyPath, expectedFingerprint }),
     sshStatus: () => invoke<ConnectionState>('ssh_status'),
     sshDisconnect: () => invoke<void>('ssh_disconnect'),
     sshExecute: (command: string) => invoke<string>('ssh_execute', { command }),

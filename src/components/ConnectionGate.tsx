@@ -15,7 +15,8 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         verifyingKey,
         connect,
         pickKeyFile,
-        dismissKeyVerification
+        dismissKeyVerification,
+        acceptFingerprint
     } = useConnectionGate();
 
     if (verifyingKey) {
@@ -30,12 +31,20 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                     <p className="text-xs text-amber-500 mb-5">
                         If you don't recognize this fingerprint, the connection may not be secure.
                     </p>
-                    <button 
-                        className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
-                        onClick={dismissKeyVerification}
-                    >
-                        Dismiss
-                    </button>
+                    <div className="flex gap-3">
+                        <button 
+                            className="flex-1 text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
+                            onClick={dismissKeyVerification}
+                        >
+                            Dismiss
+                        </button>
+                        <button 
+                            className="flex-1 text-sm font-medium py-2 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-colors"
+                            onClick={acceptFingerprint}
+                        >
+                            Accept & Connect
+                        </button>
+                    </div>
                 </div>
             </div>
         );

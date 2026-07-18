@@ -20,6 +20,7 @@ pub async fn ssh_connect(
     port: u16,
     username: String,
     key_path: String,
+    expected_fingerprint: Option<String>,
     app_handle: tauri::AppHandle,
     state: State<'_, SshState>,
 ) -> Result<(), AppError> {
@@ -31,7 +32,7 @@ pub async fn ssh_connect(
     let config = Arc::new(config);
     
     let handler = SshHandler {
-        expected_fingerprint: Some("SHA256:cKrSgYmNG4h+TV6lT/IlOYSOKIxQLhjXRnT4ykPRTok".to_string()),
+        expected_fingerprint,
         app_handle,
     };
     
