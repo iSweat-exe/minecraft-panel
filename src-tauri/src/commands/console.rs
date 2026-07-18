@@ -14,9 +14,9 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
     if let Some(tx) = task_guard.take() {
         let _ = tx.send(());
     }
+    drop(task_guard);
 
-    // Open a new channel while still holding task_guard (prevents a second
-    // call from starting before we store the handle).
+    // Open a new channel
     let mut session_guard = state.session.lock().await;
     let session = session_guard.as_mut().ok_or_else(|| AppError::Message("Not connected".into()))?;
 
@@ -54,7 +54,7 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
         }
     });
 
-    *task_guard = Some(tx);
+    *state.console_task.lock().await = Some(tx);
     Ok(())
 }
 

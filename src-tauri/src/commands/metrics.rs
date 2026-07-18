@@ -20,6 +20,7 @@ pub async fn metrics_subscribe(
     if let Some(tx) = task_guard.take() {
         let _ = tx.send(());
     }
+    drop(task_guard);
 
     let mut session_guard = state.session.lock().await;
     let session = session_guard
@@ -133,6 +134,6 @@ done
         }
     });
 
-    *task_guard = Some(tx);
+    *state.metrics_task.lock().await = Some(tx);
     Ok(())
 }
