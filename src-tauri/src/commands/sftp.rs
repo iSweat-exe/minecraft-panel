@@ -15,6 +15,14 @@ pub struct FileEntry {
     pub modified: u64,
 }
 
+fn sanitize_path(path: &str) -> Result<String, AppError> {
+    // Basic path traversal prevention
+    if path.contains("..") {
+        return Err(AppError::Message("Path traversal détecté et bloqué.".to_string()));
+    }
+    Ok(path.to_string())
+}
+
 async fn get_sftp_session(state: &SshState) -> Result<Arc<SftpSession>, AppError> {
     let mut sftp_lock = state.sftp.lock().await;
     if let Some(sftp) = sftp_lock.as_ref() {
@@ -36,6 +44,7 @@ async fn get_sftp_session(state: &SshState) -> Result<Arc<SftpSession>, AppError
 
 #[tauri::command]
 pub async fn sftp_list_dir(state: State<'_, SshState>, path: String) -> Result<Vec<FileEntry>, AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     let mut entries = Vec::new();
     
@@ -64,6 +73,7 @@ pub async fn sftp_list_dir(state: State<'_, SshState>, path: String) -> Result<V
 
 #[tauri::command]
 pub async fn sftp_read_file(state: State<'_, SshState>, path: String) -> Result<String, AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     let bytes = sftp.read(path).await.map_err(|e| AppError::Message(e.to_string()))?;
     Ok(String::from_utf8_lossy(&bytes).into_owned())
@@ -71,6 +81,7 @@ pub async fn sftp_read_file(state: State<'_, SshState>, path: String) -> Result<
 
 #[tauri::command]
 pub async fn sftp_write_file(state: State<'_, SshState>, path: String, content: String) -> Result<(), AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     let mut file = sftp.open_with_flags(path, OpenFlags::WRITE | OpenFlags::CREATE | OpenFlags::TRUNCATE).await.map_err(|e| AppError::Message(e.to_string()))?;
     file.write_all(content.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
@@ -108,6 +119,7 @@ fn remove_recursive<'a>(sftp: Arc<SftpSession>, path: String) -> Pin<Box<dyn Fut
 
 #[tauri::command]
 pub async fn sftp_delete(state: State<'_, SshState>, path: String, _is_dir: bool) -> Result<(), AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     remove_recursive(sftp, path).await?;
     Ok(())
@@ -115,6 +127,8 @@ pub async fn sftp_delete(state: State<'_, SshState>, path: String, _is_dir: bool
 
 #[tauri::command]
 pub async fn sftp_rename(state: State<'_, SshState>, old_path: String, new_path: String) -> Result<(), AppError> {
+    let old_path = sanitize_path(&old_path)?;
+    let new_path = sanitize_path(&new_path)?;
     let sftp = get_sftp_session(&state).await?;
     sftp.rename(old_path, new_path).await.map_err(|e| AppError::Message(e.to_string()))?;
     Ok(())
@@ -122,6 +136,7 @@ pub async fn sftp_rename(state: State<'_, SshState>, old_path: String, new_path:
 
 #[tauri::command]
 pub async fn sftp_mkdir(state: State<'_, SshState>, path: String) -> Result<(), AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     sftp.create_dir(path).await.map_err(|e| AppError::Message(e.to_string()))?;
     Ok(())
@@ -129,6 +144,8 @@ pub async fn sftp_mkdir(state: State<'_, SshState>, path: String) -> Result<(), 
 
 #[tauri::command]
 pub async fn ssh_copy(state: State<'_, SshState>, src: String, dest: String) -> Result<(), AppError> {
+    let src = sanitize_path(&src)?;
+    let dest = sanitize_path(&dest)?;
     let session_lock = state.session.lock().await;
     let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
 
@@ -191,6 +208,7 @@ pub async fn sftp_upload_file(
         .unwrap_or("unknown")
         .to_string();
 
+    let remote_path = sanitize_path(&remote_path)?;
     // Open SSH channel instead of SFTP
     let session_lock = state.session.lock().await;
     let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
@@ -297,6 +315,7 @@ pub async fn sftp_upload_file(
 
 #[tauri::command]
 pub async fn sftp_read_file_base64(state: State<'_, SshState>, path: String) -> Result<String, AppError> {
+    let path = sanitize_path(&path)?;
     let sftp = get_sftp_session(&state).await?;
     let bytes = sftp.read(path).await.map_err(|e| AppError::Message(e.to_string()))?;
     
@@ -321,6 +340,7 @@ pub async fn sftp_download_file(
     use tokio::io::AsyncWriteExt;
 
     state.backup_cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+    let remote_path = sanitize_path(&remote_path)?;
 
     let session_lock = state.session.lock().await;
     let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
