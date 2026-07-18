@@ -80,7 +80,7 @@ export function useWorlds() {
             await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
 
             // Warn players and wait 5s
-            await tauriBridge.consoleSendCommand('/say Le serveur va redémarrer pour changer de monde dans 5 secondes...');
+            await tauriBridge.consoleSendCommand('/say Le serveur va redémarrer pour changer de monde dans 5 secondes...').catch(() => {});
             await new Promise(resolve => setTimeout(resolve, 5000));
 
             // Restart server
