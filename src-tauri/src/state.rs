@@ -1,11 +1,15 @@
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use russh::client::Handle;
+use russh_sftp::client::SftpSession;
 use crate::ssh::connection::SshHandler;
 
 pub struct SshState {
     pub session: Arc<Mutex<Option<Handle<SshHandler>>>>,
     pub console_task: Arc<Mutex<Option<tauri::async_runtime::JoinHandle<()>>>>,
+    pub sftp: Arc<Mutex<Option<Arc<SftpSession>>>>,
+    pub rcon_channel: Arc<Mutex<Option<russh::Channel<russh::client::Msg>>>>,
+    pub metrics_task: Arc<Mutex<Option<tauri::async_runtime::JoinHandle<()>>>>,
 }
 
 impl SshState {
@@ -13,6 +17,9 @@ impl SshState {
         Self {
             session: Arc::new(Mutex::new(None)),
             console_task: Arc::new(Mutex::new(None)),
+            sftp: Arc::new(Mutex::new(None)),
+            rcon_channel: Arc::new(Mutex::new(None)),
+            metrics_task: Arc::new(Mutex::new(None)),
         }
     }
 }

@@ -5,11 +5,18 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 
 #[derive(Serialize, Deserialize)]
+pub struct McPingSample {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct McPing {
     pub online: bool,
     pub players_online: Option<u32>,
     pub players_max: Option<u32>,
     pub latency_ms: Option<u64>,
+    pub sample: Option<Vec<McPingSample>>,
 }
 
 /// Pings the MC server from the remote host by attempting a TCP connection
@@ -57,7 +64,8 @@ try:
     s.close()
     j = json.loads(resp)
     p = j.get('players', {})
-    print(json.dumps({'online': True, 'players_online': p.get('online', 0), 'players_max': p.get('max', 0), 'latency_ms': lat}))
+    sample = p.get('sample', [])
+    print(json.dumps({'online': True, 'players_online': p.get('online', 0), 'players_max': p.get('max', 0), 'latency_ms': lat, 'sample': sample}))
 except Exception:
     print(json.dumps({'online': False}))
 " 2>/dev/null"#;
@@ -73,6 +81,7 @@ except Exception:
             players_online: None,
             players_max: None,
             latency_ms: None,
+            sample: None,
         })
     }
 }

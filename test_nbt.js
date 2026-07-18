@@ -1,0 +1,1 @@
+const nbt = require('nbtify'); const parsed = nbt.parse('[{Slot: 0b, id: \" "minecraft:paper\, Count: 64b}]'); console.log(typeof parsed[0].Count); console.log(parsed[0].Count); console.log(typeof parsed[0].Count.valueOf()); console.log(parsed[0].Count.valueOf());  

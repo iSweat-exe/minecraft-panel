@@ -22,7 +22,18 @@ pub fn run() {
             commands::console::console_subscribe,
             commands::console::console_send_command,
             commands::ping::mc_ping,
-            commands::metrics::system_metrics,
+            commands::metrics::metrics_subscribe,
+            commands::sftp::sftp_list_dir,
+            commands::sftp::sftp_read_file,
+            commands::sftp::sftp_write_file,
+            commands::sftp::sftp_delete,
+            commands::sftp::sftp_rename,
+            commands::sftp::sftp_mkdir,
+            commands::sftp::ssh_copy,
+            commands::sftp::sftp_upload_file,
+            commands::sftp::sftp_read_file_base64,
+            commands::rcon::rcon_execute,
+            commands::rcon::rcon_execute_multi
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

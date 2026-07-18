@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { ConnectionState, ServiceState, McPing } from '../lib/tauriBridge';
 
+export type PendingAction = 'starting' | 'stopping' | 'restarting' | null;
+
 interface StoreState {
     sshStatus: ConnectionState;
     setSshStatus: (status: ConnectionState) => void;
@@ -8,6 +10,8 @@ interface StoreState {
     setServiceStatus: (status: ServiceState | null) => void;
     mcPing: McPing | null;
     setMcPing: (ping: McPing | null) => void;
+    pendingAction: PendingAction;
+    setPendingAction: (action: PendingAction) => void;
 }
 
 export const useConnectionStore = create<StoreState>((set) => ({
@@ -17,4 +21,6 @@ export const useConnectionStore = create<StoreState>((set) => ({
     setServiceStatus: (status) => set({ serviceStatus: status }),
     mcPing: null,
     setMcPing: (ping) => set({ mcPing: ping }),
+    pendingAction: null,
+    setPendingAction: (action) => set({ pendingAction: action }),
 }));

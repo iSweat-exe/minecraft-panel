@@ -15,5 +15,10 @@ pub async fn run_exec(state: &tauri::State<'_, SshState>, command: &str) -> Resu
         }
     }
     
+    // Explicitly close the channel to free the server-side handle.
+    // Without this, handles leak and eventually hit the SSH limit.
+    let _ = channel.eof().await;
+    let _ = channel.close().await;
+    
     Ok(output)
 }

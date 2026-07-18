@@ -72,5 +72,20 @@ pub async fn ssh_disconnect(state: State<'_, SshState>) -> Result<(), AppError> 
     if let Some(session) = guard.take() {
         let _ = session.disconnect(russh::Disconnect::ByApplication, "", "English").await;
     }
+    
+    let mut rcon_guard = state.rcon_channel.lock().await;
+    if let Some(mut channel) = rcon_guard.take() {
+        let _ = channel.eof().await;
+        let _ = channel.close().await;
+    }
+    
+    // Abort streaming tasks
+    if let Some(handle) = state.console_task.lock().await.take() {
+        handle.abort();
+    }
+    if let Some(handle) = state.metrics_task.lock().await.take() {
+        handle.abort();
+    }
+    
     Ok(())
 }
