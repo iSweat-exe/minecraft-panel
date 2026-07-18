@@ -38,6 +38,7 @@ export const tauriBridge = {
         invoke<void>('ssh_connect', { host, port, username, keyPath }),
     sshStatus: () => invoke<ConnectionState>('ssh_status'),
     sshDisconnect: () => invoke<void>('ssh_disconnect'),
+    sshExecute: (command: string) => invoke<string>('ssh_execute', { command }),
     
     serviceAction: (action: 'start' | 'stop' | 'restart') =>
         invoke<void>('service_action', { action }),
@@ -62,6 +63,8 @@ export const tauriBridge = {
     sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),
     sftpMkdir: (path: string) => invoke<void>('sftp_mkdir', { path }),
     sshCopy: (src: string, dest: string) => invoke<void>('ssh_copy', { src, dest }),
+    sftpDownloadFile: (remotePath: string, localPath: string) => invoke<void>('sftp_download_file', { remotePath, localPath }),
+    cancelBackup: () => invoke<void>('cancel_backup'),
     sftpUploadFile: (localPath: string, remotePath: string) => invoke<void>('sftp_upload_file', { localPath, remotePath }),
     
     onConsoleLine: (callback: (line: string) => void): Promise<UnlistenFn> =>
@@ -94,4 +97,7 @@ export const tauriBridge = {
 
     onUploadProgress: (callback: (progress: { filename: string; written: number; total: number }) => void): Promise<UnlistenFn> =>
         listen<{ filename: string; written: number; total: number }>('upload-progress', (event) => callback(event.payload)),
+
+    onDownloadProgress: (callback: (progress: { filename: string; written: number; total: number }) => void): Promise<UnlistenFn> =>
+        listen<{ filename: string; written: number; total: number }>('download-progress', (event) => callback(event.payload)),
 };

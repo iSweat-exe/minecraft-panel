@@ -3,10 +3,13 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { useConsoleStore } from '../store/consoleStore';
 
 export function useConsole() {
-    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear } = useConsoleStore();
+    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
     const [command, setCommand] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    const [isScrolledUpState, setIsScrolledUpState] = useState(storeIsScrolledUp);
+    const isScrolledUp = useRef(storeIsScrolledUp);
 
     useEffect(() => {
         const init = async () => {
@@ -27,11 +30,53 @@ export function useConsole() {
         };
     }, [pushLine]);
 
+    // Initial scroll on mount & save on unmount
     useEffect(() => {
         if (containerRef.current) {
+            if (isScrolledUp.current && savedScrollTop !== null) {
+                // Restore scroll position
+                containerRef.current.scrollTop = savedScrollTop;
+            } else {
+                // Scroll to bottom
+                containerRef.current.scrollTop = containerRef.current.scrollHeight;
+                isScrolledUp.current = false;
+                setIsScrolledUpState(false);
+            }
+        }
+
+        return () => {
+            if (containerRef.current) {
+                setScrollState(containerRef.current.scrollTop, isScrolledUp.current);
+            }
+        };
+    }, []); // Ignore deps, we only want mount/unmount
+
+    // Auto scroll on new lines only if user hasn't scrolled up
+    useEffect(() => {
+        if (containerRef.current && !isScrolledUp.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
     }, [lines.length]);
+
+    const handleScroll = useCallback(() => {
+        if (!containerRef.current) return;
+        const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+        // Consider "at bottom" if within 10px of the bottom
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 10;
+        
+        if (isScrolledUp.current === isAtBottom) {
+            isScrolledUp.current = !isAtBottom;
+            setIsScrolledUpState(!isAtBottom);
+        }
+    }, []);
+
+    const scrollToBottom = useCallback(() => {
+        if (containerRef.current) {
+            containerRef.current.scrollTop = containerRef.current.scrollHeight;
+            isScrolledUp.current = false;
+            setIsScrolledUpState(false);
+        }
+    }, []);
 
     const sendCommand = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,6 +86,9 @@ export function useConsole() {
             pushHistory(trimmed);
             await tauriBridge.consoleSendCommand(trimmed);
             setCommand('');
+            
+            // Force scroll to bottom when sending a command
+            scrollToBottom();
         } catch (e) {
             console.error("Failed to send command", e);
         }
@@ -76,6 +124,9 @@ export function useConsole() {
         inputRef,
         clear,
         sendCommand,
-        handleKeyDown
+        handleKeyDown,
+        handleScroll,
+        scrollToBottom,
+        isScrolledUp: isScrolledUpState
     };
 }

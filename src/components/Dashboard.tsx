@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ServerControls } from './ServerControls';
 import { OverviewPanel } from './OverviewPanel';
 import { OptionsPanel } from './OptionsPanel';
 import { PlayersPanel } from './PlayersPanel';
 import { ConsolePanel } from './ConsolePanel';
 import { SftpPanel } from './SftpPanel';
+import { WorldsPanel } from './WorldsPanel';
+import { BackupsPanel } from './BackupsPanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
+import { useBackupStore } from '../store/backupStore';
 import { 
     Settings, 
     LogOut, 
@@ -22,7 +24,9 @@ import {
     ChevronRight,
     SquareTerminal,
     PanelLeftClose,
-    PanelLeftOpen
+    PanelLeftOpen,
+    Loader2,
+    CheckCircle
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -39,7 +43,7 @@ const NAV_ITEMS = [
 ];
 
 export const Dashboard: React.FC = () => {
-    const { setSshStatus, setServiceStatus, setMcPing } = useConnectionStore();
+    const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
     const [activeTab, setActiveTab] = useState<string>('server');
 
     useEffect(() => {
@@ -61,6 +65,23 @@ export const Dashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, [setServiceStatus, setMcPing]);
 
+    useEffect(() => {
+        let unlistenDown: () => void;
+        let unlistenUp: () => void;
+
+        const handleProgress = (p: { filename: string; written: number; total: number }) => {
+            useBackupStore.getState().handleProgressUpdate(p);
+        };
+
+        tauriBridge.onDownloadProgress(handleProgress).then(un => unlistenDown = un);
+        tauriBridge.onUploadProgress(handleProgress).then(un => unlistenUp = un);
+
+        return () => {
+            if (unlistenDown) unlistenDown();
+            if (unlistenUp) unlistenUp();
+        };
+    }, []);
+
     const disconnect = async () => {
         try {
             await tauriBridge.sshDisconnect();
@@ -71,6 +92,21 @@ export const Dashboard: React.FC = () => {
     };
 
     const [collapsed, setCollapsed] = useState(false);
+    const backupState = useBackupStore();
+
+    const getServerIconColor = () => {
+        if (pendingAction) return "text-orange-400";
+        if (serviceStatus?.active_state === 'active') return "text-emerald-500";
+        if (serviceStatus?.active_state === 'failed') return "text-red-500";
+        return activeTab === 'server' ? "text-indigo-400" : "text-zinc-500";
+    };
+
+    const getServerBorderColor = () => {
+        if (pendingAction) return "border-orange-400";
+        if (serviceStatus?.active_state === 'active') return "border-emerald-500";
+        if (serviceStatus?.active_state === 'failed') return "border-red-500";
+        return "border-indigo-500";
+    };
 
     return (
         <div className="flex h-screen bg-zinc-950 text-zinc-200">
@@ -93,17 +129,23 @@ export const Dashboard: React.FC = () => {
                         <button
                             key={id}
                             onClick={() => setActiveTab(id)}
-                            className={`w-full flex items-center py-3 text-[15px] font-medium transition-colors ${
+                            className={`w-full flex items-center py-3 text-[15px] font-medium transition-colors border-r-2 ${
                                 collapsed ? 'justify-center px-0' : 'justify-between px-5'
                             } ${
                                 activeTab === id
-                                    ? 'text-white bg-zinc-800/80 border-r-2 border-indigo-500'
-                                    : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                                    ? `text-white bg-zinc-800/80 ${id === 'server' ? getServerBorderColor() : 'border-indigo-500'}`
+                                    : id === 'server'
+                                        ? `text-zinc-200 bg-zinc-800/40 hover:bg-zinc-800/60 ${getServerBorderColor()}`
+                                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 border-transparent'
                             }`}
                             title={collapsed ? label : undefined}
                         >
                             <div className="flex items-center gap-3">
-                                <Icon size={20} strokeWidth={2} className={activeTab === id ? "text-indigo-400" : "text-zinc-500"} />
+                                <Icon 
+                                    size={20} 
+                                    strokeWidth={2} 
+                                    className={id === 'server' ? getServerIconColor() : (activeTab === id ? "text-indigo-400" : "text-zinc-500")} 
+                                />
                                 {!collapsed && label}
                             </div>
                             {!collapsed && Extra && (
@@ -114,6 +156,36 @@ export const Dashboard: React.FC = () => {
                 </nav>
 
                 <div className="border-t border-zinc-800 shrink-0">
+                    {/* Global Backup Progress indicator */}
+                    {(backupState.loading || backupState.success) && (
+                        <div className={`border-b ${backupState.success ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-zinc-800'} p-4 ${collapsed ? 'hidden' : 'block'} transition-colors duration-500`}>
+                            <div className="flex items-center gap-2 mb-2">
+                                {backupState.success ? (
+                                    <CheckCircle className="text-emerald-500 shrink-0" size={16} />
+                                ) : (
+                                    <Loader2 className="animate-spin text-indigo-400 shrink-0" size={16} />
+                                )}
+                                <span className={`text-xs font-medium truncate ${backupState.success ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                                    {backupState.statusText || 'Transfert en cours...'}
+                                </span>
+                            </div>
+                            {backupState.progress && backupState.progress.total > 0 && (
+                                <div className="space-y-1">
+                                    <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-emerald-950' : 'bg-zinc-800'}`}>
+                                        <div 
+                                            className={`h-full transition-all duration-300 ${backupState.success ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                            style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
+                                        />
+                                    </div>
+                                    <div className={`flex justify-between text-[10px] font-medium ${backupState.success ? 'text-emerald-400/80' : 'text-zinc-500'}`}>
+                                        <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
+                                        <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    
                     <button
                         onClick={disconnect}
                         className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-zinc-500 hover:text-red-400 hover:bg-zinc-800/50 transition-colors ${
@@ -128,7 +200,7 @@ export const Dashboard: React.FC = () => {
             </aside>
 
             {/* Main */}
-            <main className="flex-1 overflow-hidden p-4">
+            <main className={`flex-1 overflow-hidden ${activeTab === 'console' ? '' : 'p-4'}`}>
                 {activeTab === 'server' && (
                     <div className="flex flex-col gap-4 h-full">
                         <OverviewPanel />
@@ -136,13 +208,8 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {activeTab === 'console' && (
-                    <div className="flex gap-4 h-full">
-                        <div className="w-64 shrink-0">
-                            <ServerControls />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <ConsolePanel />
-                        </div>
+                    <div className="h-full">
+                        <ConsolePanel />
                     </div>
                 )}
 
@@ -158,7 +225,15 @@ export const Dashboard: React.FC = () => {
                     <SftpPanel />
                 )}
 
-                {['history', 'version', 'worlds', 'backups', 'access'].includes(activeTab) && (
+                {activeTab === 'worlds' && (
+                    <WorldsPanel />
+                )}
+
+                {activeTab === 'backups' && (
+                    <BackupsPanel />
+                )}
+
+                {['history', 'version', 'access'].includes(activeTab) && (
                     <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
                         Section "{NAV_ITEMS.find(i => i.id === activeTab)?.label}" — En cours de développement
                     </div>

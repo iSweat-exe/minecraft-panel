@@ -4,7 +4,7 @@ import { useConnectionStore } from '../store/connectionStore';
 import { open } from '@tauri-apps/plugin-dialog';
 
 export function useConnectionGate() {
-    const { sshStatus, setSshStatus } = useConnectionStore();
+    const { sshStatus, setSshStatus, setHost: setStoreHost } = useConnectionStore();
     const [host, setHost] = useState('localhost');
     const [port, setPort] = useState(22);
     const [username, setUsername] = useState('minecraft');
@@ -28,6 +28,7 @@ export function useConnectionGate() {
         try {
             setSshStatus('reconnecting');
             await tauriBridge.sshConnect(host, port, username, keyPath);
+            setStoreHost(host);
             setSshStatus('connected');
         } catch (err) {
             console.error(err);

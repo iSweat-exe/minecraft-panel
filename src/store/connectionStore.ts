@@ -6,6 +6,8 @@ export type PendingAction = 'starting' | 'stopping' | 'restarting' | null;
 interface StoreState {
     sshStatus: ConnectionState;
     setSshStatus: (status: ConnectionState) => void;
+    host: string;
+    setHost: (host: string) => void;
     serviceStatus: ServiceState | null;
     setServiceStatus: (status: ServiceState | null) => void;
     mcPing: McPing | null;
@@ -17,6 +19,8 @@ interface StoreState {
 export const useConnectionStore = create<StoreState>((set) => ({
     sshStatus: 'disconnected',
     setSshStatus: (status) => set({ sshStatus: status }),
+    host: '',
+    setHost: (host) => set({ host }),
     serviceStatus: null,
     setServiceStatus: (status) => set({ serviceStatus: status }),
     mcPing: null,

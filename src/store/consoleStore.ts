@@ -8,6 +8,9 @@ interface ConsoleState {
     pushHistory: (cmd: string) => void;
     setHistoryIndex: (i: number) => void;
     clear: () => void;
+    savedScrollTop: number | null;
+    isScrolledUp: boolean;
+    setScrollState: (scrollTop: number | null, isScrolledUp: boolean) => void;
 }
 
 export const useConsoleStore = create<ConsoleState>((set) => ({
@@ -21,4 +24,7 @@ export const useConsoleStore = create<ConsoleState>((set) => ({
     })),
     setHistoryIndex: (i) => set({ historyIndex: i }),
     clear: () => set({ lines: [] }),
+    savedScrollTop: null,
+    isScrolledUp: false,
+    setScrollState: (scrollTop, isScrolledUp) => set({ savedScrollTop: scrollTop, isScrolledUp }),
 }));

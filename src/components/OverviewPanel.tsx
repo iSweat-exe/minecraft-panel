@@ -9,7 +9,7 @@ import { MetricChart, NetworkChart, DiskUsageCard } from './overview/ResourceCha
 type TimeRange = '1m' | '5m' | '15m' | '1h' | '1d';
 
 export const OverviewPanel: React.FC = () => {
-    const { mcPing, pendingAction } = useConnectionStore();
+    const { mcPing, pendingAction, host } = useConnectionStore();
     const { metrics } = useServerStats();
     const { rawPoints, hourPoints, dayPoints } = useServerStatsStore();
     
@@ -31,9 +31,9 @@ export const OverviewPanel: React.FC = () => {
     const getStatusIndicator = () => {
         if (pendingAction) {
             const labels: Record<string, string> = {
-                starting: 'Démarrage…',
-                stopping: 'Arrêt…',
-                restarting: 'Redémarrage…',
+                'starting': 'Démarrage...',
+                'stopping': 'Arrêt...',
+                'restarting': 'Redémarrage...'
             };
             return (
                 <>
@@ -60,7 +60,7 @@ export const OverviewPanel: React.FC = () => {
                         <Server className="text-indigo-500" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-zinc-100 tracking-tight">Minecraft Server</h2>
+                        <h2 className="text-xl font-bold text-zinc-100 tracking-tight">{host || 'Minecraft Server'}</h2>
                         <div className="flex items-center gap-2 mt-1">
                             {getStatusIndicator()}
                         </div>
@@ -88,61 +88,55 @@ export const OverviewPanel: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Time Range Selector */}
-                    <div className="flex items-center gap-2 mb-2">
-                        <Clock size={16} className="text-zinc-500" />
-                        <span className="text-sm font-medium text-zinc-400 mr-2">Période:</span>
-                        {(['1m', '5m', '15m', '1h', '1d'] as TimeRange[]).map((range) => (
-                            <button
-                                key={range}
-                                onClick={() => setTimeRange(range)}
-                                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                                    timeRange === range 
-                                    ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' 
-                                    : 'bg-zinc-800/50 text-zinc-400 border border-transparent hover:bg-zinc-800 hover:text-zinc-300'
-                                }`}
-                            >
-                                {range}
-                            </button>
-                        ))}
-                    </div>
+            {/* Time Range Selector */}
+            <div className="flex items-center gap-2 mb-2">
+                <Clock size={16} className="text-zinc-500" />
+                <span className="text-sm font-medium text-zinc-400 mr-2">Période:</span>
+                {(['1m', '5m', '15m', '1h', '1d'] as TimeRange[]).map((range) => (
+                    <button
+                        key={range}
+                        onClick={() => setTimeRange(range)}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                            timeRange === range 
+                            ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' 
+                            : 'bg-zinc-800/50 text-zinc-400 border border-transparent hover:bg-zinc-800 hover:text-zinc-300'
+                        }`}
+                    >
+                        {range}
+                    </button>
+                ))}
+            </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <MetricChart 
-                            data={history} 
-                            dataKey="cpu" 
-                            color="#10b981" 
-                            label="CPU Usage" 
-                            current={metrics ? metrics.cpu_percent.toFixed(1) : "0.0"} 
-                            unit="%" 
-                        />
-                        <MetricChart 
-                            data={history} 
-                            dataKey="ram" 
-                            color="#10b981" 
-                            label="Memory Usage" 
-                            current={metrics ? metrics.ram_used_mb.toString() : "0"} 
-                            unit="MB" 
-                        />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <NetworkChart 
-                            data={history} 
-                            currentRx={metrics?.network_rx_bps ?? 0} 
-                            currentTx={metrics?.network_tx_bps ?? 0} 
-                        />
-                        <DiskUsageCard 
-                            used={metrics?.disk_used_gb ?? 0} 
-                            total={metrics?.disk_total_gb ?? 0} 
-                        />
-                    </div>
-                </div>
-                
-                <div className="lg:col-span-1">
-                    <ServerControls />
-                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <MetricChart 
+                    data={history} 
+                    dataKey="cpu" 
+                    color="#10b981" 
+                    label="CPU Usage" 
+                    current={metrics ? metrics.cpu_percent.toFixed(1) : "0.0"} 
+                    unit="%" 
+                />
+                <MetricChart 
+                    data={history} 
+                    dataKey="ram" 
+                    color="#10b981" 
+                    label="Memory Usage" 
+                    current={metrics ? metrics.ram_used_mb.toString() : "0"} 
+                    unit="MB" 
+                />
+                <ServerControls />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <NetworkChart 
+                    data={history} 
+                    currentRx={metrics?.network_rx_bps ?? 0} 
+                    currentTx={metrics?.network_tx_bps ?? 0} 
+                />
+                <DiskUsageCard 
+                    used={metrics?.disk_used_gb ?? 0} 
+                    total={metrics?.disk_total_gb ?? 0} 
+                />
             </div>
         </div>
     );

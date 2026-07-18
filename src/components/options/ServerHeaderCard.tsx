@@ -1,7 +1,8 @@
 import React from 'react';
-import { Globe, Settings2 } from 'lucide-react';
+import { Globe, Settings2, Check } from 'lucide-react';
 import { EditableMinecraftText } from '../MinecraftText';
 import { ServerProps } from '../../hooks/useServerOptions';
+import { useConnectionStore } from '../../store/connectionStore';
 
 interface ServerHeaderCardProps {
     serverIcon: string | null;
@@ -10,38 +11,77 @@ interface ServerHeaderCardProps {
 }
 
 export const ServerHeaderCard: React.FC<ServerHeaderCardProps> = ({ serverIcon, properties, updateProp }) => {
+    const mcPing = useConnectionStore(state => state.mcPing);
+    
+    // Check if server is online via ping
+    const isOnline = mcPing?.online;
+
     return (
-        <div className="relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden p-6 shadow-sm">
-            {/* Abstract background design element */}
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l to-transparent pointer-events-none" />
-            
-            <div className="flex justify-between items-start relative z-10">
-                <div className="flex items-center gap-4 w-full max-w-2xl">
-                    <div className="rounded-xl border border-zinc-800 shadow-inner shrink-0 flex items-center justify-center overflow-hidden h-16 w-16 bg-zinc-950">
-                        {serverIcon ? (
-                            <img src={serverIcon} alt="Server Icon" className="w-full h-full object-cover" />
-                        ) : (
-                            <Globe className="text-indigo-400" size={32} />
-                        )}
-                    </div>
-                    <div className="flex flex-col gap-1 w-full">
-                        <div className="flex items-center gap-2 group">
+        <div className="flex flex-col gap-1 w-full max-w-[800px]">
+            <div className="relative bg-black/40 border-2 border-zinc-800/80 p-1.5 shadow-sm flex items-start gap-3 transition-colors">
+                
+                {/* Server Icon 64x64 */}
+                <div className="relative w-16 h-16 bg-[#0a0a0a] border-2 border-zinc-800 shrink-0 overflow-hidden">
+                    {serverIcon ? (
+                        <img src={serverIcon} alt="Server Icon" className="w-full h-full object-cover" />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-600 bg-[#111]">
+                            <Globe size={28} />
+                        </div>
+                    )}
+                    {/* Active check overlay if online */}
+                    {isOnline && (
+                        <div className="absolute top-1 right-1 bg-emerald-500 rounded-full p-0.5 shadow-sm">
+                            <Check size={12} className="text-zinc-950" strokeWidth={3} />
+                        </div>
+                    )}
+                </div>
+
+                {/* Middle text */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between h-16 py-0.5">
+                    <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2 group w-full max-w-[200px] lg:max-w-xs mt-0.5">
                             <input
                                 type="text"
                                 value={properties['server-ip'] || ''}
                                 onChange={(e) => updateProp('server-ip', e.target.value)}
                                 placeholder="Uwu SMP"
-                                className="text-xl font-bold text-white tracking-tight bg-transparent border-none p-0 focus:ring-0 w-full focus:outline-none"
+                                className="font-bold text-white text-[16px] leading-none truncate bg-transparent border-none p-0 focus:ring-0 w-full focus:outline-none placeholder-zinc-600"
                             />
-                            <Settings2 size={16} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Settings2 size={14} className="text-zinc-600 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                         </div>
-                        <div className="text-sm">
-                            <EditableMinecraftText 
-                                value={properties['motd'] || ''}
-                                onChange={(val) => updateProp('motd', val)}
-                                placeholder="Un serveur Minecraft"
-                            />
+                        
+                        {/* Right side Ping/Status */}
+                        <div className="flex items-center gap-1.5 shrink-0 ml-4 pointer-events-none mt-0.5">
+                            <span className={`text-[12px] font-bold ${isOnline ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                                {isOnline ? `${mcPing.players_online || 0}/${mcPing.players_max || 20}` : '0/0'}
+                            </span>
+                            {isOnline ? (
+                                <div className="flex items-end gap-[1.5px] h-[14px]">
+                                    <div className="w-1 bg-emerald-500 h-[4px]"></div>
+                                    <div className="w-1 bg-emerald-500 h-[7px]"></div>
+                                    <div className="w-1 bg-emerald-500 h-[10px]"></div>
+                                    <div className="w-1 bg-emerald-500 h-[13px]"></div>
+                                    <div className="w-1 bg-emerald-500 h-[16px]"></div>
+                                </div>
+                            ) : (
+                                <div className="flex items-end gap-[1.5px] h-[14px] opacity-30">
+                                    <div className="w-1 bg-zinc-500 h-[4px]"></div>
+                                    <div className="w-1 bg-zinc-500 h-[7px]"></div>
+                                    <div className="w-1 bg-zinc-500 h-[10px]"></div>
+                                    <div className="w-1 bg-zinc-500 h-[13px]"></div>
+                                    <div className="w-1 bg-zinc-500 h-[16px]"></div>
+                                </div>
+                            )}
                         </div>
+                    </div>
+
+                    <div className="text-[13px] leading-[1.3] mt-1">
+                        <EditableMinecraftText 
+                            value={properties['motd'] || ''}
+                            onChange={(val) => updateProp('motd', val)}
+                            placeholder="Un serveur Minecraft"
+                        />
                     </div>
                 </div>
             </div>

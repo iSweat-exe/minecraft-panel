@@ -3,6 +3,7 @@ import { ConnectionGate } from "./components/ConnectionGate";
 import { Dashboard } from "./components/Dashboard";
 import { ConfirmDialog } from "./components/dialogs/ConfirmDialog";
 import { PromptDialog } from "./components/dialogs/PromptDialog";
+import { ToastContainer } from "./components/ui/ToastContainer";
 
 function App() {
   useEffect(() => {
@@ -23,6 +24,7 @@ function App() {
       </ConnectionGate>
       <ConfirmDialog />
       <PromptDialog />
+      <ToastContainer />
     </>
   );
 }

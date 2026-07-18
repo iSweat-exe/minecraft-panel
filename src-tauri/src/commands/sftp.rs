@@ -129,15 +129,16 @@ pub async fn sftp_upload_file(
     remote_path: String,
 ) -> Result<(), AppError> {
     use tauri::Emitter;
+    use tokio::io::AsyncReadExt;
 
-    let sftp = get_sftp_session(&state).await?;
+    state.backup_cancel.store(false, std::sync::atomic::Ordering::Relaxed);
 
-    // Read the full file locally
-    let content = tokio::fs::read(&local_path)
+    // Open local file
+    let mut local_file = tokio::fs::File::open(&local_path)
         .await
         .map_err(|e| AppError::Message(format!("Local read failed: {}", e)))?;
 
-    let total = content.len() as u64;
+    let total = local_file.metadata().await.map(|m| m.len()).unwrap_or(0);
     let filename = local_path
         .replace('\\', "/")
         .rsplit('/')
@@ -145,37 +146,105 @@ pub async fn sftp_upload_file(
         .unwrap_or("unknown")
         .to_string();
 
-    // Open remote file
-    let mut file = sftp
-        .open_with_flags(&remote_path, OpenFlags::WRITE | OpenFlags::CREATE | OpenFlags::TRUNCATE)
-        .await
-        .map_err(|e| AppError::Message(e.to_string()))?;
+    // Open SSH channel instead of SFTP
+    let session_lock = state.session.lock().await;
+    let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
+    
+    let mut channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
 
-    // Write in 64 KB chunks, emitting progress events
-    let chunk_size = 64 * 1024;
+    let remote_path_quoted = format!("'{}'", remote_path.replace("'", "'\\''"));
+    let cmd = format!("cat > {}", remote_path_quoted);
+    
+    channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    // Read in chunks and send over SSH channel
+    let mut buffer = vec![0u8; 1024 * 1024]; // 1MB chunks
     let mut written: u64 = 0;
 
-    for chunk in content.chunks(chunk_size) {
-        file.write_all(chunk)
-            .await
-            .map_err(|e| AppError::Message(e.to_string()))?;
-        written += chunk.len() as u64;
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    let mut last_emit = std::time::Instant::now();
 
-        #[derive(serde::Serialize, Clone)]
-        struct UploadProgress {
-            filename: String,
-            written: u64,
-            total: u64,
+    loop {
+        if state.backup_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+            let _ = channel.eof().await;
+            return Err(AppError::Message("Annulé par l'utilisateur".to_string()));
         }
 
-        let _ = app.emit(
-            "upload-progress",
-            UploadProgress {
-                filename: filename.clone(),
-                written,
-                total,
-            },
-        );
+        let n = local_file.read(&mut buffer).await.map_err(|e| AppError::Message(e.to_string()))?;
+        if n == 0 {
+            break; // EOF
+        }
+
+        hasher.update(&buffer[..n]);
+        channel.data(&buffer[..n]).await.map_err(|e| AppError::Message(e.to_string()))?;
+        written += n as u64;
+
+        if last_emit.elapsed().as_millis() > 125 {
+            #[derive(serde::Serialize, Clone)]
+            struct UploadProgress {
+                filename: String,
+                written: u64,
+                total: u64,
+            }
+
+            let _ = app.emit(
+                "upload-progress",
+                UploadProgress {
+                    filename: filename.clone(),
+                    written,
+                    total,
+                },
+            );
+            last_emit = std::time::Instant::now();
+        }
+    }
+
+    // Final emit to guarantee 100%
+    #[derive(serde::Serialize, Clone)]
+    struct FinalUploadProgress {
+        filename: String,
+        written: u64,
+        total: u64,
+    }
+    let _ = app.emit(
+        "upload-progress",
+        FinalUploadProgress {
+            filename: filename.clone(),
+            written,
+            total,
+        },
+    );
+
+    channel.eof().await.map_err(|e| AppError::Message(e.to_string()))?;
+    
+    // Wait for channel close to ensure remote process flushed
+    while let Some(msg) = channel.wait().await {
+        if let russh::ChannelMsg::Close = msg {
+            break;
+        }
+    }
+
+    let hash = hasher.finalize();
+    let local_hash = hash.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+
+    // Verify remote hash
+    let mut check_channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+    let check_cmd = format!("sha256sum {}", remote_path_quoted);
+    check_channel.exec(true, check_cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let mut remote_hash_output = String::new();
+    while let Some(msg) = check_channel.wait().await {
+        if let russh::ChannelMsg::Data { ref data } = msg {
+            remote_hash_output.push_str(&String::from_utf8_lossy(data));
+        } else if let russh::ChannelMsg::Close = msg {
+            break;
+        }
+    }
+
+    let remote_hash = remote_hash_output.split_whitespace().next().unwrap_or("");
+    if local_hash != remote_hash {
+        return Err(AppError::Message("La vérification de l'intégrité (SHA256) a échoué. Le fichier est potentiellement corrompu.".to_string()));
     }
 
     Ok(())
@@ -188,4 +257,150 @@ pub async fn sftp_read_file_base64(state: State<'_, SshState>, path: String) -> 
     
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     Ok(STANDARD.encode(&bytes))
+}
+
+#[tauri::command]
+pub async fn cancel_backup(state: State<'_, SshState>) -> Result<(), AppError> {
+    state.backup_cancel.store(true, std::sync::atomic::Ordering::Relaxed);
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn sftp_download_file(
+    app: tauri::AppHandle,
+    state: State<'_, SshState>,
+    remote_path: String,
+    local_path: String,
+) -> Result<(), AppError> {
+    use tauri::Emitter;
+    use tokio::io::AsyncWriteExt;
+
+    state.backup_cancel.store(false, std::sync::atomic::Ordering::Relaxed);
+
+    let session_lock = state.session.lock().await;
+    let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
+
+    // Reliably get file size via SSH stat command
+    let mut size_channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+    let remote_path_quoted = format!("'{}'", remote_path.replace("'", "'\\''"));
+    let size_cmd = format!("stat -c%s {}", remote_path_quoted);
+    
+    size_channel.exec(true, size_cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+    
+    let mut size_output = String::new();
+    while let Some(msg) = size_channel.wait().await {
+        if let russh::ChannelMsg::Data { ref data } = msg {
+            size_output.push_str(&String::from_utf8_lossy(data));
+        } else if let russh::ChannelMsg::Close = msg {
+            break;
+        }
+    }
+    
+    let total = size_output.trim().parse::<u64>().unwrap_or(0);
+
+    let filename = remote_path
+        .replace('\\', "/")
+        .rsplit('/')
+        .next()
+        .unwrap_or("unknown")
+        .to_string();
+
+    let mut channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let remote_path_quoted = format!("'{}'", remote_path.replace("'", "'\\''"));
+    let cmd = format!("cat {}", remote_path_quoted);
+    
+    channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let mut local_file = tokio::fs::File::create(&local_path)
+        .await
+        .map_err(|e| AppError::Message(format!("Local create failed: {}", e)))?;
+
+    let mut written: u64 = 0;
+
+    use sha2::{Sha256, Digest};
+    let mut hasher = Sha256::new();
+    let mut last_emit = std::time::Instant::now();
+
+    while let Some(msg) = channel.wait().await {
+        if state.backup_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+            let _ = tokio::fs::remove_file(&local_path).await;
+            return Err(AppError::Message("Annulé par l'utilisateur".to_string()));
+        }
+
+        match msg {
+            russh::ChannelMsg::Data { ref data } => {
+                hasher.update(data);
+                local_file.write_all(data).await.map_err(|e| AppError::Message(e.to_string()))?;
+                written += data.len() as u64;
+
+                if last_emit.elapsed().as_millis() > 125 {
+                    #[derive(serde::Serialize, Clone)]
+                    struct DownloadProgress {
+                        filename: String,
+                        written: u64,
+                        total: u64,
+                    }
+
+                    let _ = app.emit(
+                        "download-progress",
+                        DownloadProgress {
+                            filename: filename.clone(),
+                            written,
+                            total,
+                        },
+                    );
+                    last_emit = std::time::Instant::now();
+                }
+            }
+            russh::ChannelMsg::Eof => {
+                break;
+            }
+            russh::ChannelMsg::Close => {
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    // Final emit to guarantee 100%
+    #[derive(serde::Serialize, Clone)]
+    struct FinalDownloadProgress {
+        filename: String,
+        written: u64,
+        total: u64,
+    }
+    let _ = app.emit(
+        "download-progress",
+        FinalDownloadProgress {
+            filename: filename.clone(),
+            written,
+            total,
+        },
+    );
+
+    let hash = hasher.finalize();
+    let local_hash = hash.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+
+    // Verify remote hash
+    let mut check_channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+    let check_cmd = format!("sha256sum {}", remote_path_quoted);
+    check_channel.exec(true, check_cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let mut remote_hash_output = String::new();
+    while let Some(msg) = check_channel.wait().await {
+        if let russh::ChannelMsg::Data { ref data } = msg {
+            remote_hash_output.push_str(&String::from_utf8_lossy(data));
+        } else if let russh::ChannelMsg::Close = msg {
+            break;
+        }
+    }
+
+    let remote_hash = remote_hash_output.split_whitespace().next().unwrap_or("");
+    if local_hash != remote_hash {
+        let _ = tokio::fs::remove_file(&local_path).await;
+        return Err(AppError::Message("La vérification de l'intégrité (SHA256) a échoué. Le fichier est potentiellement corrompu.".to_string()));
+    }
+
+    Ok(())
 }

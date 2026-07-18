@@ -52,13 +52,13 @@ export function colorizeLogLine(line: string): AnsiSpan[] {
 
     // Otherwise, colorize based on log level keywords
     if (/\bWARN\b/i.test(line)) {
-        return [{ text: line, color: '#c4a000' }];
+        return [{ text: line, color: '#F0A331' }];
     }
     if (/\bERROR\b/i.test(line)) {
-        return [{ text: line, color: '#ef5350' }];
+        return [{ text: line, color: '#FF496E' }];
     }
     if (/\bINFO\b/i.test(line)) {
-        return [{ text: line, color: '#d3d7cf' }];
+        return [{ text: line, color: '#97A0A9' }];
     }
 
     return [{ text: line }];

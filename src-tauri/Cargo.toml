@@ -35,4 +35,5 @@ tauri-plugin-notification = "2.3.3"
 async-trait = "0.1.89"
 tauri-plugin-dialog = "2.7.1"
 base64 = "0.22.1"
+sha2 = "0.11.0"
 

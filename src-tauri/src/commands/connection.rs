@@ -92,3 +92,8 @@ pub async fn ssh_disconnect(state: State<'_, SshState>) -> Result<(), AppError> 
     
     Ok(())
 }
+
+#[tauri::command]
+pub async fn ssh_execute(state: State<'_, SshState>, command: String) -> Result<String, AppError> {
+    crate::ssh::exec::run_exec(&state, &command).await
+}

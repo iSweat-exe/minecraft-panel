@@ -81,8 +81,23 @@ export function useServerOptions() {
 
             await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
             setOriginalContent(updatedLines.join('\n'));
-        } catch (error) {
+            
+            import('../store/toastStore').then(({ useToastStore }) => {
+                useToastStore.getState().addToast({
+                    type: 'success',
+                    message: 'Paramètres sauvegardés',
+                    description: 'Le fichier server.properties a été mis à jour.'
+                });
+            });
+        } catch (error: any) {
             console.error("Failed to save server.properties:", error);
+            import('../store/toastStore').then(({ useToastStore }) => {
+                useToastStore.getState().addToast({
+                    type: 'error',
+                    message: 'Erreur lors de la sauvegarde',
+                    description: error.toString()
+                });
+            });
         } finally {
             setSaving(false);
         }
