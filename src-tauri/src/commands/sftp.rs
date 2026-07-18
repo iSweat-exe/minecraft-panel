@@ -77,17 +77,39 @@ pub async fn sftp_write_file(state: State<'_, SshState>, path: String, content: 
     Ok(())
 }
 
+use std::pin::Pin;
+use std::future::Future;
+
+fn remove_recursive<'a>(sftp: Arc<SftpSession>, path: String) -> Pin<Box<dyn Future<Output = Result<(), AppError>> + Send + 'a>> {
+    Box::pin(async move {
+        // Try to read_dir first. If it succeeds, it's a directory.
+        let is_dir = match sftp.read_dir(path.clone()).await {
+            Ok(mut read_dir) => {
+                while let Some(entry) = read_dir.next() {
+                    let name = entry.file_name();
+                    if name == "." || name == ".." { continue; }
+                    let child_path = format!("{}/{}", path, name);
+                    remove_recursive(sftp.clone(), child_path).await?;
+                }
+                true
+            }
+            Err(_) => false,
+        };
+
+        if is_dir {
+            sftp.remove_dir(path).await.map_err(|e| AppError::Message(e.to_string()))?;
+        } else {
+            sftp.remove_file(path).await.map_err(|e| AppError::Message(e.to_string()))?;
+        }
+        
+        Ok(())
+    })
+}
+
 #[tauri::command]
 pub async fn sftp_delete(state: State<'_, SshState>, path: String, _is_dir: bool) -> Result<(), AppError> {
-    let session_lock = state.session.lock().await;
-    let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
-
-    let channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
-    
-    let path_quoted = format!("'{}'", path.replace("'", "'\\''"));
-    let cmd = format!("rm -rf {}", path_quoted);
-    
-    channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+    let sftp = get_sftp_session(&state).await?;
+    remove_recursive(sftp, path).await?;
     Ok(())
 }
 
@@ -110,7 +132,7 @@ pub async fn ssh_copy(state: State<'_, SshState>, src: String, dest: String) -> 
     let session_lock = state.session.lock().await;
     let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
 
-    let channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+    let mut channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
     
     // Safely quote paths
     let src_quoted = format!("'{}'", src.replace("'", "'\\''"));
@@ -118,6 +140,29 @@ pub async fn ssh_copy(state: State<'_, SshState>, src: String, dest: String) -> 
     let cmd = format!("cp -r {} {}", src_quoted, dest_quoted);
     
     channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    // Verify exit status
+    let mut exit_status = None;
+    while let Some(msg) = channel.wait().await {
+        match msg {
+            russh::ChannelMsg::ExitStatus { exit_status: s } => {
+                exit_status = Some(s);
+            }
+            russh::ChannelMsg::Close => {
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(status) = exit_status {
+        if status != 0 {
+            return Err(AppError::Message(format!("Command failed with status {}", status)));
+        }
+    } else {
+        return Err(AppError::Message("Command did not return an exit status".to_string()));
+    }
+
     Ok(())
 }
 
