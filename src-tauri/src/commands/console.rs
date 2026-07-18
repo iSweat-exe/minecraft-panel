@@ -11,8 +11,8 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
     let mut task_guard = state.console_task.lock().await;
 
     // Abort any previous subscription
-    if let Some(handle) = task_guard.take() {
-        handle.abort();
+    if let Some(tx) = task_guard.take() {
+        let _ = tx.send(());
     }
 
     // Open a new channel while still holding task_guard (prevents a second
@@ -24,22 +24,37 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
     channel.exec(true, "tail -F -n 200 /minecraft/logs/latest.log").await?;
     drop(session_guard);
 
-    let handle = tauri::async_runtime::spawn(async move {
-        while let Some(msg) = channel.wait().await {
-            if let russh::ChannelMsg::Data { data } = msg {
-                let text = String::from_utf8_lossy(&data);
-                // Split chunks into individual lines so the frontend
-                // receives one event per log line, not one per TCP packet.
-                for line in text.lines() {
-                    if !line.is_empty() {
-                        let _ = app.emit("console-line", line);
+    let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
+
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = &mut rx => {
+                    let _ = channel.eof().await;
+                    let _ = channel.close().await;
+                    break;
+                }
+                msg_opt = channel.wait() => {
+                    match msg_opt {
+                        Some(russh::ChannelMsg::Data { data }) => {
+                            let text = String::from_utf8_lossy(&data);
+                            // Split chunks into individual lines so the frontend
+                            // receives one event per log line, not one per TCP packet.
+                            for line in text.lines() {
+                                if !line.is_empty() {
+                                    let _ = app.emit("console-line", line);
+                                }
+                            }
+                        }
+                        Some(_) => {}
+                        None => break,
                     }
                 }
             }
         }
     });
 
-    *task_guard = Some(handle);
+    *task_guard = Some(tx);
     Ok(())
 }
 

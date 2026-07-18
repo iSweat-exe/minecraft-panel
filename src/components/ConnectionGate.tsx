@@ -1,54 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore } from '../store/connectionStore';
-import { open } from '@tauri-apps/plugin-dialog';
+import React from 'react';
+import { useConnectionGate } from '../hooks/useConnectionGate';
 
 export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const { sshStatus, setSshStatus } = useConnectionStore();
-    const [host, setHost] = useState('localhost');
-    const [port, setPort] = useState(22);
-    const [username, setUsername] = useState('minecraft');
-    const [keyPath, setKeyPath] = useState('~/.ssh/id_ed25519');
-    
-    const [verifyingKey, setVerifyingKey] = useState<string | null>(null);
-
-    useEffect(() => {
-        tauriBridge.sshStatus().then(setSshStatus).catch(console.error);
-        
-        const unlistenHostKey = tauriBridge.onHostKeyVerificationNeeded((fingerprint) => {
-            setVerifyingKey(fingerprint);
-        });
-        
-        return () => {
-            unlistenHostKey.then(f => f());
-        };
-    }, [setSshStatus]);
-
-    const connect = async () => {
-        try {
-            setSshStatus('reconnecting');
-            await tauriBridge.sshConnect(host, port, username, keyPath);
-            setSshStatus('connected');
-        } catch (err) {
-            console.error(err);
-            setSshStatus('disconnected');
-            alert(`Connection failed: ${err}`);
-        }
-    };
-
-    const pickKeyFile = async () => {
-        try {
-            const selected = await open({
-                multiple: false,
-                title: "Select Private Key",
-            });
-            if (selected && typeof selected === 'string') {
-                setKeyPath(selected);
-            }
-        } catch (e) {
-            console.error("Failed to open dialog", e);
-        }
-    };
+    const {
+        sshStatus,
+        host,
+        setHost,
+        port,
+        setPort,
+        username,
+        setUsername,
+        keyPath,
+        setKeyPath,
+        verifyingKey,
+        connect,
+        pickKeyFile,
+        dismissKeyVerification
+    } = useConnectionGate();
 
     if (verifyingKey) {
         return (
@@ -64,10 +32,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                     </p>
                     <button 
                         className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition-colors"
-                        onClick={() => {
-                            setVerifyingKey(null);
-                            setSshStatus('disconnected');
-                        }}
+                        onClick={dismissKeyVerification}
                     >
                         Dismiss
                     </button>
@@ -99,14 +64,14 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                         <div className="w-20">
                             <label className="block text-xs text-zinc-500 mb-1">Port</label>
                             <input 
-                                type="number" 
-                                className="w-full bg-[#0d0d0d] text-sm text-zinc-200 py-2 px-3 rounded-md border border-zinc-800 focus:border-zinc-600 focus:outline-none transition-colors text-center" 
+                                type="number"
+                                className="w-full bg-[#0d0d0d] text-sm text-zinc-200 py-2 px-3 rounded-md border border-zinc-800 focus:border-zinc-600 focus:outline-none transition-colors" 
                                 value={port} 
                                 onChange={e => setPort(parseInt(e.target.value))} 
                             />
                         </div>
                     </div>
-
+                    
                     <div>
                         <label className="block text-xs text-zinc-500 mb-1">Username</label>
                         <input 
@@ -115,34 +80,44 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                             onChange={e => setUsername(e.target.value)} 
                         />
                     </div>
-
+                    
                     <div>
                         <label className="block text-xs text-zinc-500 mb-1">Private Key</label>
                         <div className="flex gap-2">
                             <input 
-                                className="flex-1 bg-[#0d0d0d] text-sm text-zinc-200 py-2 px-3 rounded-md border border-zinc-800 focus:border-zinc-600 focus:outline-none transition-colors font-mono" 
+                                className="flex-1 bg-[#0d0d0d] text-sm text-zinc-200 py-2 px-3 rounded-md border border-zinc-800 focus:border-zinc-600 focus:outline-none transition-colors" 
                                 value={keyPath} 
                                 onChange={e => setKeyPath(e.target.value)} 
                                 placeholder="~/.ssh/id_ed25519"
                             />
                             <button 
-                                type="button"
+                                className="bg-zinc-800 hover:bg-zinc-700 text-zinc-300 px-3 rounded-md border border-zinc-700 transition-colors text-sm"
                                 onClick={pickKeyFile}
-                                className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 rounded-md border border-zinc-700 transition-colors text-xs"
-                                title="Browse"
                             >
-                                …
+                                Browse
                             </button>
                         </div>
                     </div>
+                </div>
 
+                <div className="mt-8">
                     <button 
-                        className="w-full text-sm font-medium py-2.5 rounded-md bg-zinc-200 hover:bg-white text-zinc-900 transition-colors mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className={`w-full py-2.5 rounded-md font-medium text-sm transition-colors ${
+                            sshStatus === 'reconnecting' 
+                                ? 'bg-indigo-500/50 text-indigo-200 cursor-not-allowed'
+                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                        }`}
                         onClick={connect}
                         disabled={sshStatus === 'reconnecting'}
                     >
-                        {sshStatus === 'reconnecting' ? 'Connecting…' : 'Connect'}
+                        {sshStatus === 'reconnecting' ? 'Connecting...' : 'Connect'}
                     </button>
+                </div>
+
+                <div className="mt-4 text-center">
+                    <span className="text-xs font-medium px-2 py-1 rounded bg-zinc-950 text-zinc-500 border border-zinc-800/50">
+                        Status: {sshStatus}
+                    </span>
                 </div>
             </div>
         </div>

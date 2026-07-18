@@ -79,12 +79,13 @@ export const tauriBridge = {
     }): Promise<UnlistenFn> => {
         return import('@tauri-apps/api/webview').then(({ getCurrentWebview }) => {
             return getCurrentWebview().onDragDropEvent((event) => {
-                if (event.payload.type === 'drop') {
+                const payload = event.payload as any;
+                if (payload.type === 'drop') {
                     callbacks.onHover?.(false);
-                    callbacks.onDrop(event.payload.paths);
-                } else if (event.payload.type === 'enter' || event.payload.type === 'over') {
+                    callbacks.onDrop(payload.paths);
+                } else if (payload.type === 'enter' || payload.type === 'over') {
                     callbacks.onHover?.(true);
-                } else if (event.payload.type === 'leave' || event.payload.type === 'cancel') {
+                } else if (payload.type === 'leave' || payload.type === 'cancel') {
                     callbacks.onHover?.(false);
                 }
             });

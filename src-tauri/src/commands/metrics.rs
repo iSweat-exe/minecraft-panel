@@ -33,8 +33,8 @@ pub async fn metrics_subscribe(
     let mut task_guard = state.metrics_task.lock().await;
 
     // Abort any previous subscription
-    if let Some(handle) = task_guard.take() {
-        handle.abort();
+    if let Some(tx) = task_guard.take() {
+        let _ = tx.send(());
     }
 
     let mut session_guard = state.session.lock().await;
@@ -107,33 +107,48 @@ done
     channel.exec(true, script).await?;
     drop(session_guard);
 
-    let handle = tauri::async_runtime::spawn(async move {
-        while let Some(msg) = channel.wait().await {
-            if let russh::ChannelMsg::Data { data } = msg {
-                let text = String::from_utf8_lossy(&data);
-                for line in text.lines() {
-                    let trimmed = line.trim();
-                    if trimmed.is_empty() {
-                        continue;
-                    }
-                    let parts: Vec<&str> = trimmed.split_whitespace().collect();
-                    if parts.len() >= 7 {
-                        let metrics = SystemMetrics {
-                            cpu_percent: parts[0].parse().unwrap_or(0.0),
-                            ram_used_mb: parts[1].parse().unwrap_or(0),
-                            ram_total_mb: parts[2].parse().unwrap_or(0),
-                            disk_used_gb: parts[3].parse().unwrap_or(0.0),
-                            disk_total_gb: parts[4].parse().unwrap_or(0.0),
-                            network_rx_bps: parts[5].parse().unwrap_or(0),
-                            network_tx_bps: parts[6].parse().unwrap_or(0),
-                        };
-                        let _ = app.emit("metrics-update", metrics);
+    let (tx, mut rx) = tokio::sync::oneshot::channel::<()>();
+
+    tauri::async_runtime::spawn(async move {
+        loop {
+            tokio::select! {
+                _ = &mut rx => {
+                    let _ = channel.eof().await;
+                    let _ = channel.close().await;
+                    break;
+                }
+                msg_opt = channel.wait() => {
+                    match msg_opt {
+                        Some(russh::ChannelMsg::Data { data }) => {
+                            let text = String::from_utf8_lossy(&data);
+                            for line in text.lines() {
+                                let trimmed = line.trim();
+                                if trimmed.is_empty() {
+                                    continue;
+                                }
+                                let parts: Vec<&str> = trimmed.split_whitespace().collect();
+                                if parts.len() >= 7 {
+                                    let metrics = SystemMetrics {
+                                        cpu_percent: parts[0].parse().unwrap_or(0.0),
+                                        ram_used_mb: parts[1].parse().unwrap_or(0),
+                                        ram_total_mb: parts[2].parse().unwrap_or(0),
+                                        disk_used_gb: parts[3].parse().unwrap_or(0.0),
+                                        disk_total_gb: parts[4].parse().unwrap_or(0.0),
+                                        network_rx_bps: parts[5].parse().unwrap_or(0),
+                                        network_tx_bps: parts[6].parse().unwrap_or(0),
+                                    };
+                                    let _ = app.emit("metrics-update", metrics);
+                                }
+                            }
+                        }
+                        Some(_) => {} // Ignore other messages
+                        None => break, // Channel closed from the other side
                     }
                 }
             }
         }
     });
 
-    *task_guard = Some(handle);
+    *task_guard = Some(tx);
     Ok(())
 }

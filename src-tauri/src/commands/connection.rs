@@ -52,6 +52,9 @@ pub async fn ssh_connect(
     // 6. Save session in state
     let mut guard = state.session.lock().await;
     *guard = Some(session);
+
+    let mut host_guard = state.host.lock().await;
+    *host_guard = Some(host);
     
     Ok(())
 }
@@ -79,12 +82,12 @@ pub async fn ssh_disconnect(state: State<'_, SshState>) -> Result<(), AppError> 
         let _ = channel.close().await;
     }
     
-    // Abort streaming tasks
-    if let Some(handle) = state.console_task.lock().await.take() {
-        handle.abort();
+    // Abort streaming tasks gracefully
+    if let Some(tx) = state.console_task.lock().await.take() {
+        let _ = tx.send(());
     }
-    if let Some(handle) = state.metrics_task.lock().await.take() {
-        handle.abort();
+    if let Some(tx) = state.metrics_task.lock().await.take() {
+        let _ = tx.send(());
     }
     
     Ok(())

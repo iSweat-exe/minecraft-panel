@@ -1,159 +1,116 @@
 import React from 'react';
-import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore, PendingAction } from '../store/connectionStore';
-import { useConsoleStore } from '../store/consoleStore';
-import { Loader2 } from 'lucide-react';
-
-const ACTION_LABELS: Record<NonNullable<PendingAction>, string> = {
-    starting: 'Démarrage…',
-    stopping: 'Arrêt…',
-    restarting: 'Redémarrage…',
-};
+import { Loader2, Users, Signal } from 'lucide-react';
+import { useServerControls, ACTION_LABELS } from '../hooks/useServerControls';
 
 export const ServerControls: React.FC = () => {
-    const { serviceStatus, setServiceStatus, mcPing, setMcPing, pendingAction, setPendingAction } = useConnectionStore();
-    const clearConsole = useConsoleStore((s) => s.clear);
+    const {
+        mcPing,
+        pendingAction,
+        doAction,
+        isActive,
+        isOnline,
+        isBusy
+    } = useServerControls();
 
-    const pollUntilSettled = async () => {
-        // Poll every 1.5s until the service reaches a settled state
-        const maxAttempts = 40; // ~60s max
-        for (let i = 0; i < maxAttempts; i++) {
-            await new Promise(r => setTimeout(r, 1500));
-            try {
-                const [status, ping] = await Promise.all([
-                    tauriBridge.serviceStatus(),
-                    tauriBridge.mcPing(),
-                ]);
-                setServiceStatus(status);
-                setMcPing(ping);
-
-                // "activating" / "deactivating" / "reloading" are transient systemd states
-                const settled = !['activating', 'deactivating', 'reloading'].includes(status.active_state);
-                if (settled) break;
-            } catch {
-                // Connection issues during restart are expected, keep polling
-            }
-        }
-        setPendingAction(null);
-    };
-
-    const doAction = async (action: 'start' | 'stop' | 'restart') => {
-        const pendingMap: Record<string, PendingAction> = {
-            start: 'starting',
-            stop: 'stopping',
-            restart: 'restarting',
-        };
-        setPendingAction(pendingMap[action]);
-        
-        try {
-            clearConsole();
-            await tauriBridge.serviceAction(action);
-        } catch (e) {
-            console.error(e);
-            setPendingAction(null);
-            return;
-        }
-
-        pollUntilSettled();
-    };
-
-    const isActive = serviceStatus?.active_state === 'active';
-    const isOnline = mcPing?.online ?? false;
-    const isBusy = pendingAction !== null;
-
-    // Determine the status badge appearance
-    const getServiceBadge = () => {
+    // Determine the main status
+    const getStatusInfo = () => {
         if (pendingAction) {
-            const label = ACTION_LABELS[pendingAction];
-            return (
-                <span className="text-sm font-medium px-2.5 py-0.5 rounded-md bg-amber-500/15 text-amber-400 flex items-center gap-1.5">
-                    <Loader2 size={12} className="animate-spin" />
-                    {label}
-                </span>
-            );
+            return {
+                label: ACTION_LABELS[pendingAction],
+                color: 'text-amber-400',
+                bg: 'bg-amber-500/15',
+                isSpinning: true
+            };
         }
-        return (
-            <span className={`text-sm font-medium px-2.5 py-0.5 rounded-md ${
-                isActive
-                    ? 'bg-emerald-500/15 text-emerald-400'
-                    : 'bg-red-500/15 text-red-400'
-            }`}>
-                {serviceStatus?.active_state ?? '—'}
-            </span>
-        );
+        if (isOnline) {
+            return {
+                label: 'En ligne',
+                color: 'text-emerald-400',
+                bg: 'bg-emerald-500/15',
+                isSpinning: false
+            };
+        }
+        if (isActive) {
+            return {
+                label: 'Démarrage en cours...',
+                color: 'text-blue-400',
+                bg: 'bg-blue-500/15',
+                isSpinning: true
+            };
+        }
+        return {
+            label: 'Hors ligne',
+            color: 'text-red-400',
+            bg: 'bg-red-500/15',
+            isSpinning: false
+        };
     };
+
+    const status = getStatusInfo();
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 space-y-5">
-            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Server</h2>
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-5 flex flex-col h-full">
+            <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Server</h2>
 
-            {/* Status rows */}
-            <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Service</span>
-                    {getServiceBadge()}
+            {/* Main Status */}
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+                <div className={`px-4 py-2 rounded-full flex items-center gap-2 ${status.bg} ${status.color}`}>
+                    {status.isSpinning ? (
+                        <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                        <div className={`w-2 h-2 rounded-full ${status.color.replace('text-', 'bg-')}`} />
+                    )}
+                    <span className="font-semibold">{status.label}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Process</span>
-                    <span className="text-sm text-zinc-300">
-                        {serviceStatus?.sub_state ?? '—'}
-                    </span>
-                </div>
-                <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Minecraft</span>
-                    <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-zinc-600'}`} />
-                        <span className="text-sm text-zinc-300">
-                            {isOnline ? 'Online' : 'Offline'}
-                        </span>
-                    </div>
-                </div>
-                {isOnline && mcPing?.players_online != null && (
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Players</span>
-                        <span className="text-sm text-zinc-300">
-                            {mcPing.players_online} / {mcPing.players_max}
-                        </span>
-                    </div>
-                )}
-                {isOnline && mcPing?.latency_ms != null && (
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm text-zinc-400">Ping</span>
-                        <span className="text-sm text-zinc-300">
-                            {mcPing.latency_ms} ms
-                        </span>
-                    </div>
-                )}
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-zinc-800" />
+            {/* Metrics */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-zinc-950/50 border border-zinc-800/50 rounded-lg p-3 flex flex-col items-center justify-center">
+                    <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+                        <Users size={14} />
+                        <span className="text-xs uppercase tracking-wider font-medium">Players</span>
+                    </div>
+                    <span className="text-lg font-semibold text-zinc-200">
+                        {isOnline ? `${mcPing?.players_online ?? 0} / ${mcPing?.players_max ?? 0}` : '—'}
+                    </span>
+                </div>
+                <div className="bg-zinc-950/50 border border-zinc-800/50 rounded-lg p-3 flex flex-col items-center justify-center">
+                    <div className="flex items-center gap-1.5 text-zinc-500 mb-1">
+                        <Signal size={14} />
+                        <span className="text-xs uppercase tracking-wider font-medium">Ping</span>
+                    </div>
+                    <span className="text-lg font-semibold text-zinc-200">
+                        {isOnline && mcPing?.latency_ms != null ? `${mcPing.latency_ms} ms` : '—'}
+                    </span>
+                </div>
+            </div>
 
             {/* Actions */}
-            <div className="space-y-2">
+            <div className="grid grid-cols-3 gap-2">
                 <button
                     onClick={() => doAction('start')}
-                    disabled={isActive || isBusy}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-emerald-600 hover:bg-emerald-500 text-white transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-emerald-600 flex items-center justify-center gap-2"
+                    disabled={isBusy || isActive}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-950 border border-zinc-800 rounded-lg transition-all group"
                 >
-                    {pendingAction === 'starting' && <Loader2 size={14} className="animate-spin" />}
-                    Start
+                    <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-500/30' : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)] group-hover:shadow-[0_0_12px_rgba(16,185,129,0.6)]'}`}></span>
+                    <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-300">Start</span>
                 </button>
                 <button
                     onClick={() => doAction('restart')}
-                    disabled={!isActive || isBusy}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-700 hover:bg-zinc-600 text-zinc-200 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-700 flex items-center justify-center gap-2"
+                    disabled={isBusy || (!isActive && !isOnline)}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-950 border border-zinc-800 rounded-lg transition-all group"
                 >
-                    {pendingAction === 'restarting' && <Loader2 size={14} className="animate-spin" />}
-                    Restart
+                    <span className={`w-2 h-2 rounded-full ${(!isActive && !isOnline) ? 'bg-amber-500/30' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)] group-hover:shadow-[0_0_12px_rgba(245,158,11,0.6)]'}`}></span>
+                    <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-300">Restart</span>
                 </button>
                 <button
                     onClick={() => doAction('stop')}
-                    disabled={!isActive || isBusy}
-                    className="w-full text-sm font-medium py-2 rounded-md bg-zinc-800 hover:bg-red-600/80 text-zinc-400 hover:text-white border border-zinc-700 hover:border-red-500 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-zinc-800 disabled:hover:text-zinc-400 disabled:hover:border-zinc-700 flex items-center justify-center gap-2"
+                    disabled={isBusy || !isActive}
+                    className="flex flex-col items-center justify-center gap-1.5 py-3 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 disabled:hover:bg-zinc-950 border border-zinc-800 rounded-lg transition-all group"
                 >
-                    {pendingAction === 'stopping' && <Loader2 size={14} className="animate-spin" />}
-                    Stop
+                    <span className={`w-2 h-2 rounded-full ${!isActive ? 'bg-red-500/30' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)] group-hover:shadow-[0_0_12px_rgba(239,68,68,0.6)]'}`}></span>
+                    <span className="text-xs font-medium text-zinc-400 group-hover:text-zinc-300">Stop</span>
                 </button>
             </div>
         </div>
