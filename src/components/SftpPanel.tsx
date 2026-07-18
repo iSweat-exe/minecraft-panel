@@ -82,33 +82,7 @@ export const SftpPanel: React.FC = () => {
                     <div className="flex items-center gap-2">
                         {sftp.clipboard && (
                             <button 
-                                onClick={async () => {
-                                    for (const file of sftp.clipboard!.files) {
-                                        if (sftp.entries.some(e => e.name === file)) {
-                                            const confirmed = await ConfirmDialog.call({
-                                                title: "File exists",
-                                                message: `The file ${file} already exists. Do you want to overwrite it?`
-                                            });
-                                            if (!confirmed) continue;
-                                        }
-
-                                        const src = sftp.clipboard!.path === '/' ? `/${file}` : `${sftp.clipboard!.path}/${file}`;
-                                        const dest = sftp.currentPath === '/' ? `/${file}` : `${sftp.currentPath}/${file}`;
-                                        try {
-                                            if (sftp.clipboard!.action === 'cut') {
-                                                await tauriBridge.sftpRename(src, dest);
-                                            } else {
-                                                await tauriBridge.sshCopy(src, dest);
-                                            }
-                                        } catch (e: any) {
-                                            console.error(`Paste failed: ${e.toString()}`);
-                                        }
-                                    }
-                                    if (sftp.clipboard!.action === 'cut') {
-                                        // Should be done inside a hook method ideally, but quick patch here
-                                    }
-                                    sftp.handlePaste(); // This covers fetchDir too
-                                }}
+                                onClick={() => sftp.handlePaste()}
                                 className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium rounded-md transition-colors border border-emerald-500/30"
                             >
                                 <Copy size={14} /> Paste ({sftp.clipboard.files.length})

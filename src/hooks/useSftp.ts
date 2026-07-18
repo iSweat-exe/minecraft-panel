@@ -320,18 +320,25 @@ export function useSftp() {
     const handlePaste = async () => {
         if (!clipboard) return;
         try {
-            if (clipboard.action === 'copy') {
-                for (const file of clipboard.files) {
-                    const srcPath = clipboard.path === '/' ? `/${file}` : `${clipboard.path}/${file}`;
-                    const dstPath = currentPath === '/' ? `/${file}` : `${currentPath}/${file}`;
-                    await tauriBridge.sftpRename(srcPath, dstPath); // For now it uses rename, but ideally we would have copy. SftpPanel currently did this incorrectly.
+            for (const file of clipboard.files) {
+                if (entries.some(e => e.name === file)) {
+                    const confirmed = await ConfirmDialog.call({
+                        title: "File exists",
+                        message: `The file ${file} already exists. Do you want to overwrite it?`
+                    });
+                    if (!confirmed) continue;
                 }
-            } else {
-                for (const file of clipboard.files) {
-                    const srcPath = clipboard.path === '/' ? `/${file}` : `${clipboard.path}/${file}`;
-                    const dstPath = currentPath === '/' ? `/${file}` : `${currentPath}/${file}`;
+
+                const srcPath = clipboard.path === '/' ? `/${file}` : `${clipboard.path}/${file}`;
+                const dstPath = currentPath === '/' ? `/${file}` : `${currentPath}/${file}`;
+                
+                if (clipboard.action === 'copy') {
+                    await tauriBridge.sshCopy(srcPath, dstPath);
+                } else {
                     await tauriBridge.sftpRename(srcPath, dstPath);
                 }
+            }
+            if (clipboard.action === 'cut') {
                 setClipboard(null);
             }
             fetchDir(currentPath);

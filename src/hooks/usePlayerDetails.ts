@@ -90,6 +90,8 @@ export function usePlayerDetails(player: PlayerInfo) {
         if (!config) return;
         let isMounted = true;
 
+        let timeoutId: number;
+
         const fetchLive = async () => {
             try {
                 let parsed;
@@ -174,16 +176,16 @@ export function usePlayerDetails(player: PlayerInfo) {
             } finally {
                 if (isMounted) {
                     setLoading(false);
+                    timeoutId = window.setTimeout(fetchLive, 1000);
                 }
             }
         };
 
         fetchLive();
-        const intervalId = setInterval(fetchLive, 1000);
 
         return () => {
             isMounted = false;
-            clearInterval(intervalId);
+            if (timeoutId) window.clearTimeout(timeoutId);
         };
     }, [config, player.name]);
 
