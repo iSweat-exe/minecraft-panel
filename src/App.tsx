@@ -23,7 +23,7 @@ function App() {
   }, []);
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col bg-zinc-950">
+    <div className="h-screen w-screen overflow-hidden flex flex-col bg-background">
       <TitleBar />
       <div className="flex-1 overflow-hidden relative">
         <ConnectionGate>

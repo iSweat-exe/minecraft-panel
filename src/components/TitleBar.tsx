@@ -7,8 +7,7 @@ export function TitleBar() {
   return (
     <div
       data-tauri-drag-region
-      onPointerDown={() => appWindow.startDragging()}
-      className="h-8 shrink-0 select-none flex justify-between items-center bg-zinc-900 border-b border-zinc-800 text-zinc-400"
+      className="h-8 shrink-0 select-none flex justify-between items-center bg-surface border-b border-border text-muted-foreground"
     >
       <div 
         data-tauri-drag-region 
@@ -18,22 +17,21 @@ export function TitleBar() {
       </div>
       <div 
         className="flex h-full shrink-0"
-        onPointerDown={(e) => e.stopPropagation()}
       >
         <button
-          className="inline-flex justify-center items-center w-11 h-full hover:bg-zinc-800 transition-colors"
+          className="inline-flex justify-center items-center w-11 h-full hover:bg-surface-hover transition-colors"
           onClick={() => appWindow.minimize()}
         >
           <Minus size={16} />
         </button>
         <button
-          className="inline-flex justify-center items-center w-11 h-full hover:bg-zinc-800 transition-colors"
+          className="inline-flex justify-center items-center w-11 h-full hover:bg-surface-hover transition-colors"
           onClick={() => appWindow.toggleMaximize()}
         >
           <Square size={13} />
         </button>
         <button
-          className="inline-flex justify-center items-center w-11 h-full hover:bg-red-600 hover:text-white transition-colors"
+          className="inline-flex justify-center items-center w-11 h-full hover:bg-danger hover:text-danger-foreground transition-colors"
           onClick={() => appWindow.close()}
         >
           <X size={16} />

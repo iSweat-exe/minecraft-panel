@@ -2,6 +2,7 @@
 import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
 import { Activity, Globe, HardDrive } from 'lucide-react';
 import { DataPoint } from '../../store/serverStatsStore';
+import { Card, CardContent } from '../ui/Card';
 
 export function formatBps(bps: number) {
     if (bps >= 1024 * 1024) return (bps / (1024 * 1024)).toFixed(1) + ' MB/s';
@@ -18,15 +19,16 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
     unit: string;
 }) {
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm">
-            <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-2">
-                    <Activity size={16} className="text-zinc-500" />
-                    <h3 className="text-sm font-semibold text-zinc-200 tracking-wide">{label}</h3>
-                </div>
+        <Card>
+            <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <Activity size={16} className="text-muted-foreground" />
+                        <h3 className="text-sm font-semibold text-foreground tracking-wide">{label}</h3>
+                    </div>
                 <div className="text-right">
-                    <span className="text-xl font-mono text-zinc-100">{current}</span>
-                    <span className="text-zinc-500 text-sm ml-1">{unit}</span>
+                    <span className="text-xl font-mono text-foreground">{current}</span>
+                    <span className="text-muted-foreground text-sm ml-1">{unit}</span>
                 </div>
             </div>
             <div className="w-full h-36">
@@ -38,19 +40,19 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                                 <stop offset="100%" stopColor={color} stopOpacity={0.0}/>
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#27272a" />
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-border)" />
                         <YAxis domain={[0, 100]} hide />
                         <Tooltip 
                             contentStyle={{ 
-                                backgroundColor: '#18181b', 
-                                border: '1px solid #27272a', 
+                                backgroundColor: 'var(--color-surface)', 
+                                border: '1px solid var(--color-border)', 
                                 borderRadius: '0.5rem', 
-                                color: '#e4e4e7', 
+                                color: 'var(--color-foreground)', 
                                 fontSize: '12px',
                                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)'
                             }}
                             itemStyle={{ color: color, fontWeight: 500 }}
-                            labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
+                            labelStyle={{ color: 'var(--color-muted-foreground)', marginBottom: '4px' }}
                             formatter={(value: any) => [`${Number(value).toFixed(1)}%`, label]}
                             isAnimationActive={false}
                         />
@@ -59,7 +61,7 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                             height={30} 
                             iconType="circle" 
                             iconSize={8}
-                            wrapperStyle={{ fontSize: '12px', color: '#a1a1aa' }}
+                            wrapperStyle={{ fontSize: '12px', color: 'var(--color-muted-foreground)' }}
                         />
                         <Area 
                             name={label}
@@ -75,7 +77,8 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -85,20 +88,21 @@ export function NetworkChart({ data, currentRx, currentTx }: {
     currentTx: number;
 }) {
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm">
-            <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-2">
-                    <Globe size={16} className="text-zinc-500" />
-                    <h3 className="text-sm font-semibold text-zinc-200 tracking-wide">Network</h3>
-                </div>
+        <Card>
+            <CardContent className="p-5">
+                <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <Globe size={16} className="text-muted-foreground" />
+                        <h3 className="text-sm font-semibold text-foreground tracking-wide">Network</h3>
+                    </div>
                 <div className="flex gap-4 text-right">
                     <div>
-                        <span className="text-xs text-zinc-500 uppercase font-semibold mr-2">TX</span>
-                        <span className="text-lg font-mono text-zinc-100">{formatBps(currentTx)}</span>
+                        <span className="text-xs text-muted-foreground uppercase font-semibold mr-2">TX</span>
+                        <span className="text-lg font-mono text-foreground">{formatBps(currentTx)}</span>
                     </div>
                     <div>
-                        <span className="text-xs text-zinc-500 uppercase font-semibold mr-2">RX</span>
-                        <span className="text-lg font-mono text-zinc-100">{formatBps(currentRx)}</span>
+                        <span className="text-xs text-muted-foreground uppercase font-semibold mr-2">RX</span>
+                        <span className="text-lg font-mono text-foreground">{formatBps(currentRx)}</span>
                     </div>
                 </div>
             </div>
@@ -115,18 +119,18 @@ export function NetworkChart({ data, currentRx, currentTx }: {
                                 <stop offset="100%" stopColor="#ec4899" stopOpacity={0.0}/>
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#27272a" />
+                        <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-border)" />
                         <YAxis hide />
                         <Tooltip 
                             contentStyle={{ 
-                                backgroundColor: '#18181b', 
-                                border: '1px solid #27272a', 
+                                backgroundColor: 'var(--color-surface)', 
+                                border: '1px solid var(--color-border)', 
                                 borderRadius: '0.5rem', 
-                                color: '#e4e4e7', 
+                                color: 'var(--color-foreground)', 
                                 fontSize: '12px',
                                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)'
                             }}
-                            labelStyle={{ color: '#a1a1aa', marginBottom: '4px' }}
+                            labelStyle={{ color: 'var(--color-muted-foreground)', marginBottom: '4px' }}
                             formatter={(value: any, name: any) => [formatBps(Number(value)), name === 'rx' ? 'RX (Down)' : 'TX (Up)']}
                             isAnimationActive={false}
                         />
@@ -135,7 +139,7 @@ export function NetworkChart({ data, currentRx, currentTx }: {
                             height={30} 
                             iconType="circle" 
                             iconSize={8}
-                            wrapperStyle={{ fontSize: '12px', color: '#a1a1aa' }}
+                            wrapperStyle={{ fontSize: '12px', color: 'var(--color-muted-foreground)' }}
                             {...({ payload: [
                                 { value: 'TX (Up)', type: 'circle', color: '#ec4899' },
                                 { value: 'RX (Down)', type: 'circle', color: '#3b82f6' }
@@ -166,7 +170,8 @@ export function NetworkChart({ data, currentRx, currentTx }: {
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }
 
@@ -175,27 +180,28 @@ export function DiskUsageCard({ used, total }: { used: number; total: number }) 
     const free = total - used;
     
     return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-sm flex flex-col gap-5">
-            <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/10 rounded-lg border border-amber-500/20">
-                    <HardDrive className="text-amber-500" size={20} />
+        <Card>
+            <CardContent className="p-5 flex flex-col gap-5">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 bg-warning/10 rounded-lg border border-warning/20">
+                        <HardDrive className="text-warning" size={20} />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Storage</h3>
+                        <p className="text-xs text-muted-foreground">Main Disk Mount (/minecraft)</p>
+                    </div>
                 </div>
-                <div>
-                    <h3 className="text-sm font-semibold text-zinc-200">Storage</h3>
-                    <p className="text-xs text-zinc-500">Main Disk Mount (/minecraft)</p>
-                </div>
-            </div>
             
             <div className="space-y-2.5">
                 <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400">Used: <span className="text-zinc-200 font-mono ml-1">{used.toFixed(1)} GB</span></span>
-                    <span className="text-zinc-400">Free: <span className="text-zinc-200 font-mono ml-1">{free.toFixed(1)} GB</span></span>
+                    <span className="text-muted-foreground">Used: <span className="text-foreground font-mono ml-1">{used.toFixed(1)} GB</span></span>
+                    <span className="text-muted-foreground">Free: <span className="text-foreground font-mono ml-1">{free.toFixed(1)} GB</span></span>
                 </div>
                 
-                <div className="h-4 bg-zinc-950 rounded-full overflow-hidden shadow-inner border border-zinc-800/50">
+                <div className="h-4 bg-background rounded-full overflow-hidden shadow-inner border border-border/50">
                     <div
                         className="h-full rounded-full transition-[width] duration-1000 ease-out relative"
-                        style={{ width: `${pct}%`, backgroundColor: '#f59e0b' }}
+                        style={{ width: `${pct}%`, backgroundColor: 'var(--color-warning)' }}
                     >
                         {/* Subtle highlight inside the progress bar */}
                         <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-full" />
@@ -203,10 +209,11 @@ export function DiskUsageCard({ used, total }: { used: number; total: number }) 
                 </div>
                 
                 <div className="flex justify-between items-center text-xs">
-                    <span className="text-amber-500 font-medium">{pct.toFixed(1)}% full</span>
-                    <span className="text-zinc-500 font-mono">{total.toFixed(1)} GB Total</span>
+                    <span className="text-warning font-medium">{pct.toFixed(1)}% full</span>
+                    <span className="text-muted-foreground font-mono">{total.toFixed(1)} GB Total</span>
                 </div>
             </div>
-        </div>
+            </CardContent>
+        </Card>
     );
 }

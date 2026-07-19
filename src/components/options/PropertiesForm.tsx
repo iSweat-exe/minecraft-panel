@@ -1,6 +1,9 @@
 import React from 'react';
 import { Users, Globe, Shield, FileText, Server, Terminal, Settings, MessageSquare, Cpu } from 'lucide-react';
 import { ServerProps } from '../../hooks/useServerOptions';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Switch } from '../ui/Switch';
 
 interface PropertiesFormProps {
     properties: ServerProps;
@@ -8,43 +11,43 @@ interface PropertiesFormProps {
 }
 
 const InputBox = ({ label, description, propKey, type = "text", icon: Icon, properties, updateProp }: { label: string, description?: string, propKey: string, type?: string, icon?: any, properties: any, updateProp: (k: string, v: string) => void }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col justify-between focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all h-full">
-        <div className="p-3 flex justify-between items-start bg-zinc-900/50 border-b border-zinc-800 flex-1">
+    <div className="bg-surface border border-border rounded-lg overflow-hidden flex flex-col justify-between focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all h-full">
+        <div className="p-3 flex justify-between items-start bg-surface/50 border-b border-border flex-1">
             <div>
-                <div className="font-semibold text-zinc-200 text-[14px]">{label}</div>
-                {description && <div className="text-zinc-500 text-[11px] mt-1 leading-snug pr-2">{description}</div>}
+                <div className="font-semibold text-foreground text-[14px]">{label}</div>
+                {description && <div className="text-muted-foreground text-[11px] mt-1 leading-snug pr-2">{description}</div>}
             </div>
-            <div className="text-zinc-600 font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
+            <div className="text-muted-foreground font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
         </div>
-        <div className="px-3 py-2 flex items-center bg-zinc-950 shrink-0 min-h-[46px]">
-            {Icon && <div className="p-1.5 bg-zinc-900 rounded border border-zinc-800 mr-3"><Icon size={16} className="text-zinc-400" /></div>}
-            <input 
+        <div className="px-3 py-2 flex items-center bg-background shrink-0 min-h-[46px]">
+            {Icon && <div className="p-1.5 bg-surface rounded border border-border mr-3"><Icon size={16} className="text-muted-foreground" /></div>}
+            <Input 
                 type={type} 
                 value={properties[propKey] || ''}
                 onChange={(e) => updateProp(propKey, e.target.value)}
-                className={`w-full bg-transparent border-0 text-zinc-100 font-mono text-sm focus:outline-none focus:ring-0 p-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${!Icon ? 'px-1' : ''}`}
+                className={`border-0 bg-transparent shadow-none focus-visible:ring-0 px-0 h-auto ${!Icon ? 'px-1' : ''}`}
             />
         </div>
     </div>
 );
 
 const SelectBox = ({ label, description, propKey, options, properties, updateProp }: { label: string, description?: string, propKey: string, options: { value: string, label: string }[], properties: any, updateProp: (k: string, v: string) => void }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col justify-between focus-within:border-indigo-500/50 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all h-full">
-        <div className="p-3 flex justify-between items-start bg-zinc-900/50 border-b border-zinc-800 flex-1">
+    <div className="bg-surface border border-border rounded-lg overflow-hidden flex flex-col justify-between focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all h-full">
+        <div className="p-3 flex justify-between items-start bg-surface/50 border-b border-border flex-1">
             <div>
-                <div className="font-semibold text-zinc-200 text-[14px]">{label}</div>
-                {description && <div className="text-zinc-500 text-[11px] mt-1 leading-snug pr-2">{description}</div>}
+                <div className="font-semibold text-foreground text-[14px]">{label}</div>
+                {description && <div className="text-muted-foreground text-[11px] mt-1 leading-snug pr-2">{description}</div>}
             </div>
-            <div className="text-zinc-600 font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
+            <div className="text-muted-foreground font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
         </div>
-        <div className="px-3 py-2 bg-zinc-950 flex items-center shrink-0 min-h-[46px]">
-            <select 
+        <div className="px-3 py-2 bg-background flex items-center shrink-0 min-h-[46px]">
+            <Select 
                 value={properties[propKey] || ''}
                 onChange={(e) => updateProp(propKey, e.target.value)}
-                className="w-full bg-transparent border-0 text-zinc-100 font-mono text-sm focus:outline-none focus:ring-0 p-0 cursor-pointer"
+                className="border-0 bg-transparent shadow-none focus:ring-0 px-0 h-auto"
             >
-                {options.map(opt => <option key={opt.value} value={opt.value} className="bg-zinc-900 text-zinc-100">{opt.label}</option>)}
-            </select>
+                {options.map(opt => <option key={opt.value} value={opt.value} className="bg-surface text-foreground">{opt.label}</option>)}
+            </Select>
         </div>
     </div>
 );
@@ -61,31 +64,25 @@ const ToggleBox = ({ label, description, propKey, inverted = false, properties, 
 
     return (
         <div 
-            className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden flex flex-col justify-between cursor-pointer group hover:border-zinc-700 transition-colors h-full"
+            className="bg-surface border border-border rounded-lg overflow-hidden flex flex-col justify-between cursor-pointer group hover:border-surface-hover transition-colors h-full"
             onClick={toggle}
         >
-            <div className="p-3 flex justify-between items-start bg-zinc-900/50 border-b border-zinc-800 group-hover:bg-zinc-800/30 transition-colors flex-1">
+            <div className="p-3 flex justify-between items-start bg-surface/50 border-b border-border group-hover:bg-surface-hover/30 transition-colors flex-1">
                 <div>
-                    <div className="font-semibold text-zinc-200 text-[14px]">{label}</div>
-                    {description && <div className="text-zinc-500 text-[11px] mt-1 leading-snug pr-2">{description}</div>}
+                    <div className="font-semibold text-foreground text-[14px]">{label}</div>
+                    {description && <div className="text-muted-foreground text-[11px] mt-1 leading-snug pr-2">{description}</div>}
                 </div>
-                <div className="text-zinc-600 font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
+                <div className="text-muted-foreground font-mono text-[10px] shrink-0 mt-0.5">{propKey}</div>
             </div>
-            <div className="px-4 py-2 bg-zinc-950 flex justify-between items-center group-hover:bg-zinc-900/30 transition-colors shrink-0 min-h-[46px]">
-                <span className="text-sm font-medium text-zinc-400">
+            <div className="px-4 py-2 bg-background flex justify-between items-center group-hover:bg-surface/30 transition-colors shrink-0 min-h-[46px]">
+                <span className="text-sm font-medium text-muted-foreground">
                     {isTrue ? 'Activé' : 'Désactivé'}
                 </span>
-                <button 
-                    className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none ${
-                        isTrue ? 'bg-indigo-500' : 'bg-zinc-700'
-                    }`}
-                >
-                    <span 
-                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${
-                            isTrue ? 'translate-x-5' : 'translate-x-1'
-                        }`}
-                    />
-                </button>
+                <Switch 
+                    checked={isTrue}
+                    readOnly
+                    className="pointer-events-none"
+                />
             </div>
         </div>
     );

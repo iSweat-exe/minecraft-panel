@@ -4,6 +4,8 @@ import { Upload, Copy, Scissors, XSquare, Trash2 } from 'lucide-react';
 import { FileEditor } from './FileEditor';
 import { UploadModal } from './dialogs/UploadModal';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
 import { tauriBridge } from '../lib/tauriBridge';
 import { SftpToolbar } from './sftp/SftpToolbar';
 import { SftpFileList } from './sftp/SftpFileList';
@@ -23,17 +25,17 @@ export const SftpPanel: React.FC = () => {
     }
 
     return (
-        <div className="h-full flex flex-col bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-sm relative">
+        <Card className="h-full flex flex-col overflow-hidden border-0 relative">
             {/* Drop zone overlay */}
             {sftp.isDragging && (
-                <div className="absolute inset-0 z-40 flex items-center justify-center bg-zinc-950/80 backdrop-blur-sm border-2 border-dashed border-indigo-500/50 rounded-xl">
+                <div className="absolute inset-0 z-40 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary/50 rounded-xl">
                     <div className="flex flex-col items-center gap-4 animate-pulse">
-                        <div className="p-5 bg-indigo-500/10 rounded-2xl border border-indigo-500/30">
-                            <Upload size={40} className="text-indigo-400" />
+                        <div className="p-5 bg-primary/10 rounded-2xl border border-primary/30">
+                            <Upload size={40} className="text-primary" />
                         </div>
                         <div className="text-center">
-                            <p className="text-lg font-bold text-zinc-100">Déposez vos fichiers ici</p>
-                            <p className="text-sm text-zinc-500 mt-1">dans <span className="text-indigo-400 font-mono">{sftp.currentPath}</span></p>
+                            <p className="text-lg font-bold text-foreground">Déposez vos fichiers ici</p>
+                            <p className="text-sm text-muted-foreground mt-1">dans <span className="text-primary font-mono">{sftp.currentPath}</span></p>
                         </div>
                     </div>
                 </div>
@@ -75,39 +77,47 @@ export const SftpPanel: React.FC = () => {
 
             {/* Multi-selection Action Bar */}
             {sftp.selectedFiles.size > 0 && (
-                <div className="px-4 py-2 bg-indigo-900/30 border-b border-indigo-500/30 flex items-center justify-between">
-                    <span className="text-sm text-indigo-300 font-medium">
+                <div className="px-4 py-2 bg-primary/10 border-b border-primary/20 flex items-center justify-between">
+                    <span className="text-sm text-primary font-medium">
                         {sftp.selectedFiles.size} item{sftp.selectedFiles.size > 1 ? 's' : ''} selected
                     </span>
                     <div className="flex items-center gap-2">
                         {sftp.clipboard && (
-                            <button 
+                            <Button 
                                 onClick={() => sftp.handlePaste()}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium rounded-md transition-colors border border-emerald-500/30"
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-success border-success/30 hover:bg-success/20"
                             >
                                 <Copy size={14} /> Paste ({sftp.clipboard.files.length})
-                            </button>
+                            </Button>
                         )}
-                        <button 
+                        <Button 
                             onClick={() => sftp.handleCopyCut('copy')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:text-white hover:bg-indigo-500/20 rounded-md transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-primary hover:text-primary-foreground hover:bg-primary/20"
                         >
                             <Copy size={14} /> Copy
-                        </button>
-                        <button 
+                        </Button>
+                        <Button 
                             onClick={() => sftp.handleCopyCut('cut')}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:text-white hover:bg-indigo-500/20 rounded-md transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-primary hover:text-primary-foreground hover:bg-primary/20"
                         >
                             <Scissors size={14} /> Cut
-                        </button>
-                        <div className="w-px h-4 bg-indigo-500/30 mx-1"></div>
-                        <button 
+                        </Button>
+                        <div className="w-px h-4 bg-primary/30 mx-1"></div>
+                        <Button 
                             onClick={() => sftp.setSelectedFiles(new Set())}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-300 hover:text-white hover:bg-indigo-500/20 rounded-md transition-colors"
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-primary hover:text-primary-foreground hover:bg-primary/20"
                         >
                             <XSquare size={14} /> Unselect All
-                        </button>
-                        <button 
+                        </Button>
+                        <Button 
                             onClick={async () => {
                                 const confirmed = await ConfirmDialog.call({
                                     title: "Delete Items",
@@ -128,17 +138,19 @@ export const SftpPanel: React.FC = () => {
                                 }
                                 sftp.fetchDir(sftp.currentPath);
                             }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-xs font-medium rounded-md transition-colors border border-red-500/20"
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-danger border-danger/20 hover:bg-danger/20"
                         >
                             <Trash2 size={14} /> Delete Selected
-                        </button>
+                        </Button>
                     </div>
                 </div>
             )}
 
             {/* Error banner */}
             {sftp.error && (
-                <div className="px-4 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm">
+                <div className="px-4 py-2 bg-danger/10 border-b border-danger/20 text-danger text-sm">
                     {sftp.error}
                 </div>
             )}
@@ -151,6 +163,6 @@ export const SftpPanel: React.FC = () => {
                 onNavigate={sftp.handleNavigate}
                 onDelete={sftp.handleDelete}
             />
-        </div>
+        </Card>
     );
 };

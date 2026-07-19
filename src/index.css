@@ -1,5 +1,67 @@
 @import "tailwindcss";
 
+@theme {
+  /* Semantic Colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
+  /* Shared Radiuses */
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius: 0.5rem; /* 8px */
+  --radius-md: calc(var(--radius) + 2px);
+  --radius-lg: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  :root {
+    /* Using Zinc as the base gray */
+    --background: #09090b; /* zinc-950 */
+    --foreground: #fafafa; /* zinc-50 */
+    
+    --surface: #18181b; /* zinc-900 */
+    --surface-hover: #27272a; /* zinc-800 */
+    
+    --border: #27272a; /* zinc-800 */
+    
+    --muted: #27272a; /* zinc-800 */
+    --muted-foreground: #a1a1aa; /* zinc-400 */
+    
+    /* Using Indigo as the primary color */
+    --primary: #4f46e5; /* indigo-600 */
+    --primary-hover: #6366f1; /* indigo-500 */
+    --primary-foreground: #ffffff;
+    
+    /* Status Colors */
+    --success: #10b981; /* emerald-500 */
+    --danger: #ef4444; /* red-500 */
+    --warning: #f59e0b; /* amber-500 */
+    
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
 /* Custom Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
     width: 6px;

@@ -5,6 +5,8 @@ import { useServerStatsStore } from '../store/serverStatsStore';
 import { Server, Users, Activity, Clock } from 'lucide-react';
 import { ServerControls } from './ServerControls';
 import { MetricChart, NetworkChart, DiskUsageCard } from './overview/ResourceCharts';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
 
 type TimeRange = '1m' | '5m' | '15m' | '1h' | '1d';
 
@@ -37,15 +39,15 @@ export const OverviewPanel: React.FC = () => {
             };
             return (
                 <>
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                     <span className="text-sm text-amber-400 font-medium">{labels[pendingAction]}</span>
                 </>
             );
         }
         return (
             <>
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'}`} />
-                <span className="text-sm text-zinc-400 font-medium">
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-success' : 'bg-danger'}`} />
+                <span className="text-sm text-muted-foreground font-medium">
                     {isOnline ? 'En ligne' : 'Hors ligne'}
                 </span>
             </>
@@ -54,13 +56,13 @@ export const OverviewPanel: React.FC = () => {
 
     return (
         <div className="h-full overflow-y-auto p-6 space-y-6">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-sm flex items-center justify-between">
+            <Card className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
-                        <Server className="text-indigo-500" size={24} />
+                    <div className="p-2.5 bg-primary/10 rounded-lg border border-primary/20">
+                        <Server className="text-primary" size={24} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-zinc-100 tracking-tight">{host || 'Minecraft Server'}</h2>
+                        <h2 className="text-xl font-bold text-foreground tracking-tight">{host || 'Minecraft Server'}</h2>
                         <div className="flex items-center gap-2 mt-1">
                             {getStatusIndicator()}
                         </div>
@@ -69,41 +71,39 @@ export const OverviewPanel: React.FC = () => {
 
                 <div className="flex gap-8">
                     <div className="flex flex-col items-end justify-center">
-                        <div className="flex items-center gap-2 text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-1">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">
                             <Users size={14} /> Players
                         </div>
-                        <div className="text-2xl font-mono text-zinc-200">
-                            {mcPing?.players_online ?? 0} <span className="text-zinc-600 text-lg">/ {mcPing?.players_max ?? 0}</span>
+                        <div className="text-2xl font-mono text-foreground">
+                            {mcPing?.players_online ?? 0} <span className="text-muted-foreground text-lg">/ {mcPing?.players_max ?? 0}</span>
                         </div>
                     </div>
-                    <div className="w-px h-12 bg-zinc-800" />
+                    <div className="w-px h-12 bg-border" />
                     <div className="flex flex-col items-end justify-center">
-                        <div className="flex items-center gap-2 text-zinc-500 text-xs font-semibold uppercase tracking-wider mb-1">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">
                             <Activity size={14} /> Latency
                         </div>
-                        <div className="text-2xl font-mono text-zinc-200">
-                            {mcPing?.latency_ms ?? 0} <span className="text-zinc-600 text-lg">ms</span>
+                        <div className="text-2xl font-mono text-foreground">
+                            {mcPing?.latency_ms ?? 0} <span className="text-muted-foreground text-lg">ms</span>
                         </div>
                     </div>
                 </div>
-            </div>
+            </Card>
 
             {/* Time Range Selector */}
             <div className="flex items-center gap-2 mb-2">
-                <Clock size={16} className="text-zinc-500" />
-                <span className="text-sm font-medium text-zinc-400 mr-2">Période:</span>
+                <Clock size={16} className="text-muted-foreground" />
+                <span className="text-sm font-medium text-muted-foreground mr-2">Période:</span>
                 {(['1m', '5m', '15m', '1h', '1d'] as TimeRange[]).map((range) => (
-                    <button
+                    <Button
                         key={range}
+                        variant={timeRange === range ? 'primary' : 'ghost'}
+                        size="sm"
                         onClick={() => setTimeRange(range)}
-                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                            timeRange === range 
-                            ? 'bg-indigo-500/20 text-indigo-400 border border-indigo-500/30' 
-                            : 'bg-zinc-800/50 text-zinc-400 border border-transparent hover:bg-zinc-800 hover:text-zinc-300'
-                        }`}
+                        className={timeRange === range ? "" : "text-muted-foreground"}
                     >
                         {range}
-                    </button>
+                    </Button>
                 ))}
             </div>
 
@@ -111,7 +111,7 @@ export const OverviewPanel: React.FC = () => {
                 <MetricChart 
                     data={history} 
                     dataKey="cpu" 
-                    color="#10b981" 
+                    color="var(--color-primary)" 
                     label="CPU Usage" 
                     current={metrics ? metrics.cpu_percent.toFixed(1) : "0.0"} 
                     unit="%" 
@@ -119,7 +119,7 @@ export const OverviewPanel: React.FC = () => {
                 <MetricChart 
                     data={history} 
                     dataKey="ram" 
-                    color="#10b981" 
+                    color="var(--color-primary)" 
                     label="Memory Usage" 
                     current={metrics ? metrics.ram_used_mb.toString() : "0"} 
                     unit="MB" 

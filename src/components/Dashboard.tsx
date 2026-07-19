@@ -38,7 +38,7 @@ const NAV_ITEMS = [
     { id: 'version', label: 'Version', icon: Settings },
     { id: 'files', label: 'Fichiers', icon: Folder },
     { id: 'worlds', label: 'Mondes', icon: Globe },
-    { id: 'backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-orange-500/80' },
+    { id: 'backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-warning' },
     { id: 'access', label: 'Accès', icon: UserCog },
 ];
 
@@ -95,32 +95,32 @@ export const Dashboard: React.FC = () => {
     const backupState = useBackupStore();
 
     const getServerIconColor = () => {
-        if (pendingAction) return "text-orange-400";
-        if (serviceStatus?.active_state === 'active') return "text-emerald-500";
-        if (serviceStatus?.active_state === 'failed') return "text-red-500";
-        return activeTab === 'server' ? "text-indigo-400" : "text-zinc-500";
+        if (pendingAction) return "text-warning";
+        if (serviceStatus?.active_state === 'active') return "text-success";
+        if (serviceStatus?.active_state === 'failed') return "text-danger";
+        return activeTab === 'server' ? "text-primary" : "text-muted-foreground";
     };
 
     const getServerBorderColor = () => {
-        if (pendingAction) return "border-orange-400";
-        if (serviceStatus?.active_state === 'active') return "border-emerald-500";
-        if (serviceStatus?.active_state === 'failed') return "border-red-500";
-        return "border-indigo-500";
+        if (pendingAction) return "border-warning";
+        if (serviceStatus?.active_state === 'active') return "border-success";
+        if (serviceStatus?.active_state === 'failed') return "border-danger";
+        return "border-primary";
     };
 
     return (
-        <div className="flex h-full bg-zinc-950 text-zinc-200">
+        <div className="flex h-full bg-background text-foreground">
             {/* Sidebar */}
-            <aside className={`${collapsed ? 'w-[60px]' : 'w-[260px]'} bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200`}>
+            <aside className={`${collapsed ? 'w-[60px]' : 'w-[260px]'} bg-surface border-r border-border flex flex-col shrink-0 transition-[width] duration-200`}>
                 {/* Header */}
                 <button
                     onClick={() => setCollapsed(!collapsed)}
-                    className={`h-14 text-zinc-400 hover:text-zinc-200 border-b border-zinc-800 flex items-center transition-colors overflow-hidden whitespace-nowrap shrink-0 ${
+                    className={`h-14 text-muted-foreground hover:text-foreground border-b border-border flex items-center transition-colors overflow-hidden whitespace-nowrap shrink-0 ${
                         collapsed ? 'justify-center px-0' : 'justify-between px-5'
                     }`}
                     title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
                 >
-                    {!collapsed && <span className="text-[15px] font-bold text-zinc-100 tracking-wide">Uwu Server</span>}
+                    {!collapsed && <span className="text-[15px] font-bold text-foreground tracking-wide">Uwu Server</span>}
                     {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
                 </button>
 
@@ -133,10 +133,10 @@ export const Dashboard: React.FC = () => {
                                 collapsed ? 'justify-center px-0' : 'justify-between px-5'
                             } ${
                                 activeTab === id
-                                    ? `text-white bg-zinc-800/80 ${id === 'server' ? getServerBorderColor() : 'border-indigo-500'}`
+                                    ? `text-primary-foreground bg-surface-hover ${id === 'server' ? getServerBorderColor() : 'border-primary'}`
                                     : id === 'server'
-                                        ? `text-zinc-200 bg-zinc-800/40 hover:bg-zinc-800/60 ${getServerBorderColor()}`
-                                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50 border-transparent'
+                                        ? `text-foreground bg-surface/40 hover:bg-surface-hover ${getServerBorderColor()}`
+                                        : 'text-muted-foreground hover:text-foreground hover:bg-surface-hover border-transparent'
                             }`}
                             title={collapsed ? label : undefined}
                         >
@@ -144,40 +144,40 @@ export const Dashboard: React.FC = () => {
                                 <Icon 
                                     size={20} 
                                     strokeWidth={2} 
-                                    className={id === 'server' ? getServerIconColor() : (activeTab === id ? "text-indigo-400" : "text-zinc-500")} 
+                                    className={id === 'server' ? getServerIconColor() : (activeTab === id ? "text-primary" : "text-muted-foreground")} 
                                 />
                                 {!collapsed && label}
                             </div>
                             {!collapsed && Extra && (
-                                <Extra size={16} strokeWidth={2} className={extraColor || "text-zinc-600"} />
+                                <Extra size={16} strokeWidth={2} className={extraColor || "text-muted-foreground"} />
                             )}
                         </button>
                     ))}
                 </nav>
 
-                <div className="border-t border-zinc-800 shrink-0">
+                <div className="border-t border-border shrink-0">
                     {/* Global Backup Progress indicator */}
                     {(backupState.loading || backupState.success) && (
-                        <div className={`border-b ${backupState.success ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-zinc-800'} p-4 ${collapsed ? 'hidden' : 'block'} transition-colors duration-500`}>
+                        <div className={`border-b ${backupState.success ? 'border-success/20 bg-success/5' : 'border-border'} p-4 ${collapsed ? 'hidden' : 'block'} transition-colors duration-500`}>
                             <div className="flex items-center gap-2 mb-2">
                                 {backupState.success ? (
-                                    <CheckCircle className="text-emerald-500 shrink-0" size={16} />
+                                    <CheckCircle className="text-success shrink-0" size={16} />
                                 ) : (
-                                    <Loader2 className="animate-spin text-indigo-400 shrink-0" size={16} />
+                                    <Loader2 className="animate-spin text-primary shrink-0" size={16} />
                                 )}
-                                <span className={`text-xs font-medium truncate ${backupState.success ? 'text-emerald-400' : 'text-zinc-300'}`}>
+                                <span className={`text-xs font-medium truncate ${backupState.success ? 'text-success' : 'text-foreground'}`}>
                                     {backupState.statusText || 'Transfert en cours...'}
                                 </span>
                             </div>
                             {backupState.progress && backupState.progress.total > 0 && (
                                 <div className="space-y-1">
-                                    <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-emerald-950' : 'bg-zinc-800'}`}>
+                                    <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-success/20' : 'bg-surface'}`}>
                                         <div 
-                                            className={`h-full transition-all duration-300 ${backupState.success ? 'bg-emerald-500' : 'bg-indigo-500'}`}
+                                            className={`h-full transition-all duration-300 ${backupState.success ? 'bg-success' : 'bg-primary'}`}
                                             style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
                                         />
                                     </div>
-                                    <div className={`flex justify-between text-[10px] font-medium ${backupState.success ? 'text-emerald-400/80' : 'text-zinc-500'}`}>
+                                    <div className={`flex justify-between text-[10px] font-medium ${backupState.success ? 'text-success' : 'text-muted-foreground'}`}>
                                         <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
                                         <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
                                     </div>
@@ -188,7 +188,7 @@ export const Dashboard: React.FC = () => {
                     
                     <button
                         onClick={disconnect}
-                        className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-zinc-500 hover:text-red-400 hover:bg-zinc-800/50 transition-colors ${
+                        className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-muted-foreground hover:text-danger hover:bg-surface-hover transition-colors ${
                             collapsed ? 'justify-center px-0' : 'px-5'
                         }`}
                         title={collapsed ? 'Déconnexion' : undefined}
@@ -234,7 +234,7 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {['history', 'version', 'access'].includes(activeTab) && (
-                    <div className="flex items-center justify-center h-full text-zinc-600 text-sm">
+                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                         Section "{NAV_ITEMS.find(i => i.id === activeTab)?.label}" — En cours de développement
                     </div>
                 )}

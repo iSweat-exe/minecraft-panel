@@ -36,19 +36,19 @@ export const ConsolePanel: React.FC = () => {
     } = useConsole();
 
     return (
-        <div className="bg-zinc-900 border border-zinc-800 flex flex-col h-full overflow-hidden">
+        <div className="bg-surface border border-border flex flex-col h-full overflow-hidden">
             {/* Title bar mimicking a real terminal */}
-            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-800 border-b border-zinc-700 select-none">
+            <div className="flex items-center gap-2 px-4 py-2 bg-surface-hover border-b border-border select-none">
                 <div className="flex gap-1.5">
                     <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
                     <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                 </div>
-                <span className="text-xs text-zinc-500 ml-2 font-mono flex-1">minecraft@server — tail -F logs/latest.log</span>
+                <span className="text-xs text-muted-foreground ml-2 font-mono flex-1">minecraft@server — tail -F logs/latest.log</span>
                 {isScrolledUp && (
                     <button
                         onClick={scrollToBottom}
-                        className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors font-mono mr-2 flex items-center gap-1"
+                        className="text-xs text-success hover:text-success/80 transition-colors font-mono mr-2 flex items-center gap-1"
                         title="Reprendre la lecture auto"
                     >
                         <ArrowDownToLine size={12} />
@@ -57,7 +57,7 @@ export const ConsolePanel: React.FC = () => {
                 )}
                 <button
                     onClick={() => clear()}
-                    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors font-mono"
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono"
                     title="Clear console"
                 >
                     clear
@@ -75,14 +75,14 @@ export const ConsolePanel: React.FC = () => {
                 {lines.length > 0 ? (
                     lines.map((line, i) => <LogLine key={i} line={line} />)
                 ) : (
-                    <div className="text-zinc-600 px-3 py-8 text-center">Waiting for logs...</div>
+                    <div className="text-muted-foreground px-3 py-8 text-center">Waiting for logs...</div>
                 )}
             </div>
 
             {/* Input */}
-            <div className="bg-zinc-900/50 border-t border-zinc-800 shrink-0">
-                <form onSubmit={sendCommand} className="flex items-center bg-[#0d0d0d] border border-zinc-700/50 overflow-hidden">
-                    <div className="pl-3 pr-2 flex items-center justify-center select-none shrink-0 text-emerald-500">
+            <div className="bg-surface-hover/50 border-t border-border shrink-0">
+                <form onSubmit={sendCommand} className="flex items-center bg-[#0d0d0d] border border-border/50 overflow-hidden">
+                    <div className="pl-3 pr-2 flex items-center justify-center select-none shrink-0 text-success">
                         <ChevronRight size={18} strokeWidth={2.5} />
                     </div>
                     <input
@@ -98,7 +98,7 @@ export const ConsolePanel: React.FC = () => {
                     <button
                         type="submit"
                         disabled={!command.trim()}
-                        className="text-zinc-500 hover:text-emerald-400 disabled:opacity-0 px-3 py-2 transition-all flex items-center justify-center"
+                        className="text-muted-foreground hover:text-success disabled:opacity-0 px-3 py-2 transition-all flex items-center justify-center"
                         title="Envoyer la commande"
                     >
                         <CornerDownLeft size={16} strokeWidth={2} />

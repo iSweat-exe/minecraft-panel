@@ -32,7 +32,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
     return (
         <div className="flex-1 overflow-auto">
             <table className="w-full text-sm text-left">
-                <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/50 sticky top-0">
+                <thead className="text-xs text-muted-foreground uppercase bg-surface-hover sticky top-0">
                     <tr>
                         <th className="px-4 py-3 font-medium">Name</th>
                         <th className="px-4 py-3 font-medium w-24">Size</th>
@@ -40,10 +40,10 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                         <th className="px-4 py-3 font-medium w-20 text-right">Actions</th>
                     </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/50">
+                <tbody className="divide-y divide-border/50">
                     {entries.length === 0 && !loading && (
                         <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-zinc-500">
+                            <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
                                 This directory is empty.
                             </td>
                         </tr>
@@ -54,27 +54,27 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                             <tr 
                                 key={`${entry.name}-${idx}`} 
                                 onClick={(e) => onNavigate(e, entry)}
-                                className={`cursor-pointer transition-colors group ${isSelected ? 'bg-indigo-500/20' : 'hover:bg-zinc-800/50'}`}
+                                className={`cursor-pointer transition-colors group ${isSelected ? 'bg-primary/20' : 'hover:bg-surface-hover'}`}
                             >
-                                <td className="px-4 py-2.5 font-medium text-zinc-200 flex items-center gap-3">
+                                <td className="px-4 py-2.5 font-medium text-foreground flex items-center gap-3">
                                     {entry.is_dir ? (
-                                        <Folder size={16} className="text-indigo-400" />
+                                        <Folder size={16} className="text-warning" />
                                     ) : (
-                                        <FileText size={16} className="text-zinc-400" />
+                                        <FileText size={16} className="text-muted-foreground" />
                                     )}
                                     {entry.name}
                                 </td>
-                                <td className="px-4 py-2.5 text-zinc-400 text-xs font-mono">
+                                <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">
                                     {!entry.is_dir ? formatBytes(entry.size) : '--'}
                                 </td>
-                                <td className="px-4 py-2.5 text-zinc-400 text-xs">
+                                <td className="px-4 py-2.5 text-muted-foreground text-xs">
                                     {formatDate(entry.modified)}
                                 </td>
                                 <td className="px-4 py-2.5 text-right">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={(e) => onDelete(e, entry)}
-                                            className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                                            className="p-1 text-muted-foreground hover:text-danger transition-colors"
                                             title="Delete"
                                         >
                                             <Trash2 size={14} />
