@@ -179,42 +179,70 @@ export function NetworkChart({ data, currentRx, currentTx }: {
 
 export function DiskUsageCard({ used, total }: { used: number; total: number }) {
     const pct = total > 0 ? (used / total) * 100 : 0;
-    const free = total - used;
+    const free = Math.max(0, total - used);
+    
+    let colorClass = 'from-primary to-primary/70';
+    let textColor = 'text-primary';
+    let bgColor = 'bg-primary/10';
+    let borderColor = 'border-primary/20';
+    
+    if (pct > 90) {
+        colorClass = 'from-danger to-danger/70';
+        textColor = 'text-danger';
+        bgColor = 'bg-danger/10';
+        borderColor = 'border-danger/20';
+    } else if (pct > 75) {
+        colorClass = 'from-warning to-warning/70';
+        textColor = 'text-warning';
+        bgColor = 'bg-warning/10';
+        borderColor = 'border-warning/20';
+    }
     
     return (
-        <Card>
-            <CardContent className="p-5 flex flex-col gap-5">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-warning/10 rounded-lg border border-warning/20">
-                        <HardDrive className="text-warning" size={20} />
-                    </div>
+        <Card className="group hover:border-primary/30 transition-all duration-300">
+            <CardContent className="p-6">
+                <div className="flex items-start justify-between mb-8">
                     <div>
-                        <h3 className="text-sm font-semibold text-foreground">Storage</h3>
-                        <p className="text-xs text-muted-foreground">Main Disk Mount (/minecraft)</p>
+                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                            Storage
+                        </h3>
+                        <p className="text-xs text-muted-foreground mt-1">Main Disk Mount (/minecraft)</p>
+                    </div>
+                    <div className={`p-3 ${bgColor} rounded-xl border ${borderColor} shadow-sm group-hover:scale-105 transition-transform duration-300`}>
+                        <HardDrive className={textColor} size={22} />
                     </div>
                 </div>
             
-            <div className="space-y-2.5">
-                <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Used: <span className="text-foreground font-mono ml-1">{used.toFixed(1)} GB</span></span>
-                    <span className="text-muted-foreground">Free: <span className="text-foreground font-mono ml-1">{free.toFixed(1)} GB</span></span>
-                </div>
-                
-                <div className="h-4 bg-background rounded-full overflow-hidden shadow-inner border border-border/50">
-                    <div
-                        className="h-full rounded-full transition-[width] duration-1000 ease-out relative"
-                        style={{ width: `${pct}%`, backgroundColor: 'var(--color-warning)' }}
-                    >
-                        {/* Subtle highlight inside the progress bar */}
-                        <div className="absolute top-0 left-0 right-0 h-1/2 bg-white/10 rounded-t-full" />
+                <div className="space-y-4">
+                    <div className="flex justify-between items-end">
+                        <div className="flex flex-col">
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Used</span>
+                            <span className="text-2xl font-mono font-semibold text-foreground leading-none">
+                                {used.toFixed(1)}<span className="text-sm text-muted-foreground ml-1">GB</span>
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Free</span>
+                            <span className="text-2xl font-mono font-semibold text-foreground leading-none">
+                                {free.toFixed(1)}<span className="text-sm text-muted-foreground ml-1">GB</span>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div className="relative h-2.5 w-full bg-background rounded-full overflow-hidden border border-border/50 shadow-inner">
+                        <div
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${colorClass}`}
+                            style={{ width: `${pct}%` }}
+                        >
+                            <div className="absolute inset-0 bg-white/20 rounded-full" style={{ maskImage: 'linear-gradient(to bottom, white, transparent)' }} />
+                        </div>
+                    </div>
+                    
+                    <div className="flex justify-between items-center text-xs font-medium">
+                        <span className={textColor}>{pct.toFixed(1)}% Capacity</span>
+                        <span className="text-muted-foreground">{total.toFixed(1)} GB Total</span>
                     </div>
                 </div>
-                
-                <div className="flex justify-between items-center text-xs">
-                    <span className="text-warning font-medium">{pct.toFixed(1)}% full</span>
-                    <span className="text-muted-foreground font-mono">{total.toFixed(1)} GB Total</span>
-                </div>
-            </div>
             </CardContent>
         </Card>
     );
