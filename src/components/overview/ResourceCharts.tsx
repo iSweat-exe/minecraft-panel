@@ -1,8 +1,9 @@
 
-import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis, CartesianGrid, Legend } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, Tooltip, YAxis, CartesianGrid, Legend, PieChart, Pie, Cell } from 'recharts';
 import { Activity, Globe, HardDrive } from 'lucide-react';
 import { DataPoint } from '../../store/serverStatsStore';
 import { Card, CardContent } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 export function formatBps(bps: number) {
     if (bps >= 1024 * 1024) return (bps / (1024 * 1024)).toFixed(1) + ' MB/s';
@@ -181,66 +182,77 @@ export function DiskUsageCard({ used, total }: { used: number; total: number }) 
     const pct = total > 0 ? (used / total) * 100 : 0;
     const free = Math.max(0, total - used);
     
-    let colorClass = 'from-primary to-primary/70';
+    // Default to primary color
+    let usedColorHex = '#4f46e5'; 
+    let freeColorHex = 'rgba(79, 70, 229, 0.2)';
     let textColor = 'text-primary';
-    let bgColor = 'bg-primary/10';
-    let borderColor = 'border-primary/20';
     
+    // Change color based on usage thresholds
     if (pct > 90) {
-        colorClass = 'from-danger to-danger/70';
+        usedColorHex = '#ef4444'; // danger (red)
+        freeColorHex = 'rgba(239, 68, 68, 0.2)';
         textColor = 'text-danger';
-        bgColor = 'bg-danger/10';
-        borderColor = 'border-danger/20';
     } else if (pct > 75) {
-        colorClass = 'from-warning to-warning/70';
+        usedColorHex = '#f59e0b'; // warning (amber)
+        freeColorHex = 'rgba(245, 158, 11, 0.2)';
         textColor = 'text-warning';
-        bgColor = 'bg-warning/10';
-        borderColor = 'border-warning/20';
     }
     
+    const data = [
+        { name: 'Used', value: used, color: usedColorHex },
+        { name: 'Free', value: free, color: freeColorHex }
+    ];
+    
     return (
-        <Card className="group hover:border-primary/30 transition-all duration-300">
+        <Card className="hover:border-primary/30 transition-all duration-300">
             <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-8">
-                    <div>
-                        <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                            Storage
-                        </h3>
-                        <p className="text-xs text-muted-foreground mt-1">Main Disk Mount (/minecraft)</p>
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-surface rounded-lg border border-border/50 text-foreground">
+                        <HardDrive size={18} />
                     </div>
-                    <div className={`p-3 ${bgColor} rounded-xl border ${borderColor} shadow-sm group-hover:scale-105 transition-transform duration-300`}>
-                        <HardDrive className={textColor} size={22} />
-                    </div>
+                    <h3 className="text-lg font-bold text-foreground">
+                        Stockage Principal
+                    </h3>
                 </div>
             
-                <div className="space-y-4">
-                    <div className="flex justify-between items-end">
-                        <div className="flex flex-col">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Used</span>
-                            <span className="text-2xl font-mono font-semibold text-foreground leading-none">
-                                {used.toFixed(1)}<span className="text-sm text-muted-foreground ml-1">GB</span>
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-1">Free</span>
-                            <span className="text-2xl font-mono font-semibold text-foreground leading-none">
-                                {free.toFixed(1)}<span className="text-sm text-muted-foreground ml-1">GB</span>
-                            </span>
-                        </div>
+                <div className="flex items-center gap-8">
+                    <div className="w-32 h-32 shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={0}
+                                    outerRadius={60}
+                                    stroke="none"
+                                    dataKey="value"
+                                    startAngle={90}
+                                    endAngle={-270}
+                                    isAnimationActive={true}
+                                >
+                                    {data.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
+                        </ResponsiveContainer>
                     </div>
                     
-                    <div className="relative h-2.5 w-full bg-background rounded-full overflow-hidden border border-border/50 shadow-inner">
-                        <div
-                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r ${colorClass}`}
-                            style={{ width: `${pct}%` }}
-                        >
-                            <div className="absolute inset-0 bg-white/20 rounded-full" style={{ maskImage: 'linear-gradient(to bottom, white, transparent)' }} />
+                    <div className="flex flex-col flex-1 gap-4">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-2xl font-bold text-foreground leading-none">{total.toFixed(1)} GB</span>
+                            <span className="text-sm font-medium text-foreground tracking-wide">Stockage total</span>
                         </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs font-medium">
-                        <span className={textColor}>{pct.toFixed(1)}% Capacity</span>
-                        <span className="text-muted-foreground">{total.toFixed(1)} GB Total</span>
+
+                        <div className="flex flex-col gap-1">
+                            <span className={`text-xl font-bold ${textColor} leading-none`}>{used.toFixed(1)} GB</span>
+                            <span className={`text-sm font-medium ${textColor} tracking-wide`}>{pct.toFixed(1)}% utilisé</span>
+                        </div>
+                        
+                        <Button variant="default" className="w-fit mt-2 rounded-full px-6 py-2 h-9 text-xs font-bold shadow-md">
+                            Gérer les fichiers
+                        </Button>
                     </div>
                 </div>
             </CardContent>
