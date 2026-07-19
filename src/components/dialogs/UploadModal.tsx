@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, CheckCircle2, AlertCircle, Upload, RefreshCw, SkipForward, Undo2 } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, RefreshCw, SkipForward, Undo2 } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';

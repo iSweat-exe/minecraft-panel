@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Download, AlertCircle } from 'lucide-react';
+import { Download, AlertCircle } from 'lucide-react';
 import { PlayerInfo } from '../hooks/usePlayers';
 import { usePlayerDetails } from '../hooks/usePlayerDetails';
 import { PlayerStats } from './players/PlayerStats';

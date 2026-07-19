@@ -19,17 +19,17 @@ export const Alert: React.FC<AlertProps> = ({
     icon = true
 }) => {
     const variants = {
-        default: 'bg-primary/10 border-primary/20 text-primary',
-        success: 'bg-success/10 border-success/20 text-success',
-        warning: 'bg-warning/10 border-warning/20 text-warning',
-        danger: 'bg-danger/10 border-danger/20 text-danger',
+        default: 'bg-primary/10 border-primary/20 text-foreground',
+        success: 'bg-success/10 border-success/20 text-foreground',
+        warning: 'bg-warning/10 border-warning/20 text-foreground',
+        danger: 'bg-danger/10 border-danger/20 text-foreground',
     };
 
     const icons = {
-        default: <Info size={18} />,
-        success: <CheckCircle size={18} />,
-        warning: <AlertCircle size={18} />,
-        danger: <XCircle size={18} />,
+        default: <Info size={18} className="text-primary" />,
+        success: <CheckCircle size={18} className="text-success" />,
+        warning: <AlertCircle size={18} className="text-warning" />,
+        danger: <XCircle size={18} className="text-danger" />,
     };
 
     return (

@@ -13,6 +13,7 @@ interface BackupStore {
     loading: boolean;
     success: boolean;
     statusText: string;
+    currentFile: string | null;
     error: string | null;
     progress: BackupProgress | null;
     speed: number;
@@ -36,6 +37,7 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
     loading: false,
     success: false,
     statusText: '',
+    currentFile: null,
     error: null,
     progress: null,
     speed: 0,
@@ -106,7 +108,7 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
 
             if (!localPath) return;
 
-            set({ loading: true, success: false, statusText: 'Préparation de la sauvegarde...' });
+            set({ loading: true, success: false, statusText: 'Préparation de la sauvegarde...', currentFile: null });
             get().clearProgress();
 
             const output = await tauriBridge.sftpReadFile('/minecraft/server.properties').catch(() => "");
@@ -119,18 +121,19 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
             
             await tauriBridge.sshExecute(tarCmd);
 
-            set({ statusText: 'Téléchargement de la sauvegarde...' });
+            const localFileName = localPath.split(/[/\\]/).pop();
+            set({ statusText: 'Téléchargement de', currentFile: localFileName });
             await tauriBridge.sftpDownloadFile(remotePath, localPath);
 
-            set({ statusText: 'Nettoyage...' });
+            set({ statusText: 'Nettoyage...', currentFile: null });
             await tauriBridge.sftpDelete(remotePath, false);
 
-            set({ statusText: 'Sauvegarde terminée avec succès !', success: true });
-            setTimeout(() => set({ statusText: '', loading: false, success: false }), 3000);
+            set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null });
+            setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
         } catch (err: any) {
             console.error("Backup failed:", err);
-            set({ error: err.toString(), loading: false, success: false, statusText: '' });
+            set({ error: err.toString(), loading: false, success: false, statusText: '', currentFile: null });
         }
     },
 
@@ -150,24 +153,25 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
             if (!selected) return;
             const localPath = selected as string;
 
-            set({ loading: true, success: false, statusText: 'Arrêt du serveur...' });
+            set({ loading: true, success: false, statusText: 'Préparation de la restauration...', currentFile: null });
             get().clearProgress();
 
             await tauriBridge.serviceAction('stop');
 
-            set({ statusText: 'Envoi de la sauvegarde vers le serveur...' });
+            const localFileName = localPath.split(/[/\\]/).pop();
+            set({ statusText: 'Envoi de', currentFile: localFileName });
             const remotePath = '/minecraft/restore_backup.tar.gz';
             await tauriBridge.sftpUploadFile(localPath, remotePath);
 
-            set({ statusText: 'Extraction de la sauvegarde...' });
-            const tarCmd = `cd /minecraft && tar -xzf restore_backup.tar.gz`;
-            await tauriBridge.sshExecute(tarCmd);
+            set({ statusText: 'Restauration...', currentFile: null });
+            const extractCmd = `cd /minecraft && tar -xzf restore_backup.tar.gz && rm restore_backup.tar.gz`;
+            await tauriBridge.sshExecute(extractCmd);
 
             set({ statusText: 'Nettoyage...' });
             await tauriBridge.sftpDelete(remotePath, false);
 
-            set({ statusText: 'Restauration terminée ! Redémarrez le serveur manuellement.', success: true });
-            setTimeout(() => set({ statusText: '', loading: false, success: false }), 4000);
+            set({ statusText: 'Restauration terminée !', success: true, currentFile: null });
+            setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
         } catch (err: any) {
             console.error("Restore failed:", err);

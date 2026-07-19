@@ -6,7 +6,7 @@ import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
 
 export const BackupsPanel: React.FC = () => {
-    const { loading, success, statusText, error, createBackup, restoreBackup, cancelBackup, progress, speed, eta } = useBackupStore();
+    const { loading, success, statusText, currentFile, error, createBackup, restoreBackup, cancelBackup, progress, speed, eta } = useBackupStore();
 
     const formatETA = (seconds: number) => {
         if (!isFinite(seconds) || seconds < 0) return 'Calcul...';
@@ -80,14 +80,15 @@ export const BackupsPanel: React.FC = () => {
             {(loading || success) && (
                 <Card className={`mt-8 p-6 bg-surface ${success ? 'border-success/50' : ''} transition-colors duration-500`}>
                     <div className="flex items-center justify-between mb-6">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
                             {success ? (
                                 <CheckCircle className="text-success" size={24} />
                             ) : (
                                 <Spinner className="text-primary" size={24} />
                             )}
-                            <span className={`font-medium text-lg ${success ? 'text-success' : 'text-foreground'}`}>
+                            <span className={`font-medium text-lg truncate pr-4 flex-1 ${success ? 'text-success' : 'text-foreground'}`}>
                                 {statusText || 'Opération en cours...'}
+                                {currentFile ? ` ${currentFile}` : ''}
                             </span>
                         </div>
                         

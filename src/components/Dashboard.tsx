@@ -27,7 +27,6 @@ import {
     SquareTerminal,
     PanelLeftClose,
     PanelLeftOpen,
-    Loader2,
     CheckCircle
 } from 'lucide-react';
 
@@ -90,6 +89,7 @@ export const Dashboard: React.FC = () => {
         } catch (e) {
             console.error(e);
         }
+        localStorage.removeItem('ssh_auto_connect');
         setSshStatus('disconnected');
     };
 
@@ -172,8 +172,9 @@ export const Dashboard: React.FC = () => {
                                     ) : (
                                         <Spinner className="text-primary shrink-0" size={16} />
                                     )}
-                                    <span className="font-medium truncate">
+                                    <span className="font-medium truncate text-sm">
                                         {backupState.statusText || 'Transfert en cours...'}
+                                        {backupState.currentFile ? ` ${backupState.currentFile}` : ''}
                                     </span>
                                 </div>
                                 {backupState.progress && backupState.progress.total > 0 && (
