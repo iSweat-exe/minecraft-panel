@@ -9,6 +9,8 @@ import { BackupsPanel } from './BackupsPanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
+import { Spinner } from './ui/Spinner';
+import { Alert } from './ui/Alert';
 import { 
     Settings, 
     LogOut, 
@@ -155,36 +157,43 @@ export const Dashboard: React.FC = () => {
                     ))}
                 </nav>
 
-                <div className="border-t border-border shrink-0">
+                <div className={`p-4 ${collapsed ? 'hidden' : 'block'}`}>
                     {/* Global Backup Progress indicator */}
                     {(backupState.loading || backupState.success) && (
-                        <div className={`border-b ${backupState.success ? 'border-success/20 bg-success/5' : 'border-border'} p-4 ${collapsed ? 'hidden' : 'block'} transition-colors duration-500`}>
-                            <div className="flex items-center gap-2 mb-2">
-                                {backupState.success ? (
-                                    <CheckCircle className="text-success shrink-0" size={16} />
-                                ) : (
-                                    <Loader2 className="animate-spin text-primary shrink-0" size={16} />
-                                )}
-                                <span className={`text-xs font-medium truncate ${backupState.success ? 'text-success' : 'text-foreground'}`}>
-                                    {backupState.statusText || 'Transfert en cours...'}
-                                </span>
-                            </div>
-                            {backupState.progress && backupState.progress.total > 0 && (
-                                <div className="space-y-1">
-                                    <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-success/20' : 'bg-surface'}`}>
-                                        <div 
-                                            className={`h-full transition-all duration-300 ${backupState.success ? 'bg-success' : 'bg-primary'}`}
-                                            style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
-                                        />
-                                    </div>
-                                    <div className={`flex justify-between text-[10px] font-medium ${backupState.success ? 'text-success' : 'text-muted-foreground'}`}>
-                                        <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
-                                        <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
-                                    </div>
+                        <Alert 
+                            variant={backupState.success ? 'success' : 'default'} 
+                            className="transition-colors duration-500"
+                            icon={false}
+                        >
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                    {backupState.success ? (
+                                        <CheckCircle className="text-success shrink-0" size={16} />
+                                    ) : (
+                                        <Spinner className="text-primary shrink-0" size={16} />
+                                    )}
+                                    <span className="font-medium truncate">
+                                        {backupState.statusText || 'Transfert en cours...'}
+                                    </span>
                                 </div>
-                            )}
-                        </div>
+                                {backupState.progress && backupState.progress.total > 0 && (
+                                    <div className="space-y-1">
+                                        <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-success/20' : 'bg-surface'}`}>
+                                            <div 
+                                                className={`h-full transition-all duration-300 ${backupState.success ? 'bg-success' : 'bg-primary'}`}
+                                                style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
+                                            />
+                                        </div>
+                                        <div className={`flex justify-between text-[10px] font-medium opacity-80`}>
+                                            <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
+                                            <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </Alert>
                     )}
+                </div>
                     
                     <button
                         onClick={disconnect}
@@ -196,7 +205,6 @@ export const Dashboard: React.FC = () => {
                         <LogOut size={18} />
                         {!collapsed && 'Déconnexion'}
                     </button>
-                </div>
             </aside>
 
             {/* Main */}

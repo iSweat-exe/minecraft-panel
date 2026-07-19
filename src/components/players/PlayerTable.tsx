@@ -4,6 +4,7 @@ import { PlayerInfo } from '../../hooks/usePlayers';
 import { mc } from '../../lib/minecraftCommands';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 
 interface PlayerTableProps {
     players: PlayerInfo[];
@@ -21,29 +22,40 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({ players, onSelectPlaye
     }
 
     return (
-        <div className="divide-y divide-border/50 max-h-[60vh] overflow-y-auto custom-scrollbar">
-            {players.map(player => (
-                <div key={player.uuid} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-surface-hover transition-colors">
-                    <div 
-                        className="flex items-center gap-4 cursor-pointer group"
-                        onClick={() => onSelectPlayer(player)}
-                    >
-                        <img 
-                            src={`https://mc-heads.net/avatar/${player.uuid}/40`} 
-                            alt={player.name}
-                            className={`w-10 h-10 rounded-md bg-surface group-hover:scale-105 transition-transform ${player.isOnline ? 'ring-2 ring-success ring-offset-2 ring-offset-background' : ''}`}
-                        />
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{player.name}</span>
-                                {player.isOp && <Badge variant="default">OP</Badge>}
-                                {player.isBanned && <Badge variant="danger">BANNED</Badge>}
-                                {player.isWhitelisted && <Badge variant="success">WHITELIST</Badge>}
-                            </div>
-                            <span className="text-xs text-muted-foreground font-mono">{player.uuid}</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+        <div className="max-h-[60vh]">
+            <Table>
+                <TableHeader className="sticky top-0 bg-zinc-950/90 backdrop-blur z-10">
+                    <TableRow>
+                        <TableHead>Player</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {players.map(player => (
+                        <TableRow key={player.uuid}>
+                            <TableCell>
+                                <div 
+                                    className="flex items-center gap-4 cursor-pointer group w-fit"
+                                    onClick={() => onSelectPlayer(player)}
+                                >
+                                    <img 
+                                        src={`https://mc-heads.net/avatar/${player.uuid}/40`} 
+                                        alt={player.name}
+                                        className={`w-10 h-10 rounded-md bg-surface group-hover:scale-105 transition-transform ${player.isOnline ? 'ring-2 ring-success ring-offset-2 ring-offset-background' : ''}`}
+                                    />
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{player.name}</span>
+                                            {player.isOp && <Badge variant="default">OP</Badge>}
+                                            {player.isBanned && <Badge variant="danger">BANNED</Badge>}
+                                            {player.isWhitelisted && <Badge variant="success">WHITELIST</Badge>}
+                                        </div>
+                                        <span className="text-xs text-muted-foreground font-mono">{player.uuid}</span>
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
                         {player.isOnline ? (
                             <Button 
                                 size="sm"
@@ -114,9 +126,12 @@ export const PlayerTable: React.FC<PlayerTableProps> = ({ players, onSelectPlaye
                                 <Check size={14} /> WL
                             </Button>
                         )}
-                    </div>
-                </div>
-            ))}
+                                </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </div>
     );
 };

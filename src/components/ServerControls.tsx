@@ -1,6 +1,7 @@
 import React from 'react';
-import { Loader2, Users, Signal, Server } from 'lucide-react';
+import { Users, Signal, Server } from 'lucide-react';
 import { useServerControls, ACTION_LABELS } from '../hooks/useServerControls';
+import { Spinner } from './ui/Spinner';
 
 export const ServerControls: React.FC = () => {
     const {
@@ -64,7 +65,7 @@ export const ServerControls: React.FC = () => {
                     
                     <div className={`flex items-center gap-1.5 ${status.color}`}>
                         {status.isSpinning ? (
-                            <Loader2 size={14} className="animate-spin" />
+                            <Spinner size={14} />
                         ) : (
                             <div className={`w-2 h-2 rounded-full ${status.color.replace('text-', 'bg-')}`} />
                         )}

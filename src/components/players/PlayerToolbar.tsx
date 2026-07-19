@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
+import { Tabs, TabsList, TabsTrigger } from '../ui/Tabs';
 
 interface PlayerToolbarProps {
     search: string;
@@ -24,17 +24,19 @@ export const PlayerToolbar: React.FC<PlayerToolbarProps> = ({ search, setSearch,
                 />
             </div>
             <div className="flex gap-2">
-                {(['all', 'online', 'ops', 'banned', 'whitelisted'] as const).map(f => (
-                    <Button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        variant={filter === f ? 'primary' : 'outline'}
-                        size="sm"
-                        className="capitalize"
-                    >
-                        {f}
-                    </Button>
-                ))}
+                <Tabs value={filter} onValueChange={(val) => setFilter(val as any)}>
+                    <TabsList>
+                        {(['all', 'online', 'ops', 'banned', 'whitelisted'] as const).map(f => (
+                            <TabsTrigger
+                                key={f}
+                                value={f}
+                                className="capitalize"
+                            >
+                                {f}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
             </div>
         </div>
     );

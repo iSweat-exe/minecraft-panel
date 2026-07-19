@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileEntry } from '../../lib/tauriBridge';
 import { Folder, FileText, Trash2 } from 'lucide-react';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 
 interface SftpFileListProps {
     entries: FileEntry[];
@@ -30,47 +31,49 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
     onDelete
 }) => {
     return (
-        <div className="flex-1 overflow-auto">
-            <table className="w-full text-sm text-left">
-                <thead className="text-xs text-muted-foreground uppercase bg-surface-hover sticky top-0">
-                    <tr>
-                        <th className="px-4 py-3 font-medium">Name</th>
-                        <th className="px-4 py-3 font-medium w-24">Size</th>
-                        <th className="px-4 py-3 font-medium w-48">Modified</th>
-                        <th className="px-4 py-3 font-medium w-20 text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
+        <div className="flex-1 overflow-auto custom-scrollbar">
+            <Table>
+                <TableHeader className="sticky top-0 bg-zinc-950/90 backdrop-blur z-10">
+                    <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead className="w-24">Size</TableHead>
+                        <TableHead className="w-48">Modified</TableHead>
+                        <TableHead className="w-20 text-right">Actions</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     {entries.length === 0 && !loading && (
-                        <tr>
-                            <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
+                        <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                                 This directory is empty.
-                            </td>
-                        </tr>
+                            </TableCell>
+                        </TableRow>
                     )}
                     {entries.map((entry, idx) => {
                         const isSelected = selectedFiles.has(entry.name);
                         return (
-                            <tr 
+                            <TableRow 
                                 key={`${entry.name}-${idx}`} 
                                 onClick={(e) => onNavigate(e, entry)}
-                                className={`cursor-pointer transition-colors group ${isSelected ? 'bg-primary/20' : 'hover:bg-surface-hover'}`}
+                                className={`cursor-pointer group ${isSelected ? 'bg-primary/20 hover:bg-primary/30' : ''}`}
                             >
-                                <td className="px-4 py-2.5 font-medium text-foreground flex items-center gap-3">
-                                    {entry.is_dir ? (
-                                        <Folder size={16} className="text-warning" />
-                                    ) : (
-                                        <FileText size={16} className="text-muted-foreground" />
-                                    )}
-                                    {entry.name}
-                                </td>
-                                <td className="px-4 py-2.5 text-muted-foreground text-xs font-mono">
+                                <TableCell className="font-medium text-foreground">
+                                    <div className="flex items-center gap-3">
+                                        {entry.is_dir ? (
+                                            <Folder size={16} className="text-warning" />
+                                        ) : (
+                                            <FileText size={16} className="text-muted-foreground" />
+                                        )}
+                                        {entry.name}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs font-mono">
                                     {!entry.is_dir ? formatBytes(entry.size) : '--'}
-                                </td>
-                                <td className="px-4 py-2.5 text-muted-foreground text-xs">
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs">
                                     {formatDate(entry.modified)}
-                                </td>
-                                <td className="px-4 py-2.5 text-right">
+                                </TableCell>
+                                <TableCell className="text-right">
                                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <button 
                                             onClick={(e) => onDelete(e, entry)}
@@ -80,12 +83,12 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                                             <Trash2 size={14} />
                                         </button>
                                     </div>
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         );
                     })}
-                </tbody>
-            </table>
+                </TableBody>
+            </Table>
         </div>
     );
 };

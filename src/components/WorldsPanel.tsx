@@ -3,6 +3,7 @@ import { useWorlds } from '../hooks/useWorlds';
 import { Globe, AlertCircle, RefreshCw, CheckCircle2, Play } from 'lucide-react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui/Table';
 
 export const WorldsPanel: React.FC = () => {
     const { worlds, loading, error, setActiveWorld, fetchWorlds } = useWorlds();
@@ -36,62 +37,71 @@ export const WorldsPanel: React.FC = () => {
                 </div>
             )}
 
-            {/* TODO: Need Review */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {worlds.map(world => (
-                    <Card
-                        key={world.name}
-                        className={`group flex flex-col p-5 border backdrop-blur-sm transition-all duration-300 ${world.isActive
-                                ? 'border-success/30 bg-success/5'
-                                : 'hover:bg-surface-hover hover:border-primary/30 hover:-translate-y-1'
-                            }`}
-                    >
-                        <div className="flex justify-between items-start mb-6">
-                            <div className={`${world.isActive ? 'text-success' : 'bg-surface text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors'
-                                } p-2 rounded-lg`}>
-                                <Globe size={28} />
-                            </div>
-
-                            {/* Status Badge */}
-                            {world.isActive && (
-                                <CheckCircle2 size={20} className="text-success" />
-                            )}
-                        </div>
-
-                        <div className="flex-1 mb-3">
-                            <h3 className="text-xl font-bold text-foreground truncate mb-2">{world.name}</h3>
-                            <p className="text-sm text-muted-foreground line-clamp-2">
-                                Dossier de sauvegarde du monde. {world.isActive ? "Le serveur tourne actuellement sur ce monde." : "Prêt à être chargé sur le serveur."}
-                            </p>
-                        </div>
-
-                        <Button
-                            onClick={() => !world.isActive && setActiveWorld(world.name)}
-                            disabled={loading || world.isActive}
-                            variant={world.isActive ? 'outline' : 'primary'}
-                            className={`w-full flex items-center justify-center gap-2 ${world.isActive ? 'border-success/30 text-success bg-success/10 opacity-100' : ''}`}
-                        >
-                            {world.isActive ? (
-                                <>
-                                    Monde Actuel
-                                </>
-                            ) : (
-                                <>
-                                    <Play size={18} />
-                                    Charger ce monde
-                                </>
-                            )}
-                        </Button>
-                    </Card>
-                ))}
-
-                {worlds.length === 0 && !loading && (
-                    <div className="col-span-full py-16 flex flex-col items-center justify-center text-muted-foreground bg-surface/30 rounded-2xl border border-border/50 border-dashed">
-                        <Globe size={48} className="mb-4 opacity-20" />
-                        <p className="text-lg font-medium text-muted-foreground mb-1">Aucun monde trouvé.</p>
-                        <p className="text-sm">Assurez-vous qu'il y a des dossiers avec 'level.dat' dans /minecraft</p>
-                    </div>
-                )}
+            {/* Worlds Table */}
+            <div className="flex-1 overflow-auto bg-surface/30 rounded-xl border border-border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>World Name</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {worlds.length === 0 && !loading && (
+                            <TableRow>
+                                <TableCell colSpan={3} className="text-center py-16">
+                                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                                        <Globe size={48} className="mb-4 opacity-20" />
+                                        <p className="text-lg font-medium mb-1">Aucun monde trouvé.</p>
+                                        <p className="text-sm">Assurez-vous qu'il y a des dossiers avec 'level.dat' dans /minecraft</p>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {worlds.map(world => (
+                            <TableRow key={world.name}>
+                                <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${world.isActive ? 'bg-success/10 text-success' : 'bg-surface text-muted-foreground'}`}>
+                                            <Globe size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold text-foreground">{world.name}</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                {world.isActive ? "Serveur actuel" : "Dossier de sauvegarde"}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    {world.isActive ? (
+                                        <div className="flex items-center gap-1.5 text-success text-sm font-medium">
+                                            <CheckCircle2 size={16} /> Actif
+                                        </div>
+                                    ) : (
+                                        <span className="text-muted-foreground text-sm">Inactif</span>
+                                    )}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    <Button
+                                        onClick={() => !world.isActive && setActiveWorld(world.name)}
+                                        disabled={loading || world.isActive}
+                                        variant={world.isActive ? 'outline' : 'primary'}
+                                        size="sm"
+                                        className={world.isActive ? 'border-success/30 text-success bg-success/10 opacity-100 cursor-default' : ''}
+                                    >
+                                        {world.isActive ? 'Monde Actuel' : (
+                                            <>
+                                                <Play size={14} className="mr-1.5" /> Charger
+                                            </>
+                                        )}
+                                    </Button>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
             </div>
 
             {/* TODO: Need Improvement */}

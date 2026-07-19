@@ -1,8 +1,9 @@
 import React from 'react';
 import { useBackupStore } from '../store/backupStore';
-import { Archive, Download, Upload, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
+import { Archive, Download, Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
+import { Spinner } from './ui/Spinner';
 
 export const BackupsPanel: React.FC = () => {
     const { loading, success, statusText, error, createBackup, restoreBackup, cancelBackup, progress, speed, eta } = useBackupStore();
@@ -83,7 +84,7 @@ export const BackupsPanel: React.FC = () => {
                             {success ? (
                                 <CheckCircle className="text-success" size={24} />
                             ) : (
-                                <Loader2 className="animate-spin text-primary" size={24} />
+                                <Spinner className="text-primary" size={24} />
                             )}
                             <span className={`font-medium text-lg ${success ? 'text-success' : 'text-foreground'}`}>
                                 {statusText || 'Opération en cours...'}

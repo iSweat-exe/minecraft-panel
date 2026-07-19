@@ -1,5 +1,8 @@
 import React from 'react';
-import { X, CheckCircle2, AlertCircle, Loader2, Upload, RefreshCw, SkipForward, Undo2 } from 'lucide-react';
+import { X, CheckCircle2, AlertCircle, Upload, RefreshCw, SkipForward, Undo2 } from 'lucide-react';
+import { Spinner } from '../ui/Spinner';
+import { Modal } from '../ui/Modal';
+import { Button } from '../ui/Button';
 
 export type UploadFileStatus = 'pending' | 'uploading' | 'done' | 'error' | 'cancelled' | 'conflict';
 
@@ -25,7 +28,7 @@ const StatusIcon: React.FC<{ status: UploadFileStatus }> = ({ status }) => {
         case 'pending':
             return <div className="w-4 h-4 rounded-full border-2 border-zinc-600" />;
         case 'uploading':
-            return <Loader2 size={16} className="text-indigo-400 animate-spin" />;
+            return <Spinner size={16} className="text-indigo-400" />;
         case 'done':
             return <CheckCircle2 size={16} className="text-emerald-400" />;
         case 'error':
@@ -56,29 +59,26 @@ export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onRes
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
-                {/* Header */}
-                <div className="p-5 border-b border-zinc-800">
-                    <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg border ${
-                            hasConflicts
-                                ? 'bg-amber-500/10 border-amber-500/20'
-                                : 'bg-indigo-500/10 border-indigo-500/20'
-                        }`}>
-                            <Upload size={20} className={hasConflicts ? 'text-amber-400' : 'text-indigo-400'} />
-                        </div>
-                        <div>
-                            <h2 className="text-lg font-bold text-zinc-100">
-                                {hasConflicts ? 'Conflits détectés' : 'Upload en cours'}
-                            </h2>
-                            <p className="text-xs text-zinc-500 mt-0.5">{getSubtitle()}</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* File list */}
-                <div className="max-h-[360px] overflow-y-auto custom-scrollbar">
+        <Modal
+            isOpen={true}
+            onClose={() => {}} // Controlled from outside or disable close on clicking outside
+            title={hasConflicts ? 'Conflits détectés' : 'Upload en cours'}
+            maxWidth="max-w-lg"
+            footer={
+                <Button
+                    onClick={onContinue}
+                    disabled={!allDone || hasConflicts}
+                    variant={allDone && !hasConflicts ? 'primary' : 'outline'}
+                >
+                    Continuer
+                </Button>
+            }
+        >
+            <div className="mb-4">
+                <p className="text-sm text-muted-foreground">{getSubtitle()}</p>
+            </div>
+            {/* File list */}
+            <div className="flex flex-col gap-2">
                     {files.map((file, index) => (
                         <div
                             key={file.localPath}
@@ -162,22 +162,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onRes
                         </div>
                     ))}
                 </div>
-
-                {/* Footer */}
-                <div className="p-4 border-t border-zinc-800 flex justify-end">
-                    <button
-                        onClick={onContinue}
-                        disabled={!allDone || hasConflicts}
-                        className={`px-5 py-2 text-sm font-medium rounded-lg transition-all ${
-                            allDone && !hasConflicts
-                                ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
-                                : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
-                        }`}
-                    >
-                        Continuer
-                    </button>
-                </div>
-            </div>
-        </div>
+        </Modal>
     );
 };

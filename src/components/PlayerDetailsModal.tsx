@@ -4,6 +4,8 @@ import { PlayerInfo } from '../hooks/usePlayers';
 import { usePlayerDetails } from '../hooks/usePlayerDetails';
 import { PlayerStats } from './players/PlayerStats';
 import { PlayerInventory } from './players/PlayerInventory';
+import { Modal } from './ui/Modal';
+import { Button } from './ui/Button';
 
 interface PlayerDetailsModalProps {
     player: PlayerInfo;
@@ -25,40 +27,40 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ player, 
     } = usePlayerDetails(player);
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-zinc-900/50">
-                    <div className="flex items-center gap-3">
-                        <img 
-                            src={`https://mc-heads.net/avatar/${player.uuid}/40`} 
-                            alt={player.name} 
-                            className="w-10 h-10 rounded shadow-md image-rendering-pixelated"
-                        />
-                        <div>
-                            <h2 className="text-lg font-bold text-zinc-100">{player.name}</h2>
-                            <p className="text-xs text-zinc-500 font-mono">{player.uuid}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <a 
-                            href={`https://mc-heads.net/download/${player.uuid}`} 
-                            download={`${player.name}_skin.png`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-2 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded text-sm transition-colors"
-                        >
-                            <Download size={14} />
-                            <span>Skin</span>
-                        </a>
-                        <button onClick={onClose} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors">
-                            <X size={20} />
-                        </button>
+        <Modal
+            isOpen={true}
+            onClose={onClose}
+            title=""
+            maxWidth="max-w-5xl"
+            maxHeight="max-h-none overflow-visible"
+            footer={null}
+        >
+            <div className="flex items-center justify-between pb-6 mb-6 border-b border-border">
+                <div className="flex items-center gap-3">
+                    <img 
+                        src={`https://mc-heads.net/avatar/${player.uuid}/40`} 
+                        alt={player.name} 
+                        className="w-10 h-10 rounded shadow-md image-rendering-pixelated"
+                    />
+                    <div>
+                        <h2 className="text-lg font-bold text-foreground">{player.name}</h2>
+                        <p className="text-xs text-muted-foreground font-mono">{player.uuid}</p>
                     </div>
                 </div>
+                <div className="flex items-center gap-2">
+                    <Button 
+                        onClick={() => window.open(`https://mc-heads.net/download/${player.uuid}`, '_blank')}
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                    >
+                        <Download size={14} />
+                        <span>Skin</span>
+                    </Button>
+                </div>
+            </div>
 
-                {/* Body */}
-                <div className="flex-1 overflow-y-auto p-6 flex flex-col md:flex-row gap-8">
+            <div className="flex flex-col md:flex-row gap-8">
                     {/* Left Column: Skin & Stats */}
                     <div className="w-full md:w-1/3 space-y-6">
                         {/* 3D Skin Render */}
@@ -114,8 +116,7 @@ export const PlayerDetailsModal: React.FC<PlayerDetailsModalProps> = ({ player, 
                             />
                         )}
                     </div>
-                </div>
             </div>
-        </div>
+        </Modal>
     );
 };
