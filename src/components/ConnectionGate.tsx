@@ -1,5 +1,6 @@
 import React from 'react';
 import { useConnectionGate } from '../hooks/useConnectionGate';
+import { FileUp } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
@@ -61,7 +62,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         <div className="flex items-center justify-center h-full bg-background text-foreground">
             <Card className="w-80 mx-4">
                 <CardHeader>
-                    <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">SSH Connection</CardTitle>
+                    <CardTitle className="text-sm text-muted-foreground tracking-wider">SSH Connection</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-3">
@@ -101,7 +102,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                                 placeholder="~/.ssh/id_ed25519"
                             />
                             <Button variant="secondary" onClick={pickKeyFile}>
-                                Browse
+                                <FileUp size={18} />
                             </Button>
                         </div>
                     </div>
@@ -116,9 +117,6 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                     >
                         {sshStatus === 'reconnecting' ? 'Connecting...' : 'Connect'}
                     </Button>
-                    <Badge variant="outline" className="text-muted-foreground">
-                        Status: {sshStatus}
-                    </Badge>
                 </CardFooter>
             </Card>
         </div>
