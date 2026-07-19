@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import * as nbt from 'nbtify';
 import { PlayerInfo } from './usePlayers';
@@ -8,6 +8,7 @@ export function usePlayerDetails(player: PlayerInfo) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [nbtData, setNbtData] = useState<any>(null);
+    const nbtDataRef = useRef<any>(null);
     const [healthOffset, setHealthOffset] = useState(0);
     const [foodOffset, setFoodOffset] = useState(0);
     const [xpOffset, setXpOffset] = useState(0);
@@ -95,7 +96,7 @@ export function usePlayerDetails(player: PlayerInfo) {
         const fetchLive = async () => {
             try {
                 let parsed;
-                if (!nbtData) {
+                if (!nbtDataRef.current) {
                     let base64;
                     try {
                         base64 = await tauriBridge.sftpReadFileBase64(config.actualFilePath);
@@ -112,7 +113,7 @@ export function usePlayerDetails(player: PlayerInfo) {
                     parsed = await nbt.read(bytes);
                 }
                 
-                let finalNbt: any = nbtData ? { ...nbtData } : (parsed ? (parsed.data || parsed) : {});
+                let finalNbt: any = nbtDataRef.current ? { ...nbtDataRef.current } : (parsed ? (parsed.data || parsed) : {});
 
                 if (config.rconEnabled && config.rconPass) {
                     try {
@@ -165,6 +166,7 @@ export function usePlayerDetails(player: PlayerInfo) {
                 }
 
                 if (isMounted) {
+                    nbtDataRef.current = finalNbt;
                     setNbtData(finalNbt);
                     setError(null);
                 }
@@ -186,6 +188,7 @@ export function usePlayerDetails(player: PlayerInfo) {
         return () => {
             isMounted = false;
             if (timeoutId) window.clearTimeout(timeoutId);
+            nbtDataRef.current = null;
         };
     }, [config, player.name]);
 

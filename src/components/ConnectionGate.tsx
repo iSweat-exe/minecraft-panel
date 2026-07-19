@@ -116,7 +116,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                                 ? 'bg-indigo-500/50 text-indigo-200 cursor-not-allowed'
                                 : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'
                         }`}
-                        onClick={connect}
+                        onClick={() => connect()}
                         disabled={sshStatus === 'reconnecting'}
                     >
                         {sshStatus === 'reconnecting' ? 'Connecting...' : 'Connect'}

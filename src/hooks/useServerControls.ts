@@ -46,8 +46,8 @@ export function useServerControls() {
         try {
             if (action === 'stop' || action === 'restart') {
                 const actionFr = action === 'stop' ? "s'arrêter" : 'redémarrer';
-                await tauriBridge.consoleSendCommand(`/say Le serveur va ${actionFr} dans 5 secondes...`).catch(() => {});
-                await new Promise(r => setTimeout(r, 5000));
+                await tauriBridge.consoleSendCommand(`/say Le serveur va ${actionFr} dans 60 secondes...`).catch(() => {});
+                await new Promise(r => setTimeout(r, 60000));
             }
 
             clearConsole();
