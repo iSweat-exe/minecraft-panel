@@ -21,7 +21,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
 
     if (verifyingKey) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-zinc-950 text-zinc-200">
+            <div className="flex items-center justify-center h-full bg-zinc-950 text-zinc-200">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 max-w-md w-full mx-4">
                     <h2 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-4">Host Key Verification</h2>
                     <p className="text-sm text-zinc-400 mb-3">The server presented this fingerprint:</p>
@@ -55,7 +55,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-zinc-950 text-zinc-200">
+        <div className="flex items-center justify-center h-full bg-zinc-950 text-zinc-200">
             <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-6 w-80 mx-4">
                 <h1 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider mb-6">SSH Connection</h1>
                 

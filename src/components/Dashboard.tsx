@@ -109,7 +109,7 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-zinc-950 text-zinc-200">
+        <div className="flex h-full bg-zinc-950 text-zinc-200">
             {/* Sidebar */}
             <aside className={`${collapsed ? 'w-[60px]' : 'w-[260px]'} bg-zinc-900 border-r border-zinc-800 flex flex-col shrink-0 transition-[width] duration-200`}>
                 {/* Header */}
