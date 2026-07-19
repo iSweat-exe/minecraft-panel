@@ -229,7 +229,7 @@ export function DiskUsageCard({ used, total }: { used: number; total: number }) 
                                     dataKey="value"
                                     startAngle={90}
                                     endAngle={-270}
-                                    isAnimationActive={true}
+                                    isAnimationActive={false}
                                 >
                                     {data.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={entry.color} />
