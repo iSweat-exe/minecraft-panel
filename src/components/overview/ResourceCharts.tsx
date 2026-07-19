@@ -54,6 +54,7 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                             itemStyle={{ color: color, fontWeight: 500 }}
                             labelStyle={{ color: 'var(--color-muted-foreground)', marginBottom: '4px' }}
                             formatter={(value: any) => [`${Number(value).toFixed(1)}%`, label]}
+                            labelFormatter={(_, payload) => payload?.[0]?.payload?.time || ''}
                             isAnimationActive={false}
                         />
                         <Legend 
@@ -132,6 +133,7 @@ export function NetworkChart({ data, currentRx, currentTx }: {
                             }}
                             labelStyle={{ color: 'var(--color-muted-foreground)', marginBottom: '4px' }}
                             formatter={(value: any, name: any) => [formatBps(Number(value)), name === 'rx' ? 'RX (Down)' : 'TX (Up)']}
+                            labelFormatter={(_, payload) => payload?.[0]?.payload?.time || ''}
                             isAnimationActive={false}
                         />
                         <Legend 
