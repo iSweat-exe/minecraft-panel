@@ -10,7 +10,11 @@ import { Button } from './ui/Button';
 
 type TimeRange = '1m' | '5m' | '15m' | '1h' | '1d';
 
-export const OverviewPanel: React.FC = () => {
+interface OverviewPanelProps {
+    onManageFiles?: () => void;
+}
+
+export const OverviewPanel: React.FC<OverviewPanelProps> = ({ onManageFiles }) => {
     const { mcPing, pendingAction, host } = useConnectionStore();
     const { metrics } = useServerStats();
     const { rawPoints, hourPoints, dayPoints } = useServerStatsStore();
@@ -136,6 +140,7 @@ export const OverviewPanel: React.FC = () => {
                 <DiskUsageCard 
                     used={metrics?.disk_used_gb ?? 0} 
                     total={metrics?.disk_total_gb ?? 0} 
+                    onManageFiles={onManageFiles}
                 />
             </div>
         </div>

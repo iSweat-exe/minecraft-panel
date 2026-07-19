@@ -178,7 +178,7 @@ export function NetworkChart({ data, currentRx, currentTx }: {
     );
 }
 
-export function DiskUsageCard({ used, total }: { used: number; total: number }) {
+export function DiskUsageCard({ used, total, onManageFiles }: { used: number; total: number; onManageFiles?: () => void }) {
     const pct = total > 0 ? (used / total) * 100 : 0;
     const free = Math.max(0, total - used);
     
@@ -250,7 +250,11 @@ export function DiskUsageCard({ used, total }: { used: number; total: number }) 
                             <span className={`text-sm font-medium ${textColor} tracking-wide`}>{pct.toFixed(1)}% utilisé</span>
                         </div>
                         
-                        <Button variant="default" className="w-fit mt-2 rounded-full px-6 py-2 h-9 text-xs font-bold shadow-md">
+                        <Button 
+                            variant="ghost" 
+                            className="w-fit mt-2 rounded-full px-6 py-2 h-9 text-xs font-bold shadow-md"
+                            onClick={onManageFiles}
+                        >
                             Gérer les fichiers
                         </Button>
                     </div>

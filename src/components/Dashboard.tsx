@@ -203,7 +203,7 @@ export const Dashboard: React.FC = () => {
             <main className={`flex-1 overflow-hidden ${activeTab === 'console' ? '' : 'p-4'}`}>
                 {activeTab === 'server' && (
                     <div className="flex flex-col gap-4 h-full">
-                        <OverviewPanel />
+                        <OverviewPanel onManageFiles={() => setActiveTab('files')} />
                     </div>
                 )}
 
