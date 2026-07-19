@@ -206,13 +206,13 @@ export function DiskUsageCard({ used, total, onManageFiles }: { used: number; to
     return (
         <Card className="hover:border-primary/30 transition-all duration-300">
             <CardContent className="p-6">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2 bg-surface rounded-lg border border-border/50 text-foreground">
-                        <HardDrive size={18} />
+                <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <HardDrive size={16} className="text-muted-foreground" />
+                        <h3 className="text-sm font-semibold text-foreground tracking-wide">
+                            Stockage Principal
+                        </h3>
                     </div>
-                    <h3 className="text-lg font-bold text-foreground">
-                        Stockage Principal
-                    </h3>
                 </div>
             
                 <div className="flex items-center gap-8">
