@@ -7,9 +7,11 @@ import { SftpPanel } from './SftpPanel';
 import { WorldsPanel } from './WorldsPanel';
 import { BackupsPanel } from './BackupsPanel';
 import { ModsPanel } from './ModsPanel';
+import { AccessPanel } from './AccessPanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { Spinner } from './ui/Spinner';
 import { Alert } from './ui/Alert';
 import { 
@@ -88,14 +90,28 @@ export const Dashboard: React.FC = () => {
         tauriBridge.onDownloadProgress(handleProgress).then(un => unlistenDown = un);
         tauriBridge.onUploadProgress(handleProgress).then(un => unlistenUp = un);
 
+        // Cleanup session on window close
+        const unlistenClose = getCurrentWindow().onCloseRequested(async () => {
+            const sessionUuid = localStorage.getItem('panel_session_uuid');
+            if (sessionUuid) {
+                // We use a fire-and-forget SSH command to delete the file before the window dies
+                tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`).catch(() => {});
+            }
+        });
+
         return () => {
             if (unlistenDown) unlistenDown();
             if (unlistenUp) unlistenUp();
+            unlistenClose.then(f => f());
         };
     }, []);
 
     const disconnect = async () => {
         try {
+            const sessionUuid = localStorage.getItem('panel_session_uuid');
+            if (sessionUuid) {
+                await tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`);
+            }
             await tauriBridge.sshDisconnect();
         } catch (e) {
             console.error(e);
@@ -265,7 +281,11 @@ export const Dashboard: React.FC = () => {
                     <BackupsPanel />
                 )}
 
-                {['history', 'version', 'access'].includes(activeTab) && (
+                {activeTab === 'access' && (
+                    <AccessPanel />
+                )}
+
+                {['history', 'version'].includes(activeTab) && (
                     <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
                         Section "{NAV_ITEMS.find(i => i.id === activeTab)?.label}" — En cours de développement
                     </div>

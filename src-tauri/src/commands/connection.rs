@@ -75,6 +75,9 @@ pub async fn ssh_disconnect(state: State<'_, SshState>) -> Result<(), AppError> 
         let _ = channel.close().await;
     }
     
+    let mut sftp_guard = state.sftp.lock().await;
+    *sftp_guard = None;
+    
     // Abort streaming tasks gracefully
     if let Some(tx) = state.console_task.lock().await.take() {
         let _ = tx.send(());

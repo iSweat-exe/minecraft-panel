@@ -10,6 +10,15 @@ export function useConnectionGate() {
     const [username, setUsername] = useState(() => localStorage.getItem('ssh_username') || 'minecraft');
     const [keyPath, setKeyPath] = useState(() => localStorage.getItem('ssh_keyPath') || 'C:/Users/<name>/.ssh/id_ed25519');
     const [expectedFingerprint, setExpectedFingerprint] = useState<string | undefined>(localStorage.getItem('ssh_fingerprint') || undefined);
+    const [displayName, setDisplayName] = useState(() => localStorage.getItem('panel_display_name') || '');
+    const [avatarBase64, setAvatarBase64] = useState(() => localStorage.getItem('panel_avatar_base64') || '');
+    const [sessionUuid] = useState(() => {
+        const stored = localStorage.getItem('panel_session_uuid');
+        if (stored) return stored;
+        const newUuid = crypto.randomUUID();
+        localStorage.setItem('panel_session_uuid', newUuid);
+        return newUuid;
+    });
     
     const [verifyingKey, setVerifyingKey] = useState<string | null>(null);
 
@@ -46,6 +55,8 @@ export function useConnectionGate() {
             localStorage.setItem('ssh_username', username);
             localStorage.setItem('ssh_keyPath', keyPath);
             localStorage.setItem('ssh_auto_connect', 'true');
+            localStorage.setItem('panel_display_name', displayName);
+            localStorage.setItem('panel_avatar_base64', avatarBase64);
             
             setStoreHost(host);
             setSshStatus('connected');
@@ -102,6 +113,11 @@ export function useConnectionGate() {
         connect,
         pickKeyFile,
         dismissKeyVerification,
-        acceptFingerprint
+        acceptFingerprint,
+        displayName,
+        setDisplayName,
+        avatarBase64,
+        setAvatarBase64,
+        sessionUuid
     };
 }

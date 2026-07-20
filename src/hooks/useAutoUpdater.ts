@@ -8,6 +8,8 @@ export function useAutoUpdater() {
 
     useEffect(() => {
         const checkForUpdates = async () => {
+            if (import.meta.env.DEV) return;
+            
             try {
                 const update = await check();
                 if (update) {

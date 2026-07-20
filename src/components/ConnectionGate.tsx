@@ -5,6 +5,7 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/Card';
+import { User } from 'lucide-react';
 
 export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const {
@@ -21,8 +22,48 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         connect,
         pickKeyFile,
         dismissKeyVerification,
-        acceptFingerprint
+        acceptFingerprint,
+        displayName,
+        setDisplayName,
+        avatarBase64,
+        setAvatarBase64
     } = useConnectionGate();
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_SIZE = 128;
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx?.drawImage(img, 0, 0, width, height);
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                setAvatarBase64(dataUrl);
+            };
+            img.src = URL.createObjectURL(file);
+        }
+    };
 
     if (verifyingKey) {
         return (
@@ -83,8 +124,39 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                         </div>
                     </div>
                     
+                    <div className="flex gap-4 items-center">
+                        <div 
+                            className="w-16 h-16 rounded-full bg-surface-hover/50 flex flex-col items-center justify-center cursor-pointer border border-border border-dashed overflow-hidden shrink-0 relative group"
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            {avatarBase64 ? (
+                                <img src={avatarBase64} alt="Avatar" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={24} className="text-muted-foreground" />
+                            )}
+                            <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                <span className="text-[10px] font-medium">Edit</span>
+                            </div>
+                        </div>
+                        <input 
+                            type="file" 
+                            ref={fileInputRef} 
+                            onChange={handleAvatarChange} 
+                            accept="image/*" 
+                            className="hidden" 
+                        />
+                        <div className="flex-1">
+                            <Label className="mb-1 block text-muted-foreground">Nom d'affichage (Display Name)</Label>
+                            <Input 
+                                value={displayName} 
+                                onChange={e => setDisplayName(e.target.value)} 
+                                placeholder="Ex: iSweat"
+                            />
+                        </div>
+                    </div>
+                    
                     <div>
-                        <Label className="mb-1 block text-muted-foreground">Username</Label>
+                        <Label className="mb-1 block text-muted-foreground">Username (SSH)</Label>
                         <Input 
                             value={username} 
                             onChange={e => setUsername(e.target.value)} 

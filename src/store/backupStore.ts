@@ -135,6 +135,8 @@ export const useBackupStore = create<BackupStore>()(
             set({ statusText: 'Nettoyage...', currentFile: null });
             await tauriBridge.sftpDelete(remotePath, false);
 
+            await tauriBridge.consoleSendCommand('say Le monde a été sauvegardé avec succès !').catch(() => {});
+
             set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
