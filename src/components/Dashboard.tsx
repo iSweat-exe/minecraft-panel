@@ -46,6 +46,13 @@ const NAV_ITEMS = [
 export const Dashboard: React.FC = () => {
     const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
     const [activeTab, setActiveTab] = useState<string>('server');
+    const [now, setNow] = useState(Date.now());
+
+    useEffect(() => {
+        // Update 'now' every minute to refresh the backup alert dynamically
+        const timer = setInterval(() => setNow(Date.now()), 60000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -127,7 +134,12 @@ export const Dashboard: React.FC = () => {
                 </button>
 
                 <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
-                    {NAV_ITEMS.map(({ id, label, icon: Icon, extra: Extra, extraColor }) => (
+                    {NAV_ITEMS.map(({ id, label, icon: Icon, extra: Extra, extraColor }) => {
+                        let showExtra = !!Extra;
+                        if (id === 'backups') {
+                            showExtra = !backupState.lastBackupTime || (now - backupState.lastBackupTime > 3600000);
+                        }
+                        return (
                         <button
                             key={id}
                             onClick={() => setActiveTab(id)}
@@ -150,11 +162,11 @@ export const Dashboard: React.FC = () => {
                                 />
                                 {!collapsed && label}
                             </div>
-                            {!collapsed && Extra && (
+                            {!collapsed && showExtra && Extra && (
                                 <Extra size={16} strokeWidth={2} className={extraColor || "text-muted-foreground"} />
                             )}
                         </button>
-                    ))}
+                    )})}
                 </nav>
 
                 <div className={`p-4 ${collapsed ? 'hidden' : 'block'}`}>

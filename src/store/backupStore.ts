@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from './connectionStore';
@@ -18,12 +19,14 @@ interface BackupStore {
     progress: BackupProgress | null;
     speed: number;
     eta: number;
+    lastBackupTime: number | null;
     
     _lastProgress: { timestamp: number; written: number } | null;
 
     setLoading: (loading: boolean) => void;
     setStatusText: (text: string) => void;
     setError: (error: string | null) => void;
+    setLastBackupTime: (time: number) => void;
     
     handleProgressUpdate: (p: BackupProgress) => void;
     clearProgress: () => void;
@@ -33,21 +36,25 @@ interface BackupStore {
     cancelBackup: () => Promise<void>;
 }
 
-export const useBackupStore = create<BackupStore>((set, get) => ({
-    loading: false,
-    success: false,
-    statusText: '',
-    currentFile: null,
-    error: null,
-    progress: null,
-    speed: 0,
-    eta: 0,
-    
-    _lastProgress: null,
+export const useBackupStore = create<BackupStore>()(
+    persist(
+        (set, get) => ({
+            loading: false,
+            success: false,
+            statusText: '',
+            currentFile: null,
+            error: null,
+            progress: null,
+            speed: 0,
+            eta: 0,
+            lastBackupTime: null,
+            
+            _lastProgress: null,
 
-    setLoading: (loading) => set({ loading }),
-    setStatusText: (text) => set({ statusText: text }),
-    setError: (error) => set({ error }),
+            setLoading: (loading) => set({ loading }),
+            setStatusText: (text) => set({ statusText: text }),
+            setError: (error) => set({ error }),
+            setLastBackupTime: (time) => set({ lastBackupTime: time }),
 
     handleProgressUpdate: (p) => {
         const state = get();
@@ -128,7 +135,7 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
             set({ statusText: 'Nettoyage...', currentFile: null });
             await tauriBridge.sftpDelete(remotePath, false);
 
-            set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null });
+            set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
         } catch (err: any) {
@@ -188,4 +195,9 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
             console.error("Failed to cancel backup", e);
         }
     }
-}));
+}),
+{
+    name: 'backup-storage',
+    partialize: (state) => ({ lastBackupTime: state.lastBackupTime }),
+}
+));

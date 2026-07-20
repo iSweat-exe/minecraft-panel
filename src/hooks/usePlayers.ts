@@ -39,7 +39,7 @@ export function usePlayers() {
         } finally {
             setLoading(false);
         }
-    }, [mcPing?.sample]);
+    }, []); // Removed mcPing?.sample to prevent re-fetching 4 files every 15 seconds
 
     useEffect(() => {
         fetchPlayers();

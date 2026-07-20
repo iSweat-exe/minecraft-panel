@@ -5,6 +5,7 @@ interface ConsoleState {
     history: string[];
     historyIndex: number;
     pushLine: (line: string) => void;
+    pushLines: (lines: string[]) => void;
     pushHistory: (cmd: string) => void;
     setHistoryIndex: (i: number) => void;
     clear: () => void;
@@ -17,7 +18,8 @@ export const useConsoleStore = create<ConsoleState>((set) => ({
     lines: [],
     history: [],
     historyIndex: -1,
-    pushLine: (line) => set((s) => ({ lines: [...s.lines.slice(-999), line] })),
+    pushLine: (line) => set((s) => ({ lines: [...s.lines, line].slice(-999) })),
+    pushLines: (newLines) => set((s) => ({ lines: [...s.lines, ...newLines].slice(-999) })),
     pushHistory: (cmd) => set((s) => ({
         history: [...s.history, cmd],
         historyIndex: -1,

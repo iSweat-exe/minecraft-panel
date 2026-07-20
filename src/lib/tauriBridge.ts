@@ -49,8 +49,10 @@ export const tauriBridge = {
 
     mcPing: () => invoke<McPing>('mc_ping'),
     metricsSubscribe: () => invoke<void>('metrics_subscribe'),
+    metricsUnsubscribe: () => invoke<void>('metrics_unsubscribe'),
 
     consoleSubscribe: () => invoke<void>('console_subscribe'),
+    consoleUnsubscribe: () => invoke<void>('console_unsubscribe'),
     consoleSendCommand: (cmd: string) => invoke<void>('console_send_command', { cmd }),
     
     // SFTP
@@ -70,6 +72,9 @@ export const tauriBridge = {
     
     onConsoleLine: (callback: (line: string) => void): Promise<UnlistenFn> =>
         listen<string>('console-line', (event) => callback(event.payload)),
+        
+    onConsoleLines: (callback: (lines: string[]) => void): Promise<UnlistenFn> =>
+        listen<string[]>('console-lines', (event) => callback(event.payload)),
     
     onMetricsUpdate: (callback: (metrics: SystemMetrics) => void): Promise<UnlistenFn> =>
         listen<SystemMetrics>('metrics-update', (event) => callback(event.payload)),

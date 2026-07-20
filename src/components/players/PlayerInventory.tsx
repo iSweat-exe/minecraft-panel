@@ -1,5 +1,35 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, HardDrive } from 'lucide-react';
+
+const ItemIcon = ({ id }: { id: string }) => {
+    const cleanId = id.replace('minecraft:', '');
+    const titleCaseId = cleanId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('_');
+    const [step, setStep] = useState(0);
+
+    if (step >= 4) {
+        return (
+            <span className="text-[10px] text-zinc-300 font-mono overflow-hidden text-center leading-tight line-clamp-2 break-all" title={id}>
+                {cleanId}
+            </span>
+        );
+    }
+
+    let src = '';
+    if (step === 0) src = `https://minecraft.wiki/w/Special:FilePath/Invicon_${titleCaseId}.png`;
+    else if (step === 1) src = `https://minecraft.wiki/w/Special:FilePath/${titleCaseId}.png`;
+    else if (step === 2) src = `https://assets.mcasset.cloud/26.2/assets/minecraft/textures/item/${cleanId}.png`;
+    else if (step === 3) src = `https://assets.mcasset.cloud/26.2/assets/minecraft/textures/block/${cleanId}.png`;
+
+    return (
+        <img 
+            src={src}
+            alt={cleanId}
+            className="w-full h-full p-1.5 object-contain drop-shadow-[2px_2px_0_rgba(0,0,0,0.25)]"
+            style={{ imageRendering: 'pixelated' }}
+            onError={() => setStep(s => s + 1)}
+        />
+    );
+};
 
 export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any[], cols: number, totalSlots: number, slotMap?: (i: number) => number }) => {
     const getSlot = (item: any): number => {
@@ -37,14 +67,10 @@ export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any
                     >
                         {item && (
                             <>
-                                <div className="w-8 h-8 flex items-center justify-center">
-                                    <span className="text-[10px] text-zinc-300 font-mono overflow-hidden text-center leading-tight line-clamp-2 break-all" title={getId(item)}>
-                                        {getId(item).replace('minecraft:', '')}
-                                    </span>
-                                </div>
+                                <ItemIcon id={getId(item)} />
                                 
                                 {getCount(item) > 1 && (
-                                    <span className="absolute bottom-0.5 right-1 text-[10px] font-bold text-white drop-shadow-md">
+                                    <span className="absolute bottom-0 right-1 text-[18px] font-minecraft text-white drop-shadow-[1px_1px_0_rgba(0,0,0,1)]">
                                         {getCount(item)}
                                     </span>
                                 )}
@@ -73,7 +99,6 @@ export const PlayerInventory: React.FC<PlayerInventoryProps> = ({ inventory, end
         <>
             <div>
                 <div className="flex items-center gap-2 text-zinc-300 mb-3">
-                    <Box size={18} className="text-indigo-400" />
                     <h3 className="font-semibold text-sm">Inventaire & Armure</h3>
                 </div>
                 
@@ -116,7 +141,6 @@ export const PlayerInventory: React.FC<PlayerInventoryProps> = ({ inventory, end
 
             <div className="pt-4 border-t border-zinc-800/50">
                 <div className="flex items-center gap-2 text-zinc-300 mb-3">
-                    <HardDrive size={18} className="text-fuchsia-400" />
                     <h3 className="font-semibold text-sm">Ender Chest</h3>
                 </div>
                 <div className="w-full max-w-[calc(100%-5rem)]">

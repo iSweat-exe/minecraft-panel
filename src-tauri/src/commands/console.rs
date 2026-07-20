@@ -38,12 +38,10 @@ pub async fn console_subscribe(app: tauri::AppHandle, state: State<'_, SshState>
                     match msg_opt {
                         Some(russh::ChannelMsg::Data { data }) => {
                             let text = String::from_utf8_lossy(&data);
-                            // Split chunks into individual lines so the frontend
-                            // receives one event per log line, not one per TCP packet.
-                            for line in text.lines() {
-                                if !line.is_empty() {
-                                    let _ = app.emit("console-line", line);
-                                }
+                            // Send lines as a single batch to avoid flooding the frontend with individual IPC events.
+                            let lines: Vec<&str> = text.lines().filter(|l| !l.is_empty()).collect();
+                            if !lines.is_empty() {
+                                let _ = app.emit("console-lines", lines);
                             }
                         }
                         Some(_) => {}
@@ -63,5 +61,14 @@ pub async fn console_send_command(cmd: String, state: State<'_, SshState>) -> Re
     let escaped_cmd = cmd.replace("'", "'\\''");
     let screen_cmd = format!("screen -S minecraft -p 0 -X stuff '{}\\r'", escaped_cmd);
     run_exec(&state, &screen_cmd).await?;
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn console_unsubscribe(state: State<'_, SshState>) -> Result<(), AppError> {
+    let mut task_guard = state.console_task.lock().await;
+    if let Some(tx) = task_guard.take() {
+        let _ = tx.send(());
+    }
     Ok(())
 }

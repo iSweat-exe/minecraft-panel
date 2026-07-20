@@ -137,3 +137,12 @@ done
     *state.metrics_task.lock().await = Some(tx);
     Ok(())
 }
+
+#[tauri::command]
+pub async fn metrics_unsubscribe(state: State<'_, SshState>) -> Result<(), AppError> {
+    let mut task_guard = state.metrics_task.lock().await;
+    if let Some(tx) = task_guard.take() {
+        let _ = tx.send(());
+    }
+    Ok(())
+}

@@ -7,6 +7,8 @@ export const ServerControls: React.FC = () => {
     const {
         mcPing,
         pendingAction,
+        countdownAction,
+        forceActionCallback,
         doAction,
         isActive,
         isOnline,
@@ -107,20 +109,32 @@ export const ServerControls: React.FC = () => {
                     <span className="text-xs font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">Start</span>
                 </button>
                 <button
-                    onClick={() => doAction('restart')}
-                    disabled={isBusy || (!isActive && !isOnline)}
-                    className="group flex flex-col items-center justify-center gap-2 py-3.5 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 border border-zinc-800 rounded-lg transition-colors"
+                    onClick={() => {
+                        if (countdownAction === 'restart') {
+                            forceActionCallback?.();
+                        } else {
+                            doAction('restart');
+                        }
+                    }}
+                    disabled={(isBusy && countdownAction !== 'restart') || (!isActive && !isOnline)}
+                    className={`group flex flex-col items-center justify-center gap-2 py-3.5 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 border ${countdownAction === 'restart' ? 'border-amber-500/50' : 'border-zinc-800'} rounded-lg transition-colors`}
                 >
-                    <span className={`w-2 h-2 rounded-full transition-colors ${(!isActive && !isOnline) ? 'bg-amber-500/30' : 'bg-amber-500'}`}></span>
-                    <span className="text-xs font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">Restart</span>
+                    <span className={`w-2 h-2 rounded-full transition-colors ${countdownAction === 'restart' ? 'bg-amber-500 animate-pulse' : (!isActive && !isOnline) ? 'bg-amber-500/30' : 'bg-amber-500'}`}></span>
+                    <span className={`text-xs font-semibold transition-colors ${countdownAction === 'restart' ? 'text-amber-400' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{countdownAction === 'restart' ? 'Force Restart' : 'Restart'}</span>
                 </button>
                 <button
-                    onClick={() => doAction('stop')}
-                    disabled={isBusy || !isActive}
-                    className="group flex flex-col items-center justify-center gap-2 py-3.5 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 border border-zinc-800 rounded-lg transition-colors"
+                    onClick={() => {
+                        if (countdownAction === 'stop') {
+                            forceActionCallback?.();
+                        } else {
+                            doAction('stop');
+                        }
+                    }}
+                    disabled={(isBusy && countdownAction !== 'stop') || !isActive}
+                    className={`group flex flex-col items-center justify-center gap-2 py-3.5 bg-zinc-950 hover:bg-zinc-800 disabled:opacity-40 disabled:hover:bg-zinc-950 border ${countdownAction === 'stop' ? 'border-red-500/50' : 'border-zinc-800'} rounded-lg transition-colors`}
                 >
-                    <span className={`w-2 h-2 rounded-full transition-colors ${!isActive ? 'bg-red-500/30' : 'bg-red-500'}`}></span>
-                    <span className="text-xs font-semibold text-zinc-400 group-hover:text-zinc-200 transition-colors">Stop</span>
+                    <span className={`w-2 h-2 rounded-full transition-colors ${countdownAction === 'stop' ? 'bg-red-500 animate-pulse' : !isActive ? 'bg-red-500/30' : 'bg-red-500'}`}></span>
+                    <span className={`text-xs font-semibold transition-colors ${countdownAction === 'stop' ? 'text-red-400' : 'text-zinc-400 group-hover:text-zinc-200'}`}>{countdownAction === 'stop' ? 'Force Stop' : 'Stop'}</span>
                 </button>
             </div>
         </div>

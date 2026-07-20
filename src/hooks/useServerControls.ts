@@ -9,7 +9,13 @@ export const ACTION_LABELS: Record<NonNullable<PendingAction>, string> = {
 };
 
 export function useServerControls() {
-    const { serviceStatus, setServiceStatus, mcPing, setMcPing, pendingAction, setPendingAction } = useConnectionStore();
+    const { 
+        serviceStatus, setServiceStatus, 
+        mcPing, setMcPing, 
+        pendingAction, setPendingAction,
+        countdownAction, setCountdownAction,
+        forceActionCallback, setForceActionCallback
+    } = useConnectionStore();
     const clearConsole = useConsoleStore((s) => s.clear);
 
     const pollUntilSettled = async () => {
@@ -47,7 +53,36 @@ export function useServerControls() {
             if (action === 'stop' || action === 'restart') {
                 const actionFr = action === 'stop' ? "s'arrêter" : 'redémarrer';
                 await tauriBridge.consoleSendCommand(`/say Le serveur va ${actionFr} dans 60 secondes...`).catch(() => {});
-                await new Promise(r => setTimeout(r, 60000));
+                
+                setCountdownAction(action);
+                
+                let timeoutId: any;
+                const waitPromise = new Promise<boolean>(resolve => {
+                    const forceResolve = () => {
+                        clearTimeout(timeoutId);
+                        resolve(true);
+                    };
+                    setForceActionCallback(forceResolve);
+                    
+                    timeoutId = setTimeout(() => {
+                        resolve(false);
+                    }, 60000);
+                });
+                
+                const forced = await waitPromise;
+                
+                setCountdownAction(null);
+                setForceActionCallback(null);
+
+                if (forced) {
+                    if (action === 'restart') {
+                        await tauriBridge.consoleSendCommand(`/say Redemarrage...`).catch(() => {});
+                        await new Promise(r => setTimeout(r, 3000));
+                    } else if (action === 'stop') {
+                        await tauriBridge.consoleSendCommand(`/say Arret du serveur`).catch(() => {});
+                        await new Promise(r => setTimeout(r, 5000));
+                    }
+                }
             }
 
             clearConsole();
@@ -69,6 +104,8 @@ export function useServerControls() {
         serviceStatus,
         mcPing,
         pendingAction,
+        countdownAction,
+        forceActionCallback,
         doAction,
         isActive,
         isOnline,

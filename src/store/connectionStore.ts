@@ -14,6 +14,10 @@ interface StoreState {
     setMcPing: (ping: McPing | null) => void;
     pendingAction: PendingAction;
     setPendingAction: (action: PendingAction) => void;
+    countdownAction: 'stop' | 'restart' | null;
+    setCountdownAction: (action: 'stop' | 'restart' | null) => void;
+    forceActionCallback: (() => void) | null;
+    setForceActionCallback: (cb: (() => void) | null) => void;
 }
 
 export const useConnectionStore = create<StoreState>((set) => ({
@@ -27,4 +31,8 @@ export const useConnectionStore = create<StoreState>((set) => ({
     setMcPing: (ping) => set({ mcPing: ping }),
     pendingAction: null,
     setPendingAction: (action) => set({ pendingAction: action }),
+    countdownAction: null,
+    setCountdownAction: (action) => set({ countdownAction: action }),
+    forceActionCallback: null,
+    setForceActionCallback: (cb) => set({ forceActionCallback: cb }),
 }));

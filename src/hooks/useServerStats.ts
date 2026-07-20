@@ -39,6 +39,7 @@ export function useServerStats() {
         return () => {
             isMounted = false;
             if (unlisten) unlisten();
+            tauriBridge.metricsUnsubscribe().catch(e => console.error('Failed to unsubscribe from metrics:', e));
         };
     }, [handleMetrics]);
 

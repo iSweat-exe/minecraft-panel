@@ -3,7 +3,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { useConsoleStore } from '../store/consoleStore';
 
 export function useConsole() {
-    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
+    const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
     const [command, setCommand] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -21,14 +21,20 @@ export function useConsole() {
         };
         init();
 
+        const unlistenLines = tauriBridge.onConsoleLines((newLines) => {
+            pushLines(newLines);
+        });
+
         const unlisten = tauriBridge.onConsoleLine((line) => {
             pushLine(line);
         });
 
         return () => {
             unlisten.then(f => f());
+            unlistenLines.then(f => f());
+            tauriBridge.consoleUnsubscribe().catch(e => console.error("Failed to unsubscribe console", e));
         };
-    }, [pushLine]);
+    }, [pushLine, pushLines]);
 
     // Initial scroll on mount & save on unmount
     useEffect(() => {
