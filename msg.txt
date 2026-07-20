@@ -1,5 +1,0 @@
-﻿feat: add Tauri auto-updater and GitHub Actions release workflow
-
-Configured tauri-plugin-updater and tauri-plugin-process for automatic
-background updates. Added a GitHub Actions workflow to build, sign, and
-release the application automatically across platforms.

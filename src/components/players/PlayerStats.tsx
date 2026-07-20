@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Utensils, Zap, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { mc } from '../../lib/minecraftCommands';
 

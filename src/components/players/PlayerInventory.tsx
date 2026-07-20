@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { Box, HardDrive } from 'lucide-react';
 
 const ItemIcon = ({ id }: { id: string }) => {
     const cleanId = id.replace('minecraft:', '');

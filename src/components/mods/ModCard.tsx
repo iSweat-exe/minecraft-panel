@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Download, Server, Monitor, Info, Check, Loader2 } from 'lucide-react';
+import React from 'react';
+import { Download, Server, Monitor, Check, Loader2 } from 'lucide-react';
 import { ModrinthProject } from '../../hooks/useModrinth';
 
 interface ModCardProps {

@@ -5,7 +5,6 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/Card';
-import { Badge } from './ui/Badge';
 
 export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const {
