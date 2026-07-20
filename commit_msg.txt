@@ -1,0 +1,5 @@
+fix(security): resolve CSP blocks for location and avatars
+
+- Add `blob:` to `img-src` CSP to allow avatar uploads to render in the UI
+- Whitelist `https://ipwho.is`, `https://*.icanhazip.com`, and `https://api.modrinth.com` in `connect-src` CSP to fix fetch blocks
+- Bump version to 0.1.4
