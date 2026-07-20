@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "minecraft-panel",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "identifier": "com.isweat.minecraft-panel",
   "build": {
     "beforeDevCommand": "bun run dev",
@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws://localhost:* http://localhost:* ipc: http://ipc.localhost; img-src 'self' data: asset:;"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https: http: ws://localhost:* http://localhost:* ipc: http://ipc.localhost; img-src 'self' https: http: data: asset:;"
     }
   },
   "bundle": {
