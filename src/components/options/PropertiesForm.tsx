@@ -2,7 +2,7 @@ import React from 'react';
 import { Users, Globe, Shield, FileText, Server, Terminal, Settings, MessageSquare, Cpu } from 'lucide-react';
 import { ServerProps } from '../../hooks/useServerOptions';
 import { Input } from '../ui/Input';
-import { Select } from '../ui/Select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 import { Switch } from '../ui/Switch';
 
 interface PropertiesFormProps {
@@ -43,10 +43,18 @@ const SelectBox = ({ label, description, propKey, options, properties, updatePro
         <div className="px-3 py-2 bg-background flex items-center shrink-0 min-h-[46px]">
             <Select 
                 value={properties[propKey] || ''}
-                onChange={(e) => updateProp(propKey, e.target.value)}
-                className="border-0 bg-transparent shadow-none focus:ring-0 px-0 h-auto"
+                onValueChange={(value) => updateProp(propKey, value)}
             >
-                {options.map(opt => <option key={opt.value} value={opt.value} className="bg-surface text-foreground">{opt.label}</option>)}
+                <SelectTrigger className="w-full border-0 bg-transparent shadow-none focus:ring-0 px-0 h-auto">
+                    <SelectValue placeholder="Sélectionner..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {options.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
             </Select>
         </div>
     </div>

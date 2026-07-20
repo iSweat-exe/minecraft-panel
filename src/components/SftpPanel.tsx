@@ -9,9 +9,16 @@ import { Button } from './ui/Button';
 import { tauriBridge } from '../lib/tauriBridge';
 import { SftpToolbar } from './sftp/SftpToolbar';
 import { SftpFileList } from './sftp/SftpFileList';
+import { useModsStore } from '../store/modsStore';
 
 export const SftpPanel: React.FC<{ initialPath?: string }> = ({ initialPath = '/' }) => {
     const sftp = useSftp(initialPath);
+    const { modPath } = useModsStore();
+    
+    // Normalize paths for comparison
+    const normCurrent = sftp.currentPath.replace(/^\//, '').replace(/\/$/, '');
+    const normMod = modPath.replace(/^\//, '').replace(/\/$/, '');
+    const isModsFolder = normCurrent === normMod || (normMod.length > 0 && normCurrent.endsWith(normMod));
 
     if (sftp.editingFile) {
         return (
@@ -208,6 +215,19 @@ export const SftpPanel: React.FC<{ initialPath?: string }> = ({ initialPath = '/
                         return next;
                     });
                 }}
+                isModsFolder={isModsFolder}
+                currentPath={sftp.currentPath}
+                onRenameFile={async (oldName, newName) => {
+                    const oldPath = sftp.currentPath === '/' ? `/${oldName}` : `${sftp.currentPath}/${oldName}`;
+                    const newPath = sftp.currentPath === '/' ? `/${newName}` : `${sftp.currentPath}/${newName}`;
+                    try {
+                        await tauriBridge.sftpRename(oldPath, newPath);
+                        sftp.fetchDir(sftp.currentPath);
+                    } catch (e) {
+                        console.error('Failed to rename file:', e);
+                    }
+                }}
+                onRefresh={() => sftp.fetchDir(sftp.currentPath)}
             />
         </Card>
     );

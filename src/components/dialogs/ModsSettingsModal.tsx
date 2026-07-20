@@ -57,7 +57,7 @@ export const ModsSettingsModal: React.FC<ModsSettingsModalProps> = ({ onClose })
                             className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                             value={tempPath}
                             onChange={(e) => setTempPath(e.target.value)}
-                            placeholder="ex: ~/minecraft/mods/"
+                            placeholder="ex: mods/"
                         />
                         <p className="text-xs text-muted-foreground">Chemin relatif depuis le dossier personnel ou chemin absolu sur le serveur distant.</p>
                     </div>

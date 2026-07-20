@@ -132,7 +132,7 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
                     <button
                         onClick={() => handleSearch(currentPage - 1)}
                         disabled={currentPage === 0}
-                        className="p-1.5 flex items-center gap-1 text-sm font-medium text-foreground bg-surface hover:bg-surface-hover border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground bg-surface hover:bg-surface-hover border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <ChevronLeft size={16} />
                         Précédent
@@ -140,7 +140,7 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
                     <button
                         onClick={() => handleSearch(currentPage + 1)}
                         disabled={(currentPage + 1) * limit >= totalHits}
-                        className="p-1.5 flex items-center gap-1 text-sm font-medium text-foreground bg-surface hover:bg-surface-hover border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-3 py-1.5 flex items-center gap-1.5 text-sm font-medium text-foreground bg-surface hover:bg-surface-hover border border-border rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         Suivant
                         <ChevronRight size={16} />

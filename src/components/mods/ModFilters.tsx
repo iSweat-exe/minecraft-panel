@@ -1,5 +1,6 @@
 import React from 'react';
 import { Filter, Search } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/Select';
 
 interface ModFiltersProps {
     searchQuery: string;
@@ -40,59 +41,61 @@ export const ModFilters: React.FC<ModFiltersProps> = ({
                     <span className="text-sm text-muted-foreground font-medium hidden sm:inline">Filtres</span>
                 </div>
 
-                <select 
-                    value={selectedVersion} 
-                    onChange={(e) => setSelectedVersion(e.target.value)}
-                    className="bg-surface border border-border rounded-md px-3 h-[38px] py-0 text-sm text-foreground focus:outline-none focus:border-primary min-w-[120px]"
-                >
-                    <option value="all">Toutes versions</option>
-                    <option value="26.2">26.2</option>
-                    <option value="26.1.2">26.1.2</option>
-                    <option value="26.1.1">26.1.1</option>
-                    <option value="26.1">26.1</option>
-                    <option value="1.21.11">1.21.11</option>
-                    <option value="1.21.10">1.21.10</option>
-                    <option value="1.21.9">1.21.9</option>
-                    <option value="1.21.8">1.21.8</option>
-                    <option value="1.21.7">1.21.7</option>
-                    <option value="1.21.6">1.21.6</option>
-                    <option value="1.21.5">1.21.5</option>
-                    <option value="1.21.4">1.21.4</option>
-                    <option value="1.21.3">1.21.3</option>
-                    <option value="1.21.2">1.21.2</option>
-                    <option value="1.21.1">1.21.1</option>
-                    <option value="1.21">1.21</option>
-                    <option value="1.20.6">1.20.6</option>
-                    <option value="1.20.5">1.20.5</option>
-                    <option value="1.20.4">1.20.4</option>
-                    <option value="1.20.3">1.20.3</option>
-                    <option value="1.20.2">1.20.2</option>
-                    <option value="1.20.1">1.20.1</option>
-                    <option value="1.20">1.20</option>
-                    <option value="1.19.4">1.19.4</option>
-                    <option value="1.19.3">1.19.3</option>
-                    <option value="1.19.2">1.19.2</option>
-                    <option value="1.19.1">1.19.1</option>
-                    <option value="1.19">1.19</option>
-                    <option value="1.18.2">1.18.2</option>
-                    <option value="1.18.1">1.18.1</option>
-                    <option value="1.18">1.18</option>
-                    <option value="1.17.1">1.17.1</option>
-                    <option value="1.17">1.17</option>
-                    <option value="1.16.5">1.16.5</option>
-                </select>
+                <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                    <SelectTrigger className="w-[140px] bg-surface h-[38px] border-border text-foreground">
+                        <SelectValue placeholder="Toutes versions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Toutes versions</SelectItem>
+                        <SelectItem value="26.2">26.2</SelectItem>
+                        <SelectItem value="26.1.2">26.1.2</SelectItem>
+                        <SelectItem value="26.1.1">26.1.1</SelectItem>
+                        <SelectItem value="26.1">26.1</SelectItem>
+                        <SelectItem value="1.21.11">1.21.11</SelectItem>
+                        <SelectItem value="1.21.10">1.21.10</SelectItem>
+                        <SelectItem value="1.21.9">1.21.9</SelectItem>
+                        <SelectItem value="1.21.8">1.21.8</SelectItem>
+                        <SelectItem value="1.21.7">1.21.7</SelectItem>
+                        <SelectItem value="1.21.6">1.21.6</SelectItem>
+                        <SelectItem value="1.21.5">1.21.5</SelectItem>
+                        <SelectItem value="1.21.4">1.21.4</SelectItem>
+                        <SelectItem value="1.21.3">1.21.3</SelectItem>
+                        <SelectItem value="1.21.2">1.21.2</SelectItem>
+                        <SelectItem value="1.21.1">1.21.1</SelectItem>
+                        <SelectItem value="1.21">1.21</SelectItem>
+                        <SelectItem value="1.20.6">1.20.6</SelectItem>
+                        <SelectItem value="1.20.5">1.20.5</SelectItem>
+                        <SelectItem value="1.20.4">1.20.4</SelectItem>
+                        <SelectItem value="1.20.3">1.20.3</SelectItem>
+                        <SelectItem value="1.20.2">1.20.2</SelectItem>
+                        <SelectItem value="1.20.1">1.20.1</SelectItem>
+                        <SelectItem value="1.20">1.20</SelectItem>
+                        <SelectItem value="1.19.4">1.19.4</SelectItem>
+                        <SelectItem value="1.19.3">1.19.3</SelectItem>
+                        <SelectItem value="1.19.2">1.19.2</SelectItem>
+                        <SelectItem value="1.19.1">1.19.1</SelectItem>
+                        <SelectItem value="1.19">1.19</SelectItem>
+                        <SelectItem value="1.18.2">1.18.2</SelectItem>
+                        <SelectItem value="1.18.1">1.18.1</SelectItem>
+                        <SelectItem value="1.18">1.18</SelectItem>
+                        <SelectItem value="1.17.1">1.17.1</SelectItem>
+                        <SelectItem value="1.17">1.17</SelectItem>
+                        <SelectItem value="1.16.5">1.16.5</SelectItem>
+                    </SelectContent>
+                </Select>
 
-                <select 
-                    value={selectedLoader} 
-                    onChange={(e) => setSelectedLoader(e.target.value)}
-                    className="bg-surface border border-border rounded-md px-3 h-[38px] py-0 text-sm text-foreground focus:outline-none focus:border-primary min-w-[120px]"
-                >
-                    <option value="all">Tous Loaders</option>
-                    <option value="fabric">Fabric</option>
-                    <option value="forge">Forge</option>
-                    <option value="neoforge">NeoForge</option>
-                    <option value="quilt">Quilt</option>
-                </select>
+                <Select value={selectedLoader} onValueChange={setSelectedLoader}>
+                    <SelectTrigger className="w-[140px] bg-surface h-[38px] border-border text-foreground">
+                        <SelectValue placeholder="Tous Loaders" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Tous Loaders</SelectItem>
+                        <SelectItem value="fabric">Fabric</SelectItem>
+                        <SelectItem value="forge">Forge</SelectItem>
+                        <SelectItem value="neoforge">NeoForge</SelectItem>
+                        <SelectItem value="quilt">Quilt</SelectItem>
+                    </SelectContent>
+                </Select>
                 
                 <button
                     onClick={onSearch}

@@ -11,6 +11,8 @@ export interface ModrinthProject {
     downloads: number;
     icon_url: string;
     author: string;
+    author_avatar?: string;
+    team?: string;
     client_side: 'required' | 'optional' | 'unsupported';
     server_side: 'required' | 'optional' | 'unsupported';
     date_modified: string;
@@ -30,6 +32,9 @@ export interface ModrinthVersion {
     featured: boolean;
     name: string;
     version_number: string;
+    changelog?: string;
+    date_published: string;
+    version_type: 'release' | 'beta' | 'alpha';
     game_versions: string[];
     loaders: string[];
     files: {
@@ -123,9 +128,29 @@ export const useModrinth = () => {
         }
     }, []);
 
+    const getProjectVersions = useCallback(async (
+        projectId: string
+    ): Promise<ModrinthVersion[] | null> => {
+        setLoading(true);
+        setError(null);
+        try {
+            const url = new URL(`https://api.modrinth.com/v2/project/${projectId}/version`);
+            const response = await fetch(url.toString());
+            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+            
+            return await response.json();
+        } catch (e: any) {
+            setError(e.message);
+            return null;
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
     return {
         searchMods,
         getLatestVersion,
+        getProjectVersions,
         loading,
         error
     };
