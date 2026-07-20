@@ -1,12 +1,14 @@
 import React from 'react';
 import { FileEntry } from '../../lib/tauriBridge';
-import { Folder, FileText, Trash2 } from 'lucide-react';
+import { Folder, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 
 interface SftpFileListProps {
     entries: FileEntry[];
     loading: boolean;
     selectedFiles: Set<string>;
+    sortConfig: { key: 'name'|'size'|'modified', direction: 'asc'|'desc' };
+    onSort: (key: 'name'|'size'|'modified') => void;
     onNavigate: (e: React.MouseEvent, entry: FileEntry) => void;
     onDelete: (e: React.MouseEvent, entry: FileEntry) => void;
 }
@@ -27,18 +29,31 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
     entries,
     loading,
     selectedFiles,
+    sortConfig,
+    onSort,
     onNavigate,
     onDelete
 }) => {
+    const SortIcon = ({ columnKey }: { columnKey: 'name'|'size'|'modified' }) => {
+        if (sortConfig.key !== columnKey) return null;
+        return sortConfig.direction === 'asc' ? <ChevronUp size={14} className="ml-1 inline" /> : <ChevronDown size={14} className="ml-1 inline" />;
+    };
+
     return (
         <div className="flex-1 overflow-auto custom-scrollbar">
             <Table>
                 <TableHeader className="sticky top-0 bg-zinc-950/90 backdrop-blur z-10">
                     <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="w-24">Size</TableHead>
-                        <TableHead className="w-48">Modified</TableHead>
-                        <TableHead className="w-20 text-right">Actions</TableHead>
+                        <TableHead className="cursor-pointer hover:text-foreground" onClick={() => onSort('name')}>
+                            Name <SortIcon columnKey="name" />
+                        </TableHead>
+                        <TableHead className="w-24 cursor-pointer hover:text-foreground" onClick={() => onSort('size')}>
+                            Size <SortIcon columnKey="size" />
+                        </TableHead>
+                        <TableHead className="w-48 cursor-pointer hover:text-foreground" onClick={() => onSort('modified')}>
+                            Modified <SortIcon columnKey="modified" />
+                        </TableHead>
+                        <TableHead className="w-24 text-right">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -74,14 +89,29 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                                     {formatDate(entry.modified)}
                                 </TableCell>
                                 <TableCell className="text-right">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button 
-                                            onClick={(e) => onDelete(e, entry)}
-                                            className="p-1 text-muted-foreground hover:text-danger transition-colors"
-                                            title="Delete"
-                                        >
-                                            <Trash2 size={14} />
-                                        </button>
+                                    <div className="flex items-center justify-end gap-3">
+                                        <div className={`flex justify-end gap-2 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onDelete(e, entry);
+                                                }}
+                                                className="p-1 text-muted-foreground hover:text-danger transition-colors"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
+                                        <div className="w-4 h-4 flex items-center justify-center shrink-0">
+                                            {isSelected && (
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked 
+                                                    readOnly 
+                                                    className="rounded border-border/80 bg-background/50 w-4 h-4 cursor-pointer accent-primary" 
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 </TableCell>
                             </TableRow>

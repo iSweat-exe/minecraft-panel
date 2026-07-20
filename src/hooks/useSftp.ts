@@ -1,12 +1,14 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { tauriBridge, FileEntry } from '../lib/tauriBridge';
 import { ConfirmDialog } from '../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../components/dialogs/PromptDialog';
-import { UploadFileItem } from '../components/dialogs/UploadModal'; // We will adjust paths as needed
+import { UploadFileItem } from '../components/dialogs/UploadModal';
 
 export function useSftp() {
     const [currentPath, setCurrentPath] = useState<string>('/');
-    const [entries, setEntries] = useState<FileEntry[]>([]);
+    const [rawEntries, setRawEntries] = useState<FileEntry[]>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortConfig, setSortConfig] = useState<{ key: 'name'|'size'|'modified', direction: 'asc'|'desc' }>({ key: 'name', direction: 'asc' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -23,13 +25,38 @@ export function useSftp() {
     // Upload modal
     const [uploadFiles, setUploadFiles] = useState<UploadFileItem[] | null>(null);
 
+    const entries = useMemo(() => {
+        let filtered = rawEntries;
+        if (searchQuery.trim()) {
+            const lowerQuery = searchQuery.toLowerCase();
+            filtered = filtered.filter(e => e.name.toLowerCase().includes(lowerQuery));
+        }
+        
+        return [...filtered].sort((a, b) => {
+            if (a.is_dir !== b.is_dir) {
+                return a.is_dir ? -1 : 1;
+            }
+            
+            let comparison = 0;
+            if (sortConfig.key === 'name') {
+                comparison = a.name.localeCompare(b.name);
+            } else if (sortConfig.key === 'size') {
+                comparison = a.size - b.size;
+            } else if (sortConfig.key === 'modified') {
+                comparison = a.modified - b.modified;
+            }
+            
+            return sortConfig.direction === 'asc' ? comparison : -comparison;
+        });
+    }, [rawEntries, searchQuery, sortConfig]);
+
     const fetchDir = async (path: string) => {
         setLoading(true);
         setError(null);
         setSelectedFiles(new Set()); // Reset selection on navigate
         try {
             const data = await tauriBridge.sftpListDir(path);
-            setEntries(data);
+            setRawEntries(data);
             setCurrentPath(path);
         } catch (e: any) {
             setError(e.toString());
@@ -38,10 +65,10 @@ export function useSftp() {
         }
     };
 
-    const stateRef = useRef({ currentPath, entries });
+    const stateRef = useRef({ currentPath, entries: rawEntries });
     useEffect(() => {
-        stateRef.current = { currentPath, entries };
-    }, [currentPath, entries]);
+        stateRef.current = { currentPath, entries: rawEntries };
+    }, [currentPath, rawEntries]);
 
     // Upload queue processor — only uploads files with 'pending' status
     const processUploads = useCallback(async (files: UploadFileItem[]) => {
@@ -317,6 +344,41 @@ export function useSftp() {
         if (action === 'cut') setSelectedFiles(new Set());
     };
 
+    const handleRename = async () => {
+        if (selectedFiles.size !== 1) return;
+        const currentName = Array.from(selectedFiles)[0];
+        
+        const newName = await PromptDialog.call({
+            title: "Renommer :",
+            defaultValue: currentName
+        });
+        
+        if (!newName || newName === currentName) return;
+        
+        if (rawEntries.some(e => e.name === newName)) {
+            setError(`A file or folder named ${newName} already exists.`);
+            return;
+        }
+
+        const oldPath = currentPath === '/' ? `/${currentName}` : `${currentPath}/${currentName}`;
+        const newPath = currentPath === '/' ? `/${newName}` : `${currentPath}/${newName}`;
+        
+        try {
+            await tauriBridge.sftpRename(oldPath, newPath);
+            setSelectedFiles(new Set());
+            fetchDir(currentPath);
+        } catch (err: any) {
+            setError(`Rename failed: ${err.toString()}`);
+        }
+    };
+
+    const skipAllConflicts = useCallback(() => {
+        setUploadFiles(prev => {
+            if (!prev) return null;
+            return prev.map(f => f.status === 'conflict' ? { ...f, status: 'cancelled' } : f);
+        });
+    }, []);
+
     const handlePaste = async () => {
         if (!clipboard) return;
         try {
@@ -352,6 +414,10 @@ export function useSftp() {
         entries,
         loading,
         error,
+        searchQuery,
+        setSearchQuery,
+        sortConfig,
+        setSortConfig,
         selectedFiles,
         setSelectedFiles,
         clipboard,
@@ -363,12 +429,14 @@ export function useSftp() {
         fetchDir,
         resolveConflict,
         undoCancel,
+        skipAllConflicts,
         handleNavigate,
         handleNavigateUp,
         saveEditor,
         handleDelete,
         handleMkdir,
         handleMkfile,
+        handleRename,
         handleCopyCut,
         handlePaste
     };

@@ -20,6 +20,7 @@ interface UploadModalProps {
     onCancel: (index: number) => void;
     onResolveConflict: (index: number, action: 'replace' | 'skip') => void;
     onUndoCancel: (index: number) => void;
+    onSkipAllConflicts: () => void;
     onContinue: () => void;
 }
 
@@ -40,16 +41,16 @@ const StatusIcon: React.FC<{ status: UploadFileStatus }> = ({ status }) => {
     }
 };
 
-export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onResolveConflict, onUndoCancel, onContinue }) => {
+export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onResolveConflict, onUndoCancel, onSkipAllConflicts, onContinue }) => {
     const isSettled = (s: UploadFileStatus) => s === 'done' || s === 'error' || s === 'cancelled';
     const allDone = files.every(f => isSettled(f.status));
     const hasConflicts = files.some(f => f.status === 'conflict');
+    const conflictCount = files.filter(f => f.status === 'conflict').length;
     const doneCount = files.filter(f => f.status === 'done').length;
     const totalCount = files.length;
 
     const getSubtitle = () => {
         if (hasConflicts) {
-            const conflictCount = files.filter(f => f.status === 'conflict').length;
             return `${conflictCount} fichier${conflictCount > 1 ? 's' : ''} existe${conflictCount > 1 ? 'nt' : ''} déjà`;
         }
         if (allDone) {
@@ -65,13 +66,23 @@ export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onRes
             title={hasConflicts ? 'Conflits détectés' : 'Upload en cours'}
             maxWidth="max-w-lg"
             footer={
-                <Button
-                    onClick={onContinue}
-                    disabled={!allDone || hasConflicts}
-                    variant={allDone && !hasConflicts ? 'primary' : 'outline'}
-                >
-                    Continuer
-                </Button>
+                <div className="flex gap-2">
+                    {hasConflicts && conflictCount > 1 && (
+                        <Button
+                            onClick={onSkipAllConflicts}
+                            variant="outline"
+                        >
+                            Passer tout
+                        </Button>
+                    )}
+                    <Button
+                        onClick={onContinue}
+                        disabled={!allDone || hasConflicts}
+                        variant={allDone && !hasConflicts ? 'primary' : 'outline'}
+                    >
+                        Continuer
+                    </Button>
+                </div>
             }
         >
             <div className="mb-4">

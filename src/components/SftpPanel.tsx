@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSftp } from '../hooks/useSftp';
-import { Upload, Copy, Scissors, XSquare, Trash2 } from 'lucide-react';
+import { Upload, Copy, Scissors, XSquare, Trash2, Edit, CheckSquare } from 'lucide-react';
 import { FileEditor } from './FileEditor';
 import { UploadModal } from './dialogs/UploadModal';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
@@ -55,6 +55,7 @@ export const SftpPanel: React.FC = () => {
                     }}
                     onResolveConflict={sftp.resolveConflict}
                     onUndoCancel={sftp.undoCancel}
+                    onSkipAllConflicts={sftp.skipAllConflicts}
                     onContinue={() => {
                         sftp.setUploadFiles(null);
                         sftp.fetchDir(sftp.currentPath);
@@ -67,6 +68,8 @@ export const SftpPanel: React.FC = () => {
                 currentPath={sftp.currentPath}
                 entries={sftp.entries}
                 loading={sftp.loading}
+                searchQuery={sftp.searchQuery}
+                setSearchQuery={sftp.setSearchQuery}
                 onNavigateUp={sftp.handleNavigateUp}
                 onNavigateHome={() => sftp.fetchDir('/')}
                 onNavigate={(path) => sftp.fetchDir(path)}
@@ -82,6 +85,16 @@ export const SftpPanel: React.FC = () => {
                         {sftp.selectedFiles.size} item{sftp.selectedFiles.size > 1 ? 's' : ''} selected
                     </span>
                     <div className="flex items-center gap-2">
+                        {sftp.selectedFiles.size === 1 && (
+                            <Button 
+                                onClick={() => sftp.handleRename()}
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-primary border-primary/30 hover:bg-primary/20"
+                            >
+                                <Edit size={14} /> Rename
+                            </Button>
+                        )}
                         {sftp.clipboard && (
                             <Button 
                                 onClick={() => sftp.handlePaste()}
@@ -109,6 +122,14 @@ export const SftpPanel: React.FC = () => {
                             <Scissors size={14} /> Cut
                         </Button>
                         <div className="w-px h-4 bg-primary/30 mx-1"></div>
+                        <Button 
+                            onClick={() => sftp.setSelectedFiles(new Set(sftp.entries.map(e => e.name)))}
+                            variant="ghost"
+                            size="sm"
+                            className="gap-1.5 text-primary hover:text-primary-foreground hover:bg-primary/20"
+                        >
+                            <CheckSquare size={14} /> Select All
+                        </Button>
                         <Button 
                             onClick={() => sftp.setSelectedFiles(new Set())}
                             variant="ghost"
@@ -160,6 +181,15 @@ export const SftpPanel: React.FC = () => {
                 entries={sftp.entries}
                 loading={sftp.loading}
                 selectedFiles={sftp.selectedFiles}
+                sortConfig={sftp.sortConfig}
+                onSort={(key) => {
+                    sftp.setSortConfig(prev => {
+                        if (prev.key === key) {
+                            return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+                        }
+                        return { key, direction: 'asc' };
+                    });
+                }}
                 onNavigate={sftp.handleNavigate}
                 onDelete={sftp.handleDelete}
             />

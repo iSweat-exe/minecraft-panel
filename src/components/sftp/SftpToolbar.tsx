@@ -1,11 +1,13 @@
 import React from 'react';
-import { CornerLeftUp, Home, ChevronRight, Folder, FileText, FolderPlus, RefreshCw } from 'lucide-react';
+import { CornerLeftUp, Home, ChevronRight, Folder, FileText, FolderPlus, RefreshCw, Search } from 'lucide-react';
 import { FileEntry } from '../../lib/tauriBridge';
 
 interface SftpToolbarProps {
     currentPath: string;
     entries: FileEntry[];
     loading: boolean;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
     onNavigateUp: () => void;
     onNavigateHome: () => void;
     onNavigate: (path: string) => void;
@@ -18,6 +20,8 @@ export const SftpToolbar: React.FC<SftpToolbarProps> = ({
     currentPath,
     entries,
     loading,
+    searchQuery,
+    setSearchQuery,
     onNavigateUp,
     onNavigateHome,
     onNavigate,
@@ -26,8 +30,8 @@ export const SftpToolbar: React.FC<SftpToolbarProps> = ({
     onRefresh
 }) => {
     return (
-        <div className="p-3 border-b border-border flex items-center justify-between bg-surface/50">
-            <div className="flex items-center gap-2 overflow-hidden text-sm">
+        <div className="p-3 border-b border-border flex items-center justify-between bg-surface/50 gap-4">
+            <div className="flex items-center gap-2 overflow-hidden text-sm flex-1">
                 <button 
                     onClick={onNavigateUp}
                     disabled={currentPath === '/'}
@@ -85,7 +89,17 @@ export const SftpToolbar: React.FC<SftpToolbarProps> = ({
                     </div>
                 )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
+                <div className="relative mr-2">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <input
+                        type="text"
+                        placeholder="Rechercher..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="bg-background border border-border/80 rounded-md py-1.5 pl-8 pr-3 text-xs w-48 text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary/50 transition-colors"
+                    />
+                </div>
                 <button onClick={onMkfile} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-surface-hover rounded transition-colors" title="New File">
                     <FileText size={16} />
                 </button>
