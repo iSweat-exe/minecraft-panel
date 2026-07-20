@@ -186,3 +186,43 @@ pub async fn sftp_read_file_base64(state: State<'_, SshState>, path: String) -> 
     use base64::{Engine as _, engine::general_purpose::STANDARD};
     Ok(STANDARD.encode(&bytes))
 }
+
+#[tauri::command]
+pub async fn ssh_download_remote(state: State<'_, SshState>, url: String, dest: String) -> Result<(), AppError> {
+    let dest = sanitize_path(&dest)?;
+    let session_lock = state.session.lock().await;
+    let session = session_lock.as_ref().ok_or_else(|| AppError::Message("Not connected".into()))?;
+
+    let mut channel = session.channel_open_session().await.map_err(|e| AppError::Message(e.to_string()))?;
+    
+    let url_quoted = format!("'{}'", url.replace("'", "'\\''"));
+    let dest_quoted = format!("'{}'", dest.replace("'", "'\\''"));
+    
+    // Try wget, fallback to curl if not available
+    let cmd = format!("wget -q -O {0} {1} || curl -sLo {0} {1}", dest_quoted, url_quoted);
+    
+    channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let mut exit_status = None;
+    while let Some(msg) = channel.wait().await {
+        match msg {
+            russh::ChannelMsg::ExitStatus { exit_status: s } => {
+                exit_status = Some(s);
+            }
+            russh::ChannelMsg::Close => {
+                break;
+            }
+            _ => {}
+        }
+    }
+
+    if let Some(status) = exit_status {
+        if status != 0 {
+            return Err(AppError::Message(format!("Download failed with status {}", status)));
+        }
+    } else {
+        return Err(AppError::Message("Command did not return an exit status".to_string()));
+    }
+
+    Ok(())
+}

@@ -66,6 +66,7 @@ export const tauriBridge = {
     sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),
     sftpMkdir: (path: string) => invoke<void>('sftp_mkdir', { path }),
     sshCopy: (src: string, dest: string) => invoke<void>('ssh_copy', { src, dest }),
+    sshDownloadRemote: (url: string, dest: string) => invoke<void>('ssh_download_remote', { url, dest }),
     sftpDownloadFile: (remotePath: string, localPath: string) => invoke<void>('sftp_download_file', { remotePath, localPath }),
     cancelBackup: () => invoke<void>('cancel_backup'),
     sftpUploadFile: (localPath: string, remotePath: string) => invoke<void>('sftp_upload_file', { localPath, remotePath }),

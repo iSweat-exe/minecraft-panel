@@ -37,6 +37,7 @@ pub fn run() {
             commands::sftp::sftp_mkdir,
             commands::sftp::ssh_copy,
             commands::sftp::sftp_read_file_base64,
+            commands::sftp::ssh_download_remote,
             transfer::upload::sftp_upload_file,
             transfer::download::sftp_download_file,
             transfer::cancel_backup,
