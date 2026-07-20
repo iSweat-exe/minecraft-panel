@@ -32,4 +32,6 @@ tauri-plugin-notification = "2.3.3"
 tauri-plugin-dialog = "2.7.1"
 base64 = "0.22.1"
 sha2 = "0.11.0"
+tauri-plugin-updater = "2.10.1"
+tauri-plugin-process = "2.3.1"
 

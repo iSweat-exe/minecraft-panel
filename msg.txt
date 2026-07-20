@@ -1,8 +1,5 @@
-﻿feat(panel): enhance sftp file explorer with search, sorting, and multi-select
+﻿feat: add Tauri auto-updater and GitHub Actions release workflow
 
-- Add search bar to filter files and folders in real-time
-- Make table headers clickable to sort by Name, Size, or Modified date
-- Add checkbox selection indicator when selecting files
-- Add "Select All" button in multi-selection action bar
-- Add "Rename" button to rename single files or folders directly
-- Add "Passer tout" (Skip all) button in file upload modal to resolve bulk conflicts
+Configured tauri-plugin-updater and tauri-plugin-process for automatic
+background updates. Added a GitHub Actions workflow to build, sign, and
+release the application automatically across platforms.

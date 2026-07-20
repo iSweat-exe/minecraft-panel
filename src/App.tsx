@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useAutoUpdater } from "./hooks/useAutoUpdater";
 import { ConnectionGate } from "./components/ConnectionGate";
 import { Dashboard } from "./components/Dashboard";
 import { ConfirmDialog } from "./components/dialogs/ConfirmDialog";
@@ -10,6 +11,8 @@ function App() {
   // TODO: FUTURE UPDATE (Internationalization / i18n)
   // i18n initialization will happen here or in main.tsx.
   // A translation provider (e.g., <I18nextProvider>) will wrap the components below.
+  
+  useAutoUpdater();
 
   useEffect(() => {
     // Prevent browser from opening dropped files and reloading the app
