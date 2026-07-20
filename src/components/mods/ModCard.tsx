@@ -6,9 +6,10 @@ interface ModCardProps {
     mod: ModrinthProject;
     onInstall: (mod: ModrinthProject) => void;
     isInstalling: boolean;
+    isInstalled?: boolean;
 }
 
-export const ModCard: React.FC<ModCardProps> = ({ mod, onInstall, isInstalling }) => {
+export const ModCard: React.FC<ModCardProps> = ({ mod, onInstall, isInstalling, isInstalled }) => {
     // Format large numbers (e.g. 1500000 -> 1.5M)
     const formatNumber = (num: number) => {
         if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -62,14 +63,23 @@ export const ModCard: React.FC<ModCardProps> = ({ mod, onInstall, isInstalling }
                     )}
                 </div>
 
-                <button
-                    onClick={() => onInstall(mod)}
-                    disabled={isInstalling}
-                    className="flex items-center gap-2 px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-sm font-medium rounded transition-colors"
-                >
-                    {isInstalling ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-                    {isInstalling ? 'Installation...' : 'Installer'}
-                </button>
+                {isInstalled ? (
+                    <button
+                        disabled
+                        className="flex items-center gap-2 px-4 py-1.5 bg-surface border border-border text-success text-sm font-medium rounded opacity-80 cursor-default"
+                    >
+                        <Check size={16} /> Installé
+                    </button>
+                ) : (
+                    <button
+                        onClick={() => onInstall(mod)}
+                        disabled={isInstalling}
+                        className="flex items-center gap-2 px-4 py-1.5 bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground text-sm font-medium rounded transition-colors"
+                    >
+                        {isInstalling ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+                        {isInstalling ? 'Installation...' : 'Installer'}
+                    </button>
+                )}
             </div>
         </div>
     );

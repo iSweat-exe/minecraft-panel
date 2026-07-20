@@ -4,8 +4,8 @@ import { ConfirmDialog } from '../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../components/dialogs/PromptDialog';
 import { UploadFileItem } from '../components/dialogs/UploadModal';
 
-export function useSftp() {
-    const [currentPath, setCurrentPath] = useState<string>('/');
+export function useSftp(initialPath: string = '/') {
+    const [currentPath, setCurrentPath] = useState<string>(initialPath);
     const [rawEntries, setRawEntries] = useState<FileEntry[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [sortConfig, setSortConfig] = useState<{ key: 'name'|'size'|'modified', direction: 'asc'|'desc' }>({ key: 'name', direction: 'asc' });
@@ -176,7 +176,7 @@ export function useSftp() {
     }, [processUploads]);
 
     useEffect(() => {
-        fetchDir('/');
+        fetchDir(initialPath);
 
         let unlistenDrop: () => void;
         let unlistenProgress: () => void;

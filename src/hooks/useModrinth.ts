@@ -52,14 +52,15 @@ export const useModrinth = () => {
         query: string, 
         version?: string, 
         loader?: string,
-        offset: number = 0
+        offset: number = 0,
+        limit: number = 15
     ): Promise<SearchResult | null> => {
         setLoading(true);
         setError(null);
         try {
             const url = new URL('https://api.modrinth.com/v2/search');
             url.searchParams.set('query', query);
-            url.searchParams.set('limit', '20');
+            url.searchParams.set('limit', limit.toString());
             url.searchParams.set('offset', offset.toString());
 
             const facets: string[][] = [];

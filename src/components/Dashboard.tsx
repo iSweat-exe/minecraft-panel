@@ -49,6 +49,7 @@ const NAV_ITEMS = [
 export const Dashboard: React.FC = () => {
     const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
     const [activeTab, setActiveTab] = useState<string>('server');
+    const [sftpInitialPath, setSftpInitialPath] = useState<string>('/');
     const [now, setNow] = useState(Date.now());
 
     useEffect(() => {
@@ -246,11 +247,14 @@ export const Dashboard: React.FC = () => {
                 )}
 
                 {activeTab === 'files' && (
-                    <SftpPanel />
+                    <SftpPanel initialPath={sftpInitialPath} />
                 )}
 
                 {activeTab === 'mods' && (
-                    <ModsPanel />
+                    <ModsPanel onOpenFiles={(path) => {
+                        setSftpInitialPath(path);
+                        setActiveTab('files');
+                    }} />
                 )}
 
                 {activeTab === 'worlds' && (

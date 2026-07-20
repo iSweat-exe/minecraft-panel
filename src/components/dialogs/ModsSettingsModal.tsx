@@ -11,19 +11,28 @@ export const ModsSettingsModal: React.FC<ModsSettingsModalProps> = ({ onClose })
         modPath, 
         curseforgeApiKey, 
         warnOnClientMods, 
+        modsPerPage,
         setModPath, 
         setCurseforgeApiKey, 
-        setWarnOnClientMods 
+        setWarnOnClientMods,
+        setModsPerPage
     } = useModsStore();
 
     const [tempPath, setTempPath] = useState(modPath);
     const [tempKey, setTempKey] = useState(curseforgeApiKey);
     const [tempWarn, setTempWarn] = useState(warnOnClientMods);
+    const [tempLimit, setTempLimit] = useState(modsPerPage.toString());
 
     const handleSave = () => {
         setModPath(tempPath);
         setCurseforgeApiKey(tempKey);
         setWarnOnClientMods(tempWarn);
+        
+        const parsedLimit = parseInt(tempLimit, 10);
+        if (!isNaN(parsedLimit) && parsedLimit > 0) {
+            setModsPerPage(parsedLimit);
+        }
+        
         onClose();
     };
 
@@ -63,6 +72,19 @@ export const ModsSettingsModal: React.FC<ModsSettingsModalProps> = ({ onClose })
                             placeholder="Votre clé API CurseForge..."
                         />
                         <p className="text-xs text-muted-foreground">Requis uniquement si vous souhaitez utiliser le catalogue CurseForge dans le futur.</p>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-foreground">Nombre de mods par page</label>
+                        <input 
+                            type="number"
+                            min="1"
+                            max="100"
+                            className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                            value={tempLimit}
+                            onChange={(e) => setTempLimit(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">Détermine le nombre de résultats affichés par page (défaut : 15).</p>
                     </div>
 
                     <div className="flex items-center justify-between pt-2">

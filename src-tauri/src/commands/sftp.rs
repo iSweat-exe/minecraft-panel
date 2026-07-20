@@ -198,8 +198,8 @@ pub async fn ssh_download_remote(state: State<'_, SshState>, url: String, dest: 
     let url_quoted = format!("'{}'", url.replace("'", "'\\''"));
     let dest_quoted = format!("'{}'", dest.replace("'", "'\\''"));
     
-    // Try wget, fallback to curl if not available
-    let cmd = format!("wget -q -O {0} {1} || curl -sLo {0} {1}", dest_quoted, url_quoted);
+    // Create directory and try wget, fallback to curl if not available
+    let cmd = format!("mkdir -p $(dirname {0}) && (wget -q -O {0} {1} || curl -sLo {0} {1})", dest_quoted, url_quoted);
     
     channel.exec(true, cmd.as_bytes()).await.map_err(|e| AppError::Message(e.to_string()))?;
 

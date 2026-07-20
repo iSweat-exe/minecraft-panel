@@ -22,6 +22,7 @@ interface UploadModalProps {
     onUndoCancel: (index: number) => void;
     onSkipAllConflicts: () => void;
     onContinue: () => void;
+    onClose: () => void;
 }
 
 const StatusIcon: React.FC<{ status: UploadFileStatus }> = ({ status }) => {
@@ -41,7 +42,7 @@ const StatusIcon: React.FC<{ status: UploadFileStatus }> = ({ status }) => {
     }
 };
 
-export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onResolveConflict, onUndoCancel, onSkipAllConflicts, onContinue }) => {
+export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onResolveConflict, onUndoCancel, onSkipAllConflicts, onContinue, onClose }) => {
     const isSettled = (s: UploadFileStatus) => s === 'done' || s === 'error' || s === 'cancelled';
     const allDone = files.every(f => isSettled(f.status));
     const hasConflicts = files.some(f => f.status === 'conflict');
@@ -62,7 +63,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({ files, onCancel, onRes
     return (
         <Modal
             isOpen={true}
-            onClose={() => {}} // Controlled from outside or disable close on clicking outside
+            onClose={onClose}
             title={hasConflicts ? 'Conflits détectés' : 'Upload en cours'}
             maxWidth="max-w-lg"
             footer={

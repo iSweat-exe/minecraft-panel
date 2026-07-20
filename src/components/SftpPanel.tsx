@@ -10,8 +10,8 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { SftpToolbar } from './sftp/SftpToolbar';
 import { SftpFileList } from './sftp/SftpFileList';
 
-export const SftpPanel: React.FC = () => {
-    const sftp = useSftp();
+export const SftpPanel: React.FC<{ initialPath?: string }> = ({ initialPath = '/' }) => {
+    const sftp = useSftp(initialPath);
 
     if (sftp.editingFile) {
         return (
@@ -57,6 +57,11 @@ export const SftpPanel: React.FC = () => {
                     onUndoCancel={sftp.undoCancel}
                     onSkipAllConflicts={sftp.skipAllConflicts}
                     onContinue={() => {
+                        sftp.setUploadFiles(null);
+                        sftp.fetchDir(sftp.currentPath);
+                    }}
+                    onClose={() => {
+                        tauriBridge.cancelBackup();
                         sftp.setUploadFiles(null);
                         sftp.fetchDir(sftp.currentPath);
                     }}
@@ -192,6 +197,17 @@ export const SftpPanel: React.FC = () => {
                 }}
                 onNavigate={sftp.handleNavigate}
                 onDelete={sftp.handleDelete}
+                onToggleSelect={(entry) => {
+                    sftp.setSelectedFiles(prev => {
+                        const next = new Set(prev);
+                        if (next.has(entry.name)) {
+                            next.delete(entry.name);
+                        } else {
+                            next.add(entry.name);
+                        }
+                        return next;
+                    });
+                }}
             />
         </Card>
     );

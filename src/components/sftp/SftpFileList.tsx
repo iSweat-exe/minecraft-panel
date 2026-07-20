@@ -2,6 +2,7 @@ import React from 'react';
 import { FileEntry } from '../../lib/tauriBridge';
 import { Folder, FileText, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
+import { Checkbox } from '../ui/Checkbox';
 
 interface SftpFileListProps {
     entries: FileEntry[];
@@ -11,6 +12,7 @@ interface SftpFileListProps {
     onSort: (key: 'name'|'size'|'modified') => void;
     onNavigate: (e: React.MouseEvent, entry: FileEntry) => void;
     onDelete: (e: React.MouseEvent, entry: FileEntry) => void;
+    onToggleSelect: (entry: FileEntry) => void;
 }
 
 const formatBytes = (bytes: number) => {
@@ -32,7 +34,8 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
     sortConfig,
     onSort,
     onNavigate,
-    onDelete
+    onDelete,
+    onToggleSelect
 }) => {
     const SortIcon = ({ columnKey }: { columnKey: 'name'|'size'|'modified' }) => {
         if (sortConfig.key !== columnKey) return null;
@@ -44,6 +47,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             <Table>
                 <TableHeader className="sticky top-0 bg-zinc-950/90 backdrop-blur z-10">
                     <TableRow>
+                        <TableHead className="w-10 text-center px-0"></TableHead>
                         <TableHead className="cursor-pointer hover:text-foreground" onClick={() => onSort('name')}>
                             Name <SortIcon columnKey="name" />
                         </TableHead>
@@ -59,7 +63,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                 <TableBody>
                     {entries.length === 0 && !loading && (
                         <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                                 This directory is empty.
                             </TableCell>
                         </TableRow>
@@ -72,6 +76,19 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                                 onClick={(e) => onNavigate(e, entry)}
                                 className={`cursor-pointer group ${isSelected ? 'bg-primary/20 hover:bg-primary/30' : ''}`}
                             >
+                                <TableCell className="px-3 text-center">
+                                    <div className="w-4 h-4 mx-auto flex items-center justify-center">
+                                        <Checkbox 
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                                e.stopPropagation();
+                                                onToggleSelect(entry);
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="w-4 h-4 cursor-pointer" 
+                                        />
+                                    </div>
+                                </TableCell>
                                 <TableCell className="font-medium text-foreground">
                                     <div className="flex items-center gap-3">
                                         {entry.is_dir ? (
@@ -101,16 +118,6 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                                             >
                                                 <Trash2 size={14} />
                                             </button>
-                                        </div>
-                                        <div className="w-4 h-4 flex items-center justify-center shrink-0">
-                                            {isSelected && (
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked 
-                                                    readOnly 
-                                                    className="rounded border-border/80 bg-background/50 w-4 h-4 cursor-pointer accent-primary" 
-                                                />
-                                            )}
                                         </div>
                                     </div>
                                 </TableCell>
