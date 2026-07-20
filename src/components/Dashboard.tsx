@@ -6,6 +6,7 @@ import { ConsolePanel } from './ConsolePanel';
 import { SftpPanel } from './SftpPanel';
 import { WorldsPanel } from './WorldsPanel';
 import { BackupsPanel } from './BackupsPanel';
+import { ModsPanel } from './ModsPanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
@@ -27,7 +28,8 @@ import {
     SquareTerminal,
     PanelLeftClose,
     PanelLeftOpen,
-    CheckCircle
+    CheckCircle,
+    Blocks
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -38,6 +40,7 @@ const NAV_ITEMS = [
     { id: 'players', label: 'Joueurs', icon: Users, extra: ChevronRight },
     { id: 'version', label: 'Version', icon: Settings },
     { id: 'files', label: 'Fichiers', icon: Folder },
+    { id: 'mods', label: 'Mods', icon: Blocks },
     { id: 'worlds', label: 'Mondes', icon: Globe },
     { id: 'backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-warning' },
     { id: 'access', label: 'Accès', icon: UserCog },
@@ -244,6 +247,10 @@ export const Dashboard: React.FC = () => {
 
                 {activeTab === 'files' && (
                     <SftpPanel />
+                )}
+
+                {activeTab === 'mods' && (
+                    <ModsPanel />
                 )}
 
                 {activeTab === 'worlds' && (
