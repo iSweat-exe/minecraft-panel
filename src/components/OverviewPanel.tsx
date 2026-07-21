@@ -15,7 +15,7 @@ export const OverviewPanel: React.FC = () => {
     const navigate = useNavigate();
     const { mcPing, pendingAction, host } = useConnectionStore();
     const { metrics } = useServerStats();
-    const { rawPoints, hourPoints, dayPoints } = useServerStatsStore();
+    const { rawPoints, historicalPoints } = useServerStatsStore();
     
     const [timeRange, setTimeRange] = useState<TimeRange>('5m');
 
@@ -24,11 +24,11 @@ export const OverviewPanel: React.FC = () => {
             case '1m': return rawPoints.slice(-60);
             case '5m': return rawPoints.slice(-300);
             case '15m': return rawPoints;
-            case '1h': return hourPoints;
-            case '1d': return dayPoints;
+            case '1h': return historicalPoints.slice(-60);
+            case '1d': return historicalPoints;
             default: return rawPoints.slice(-300);
         }
-    }, [timeRange, rawPoints, hourPoints, dayPoints]);
+    }, [timeRange, rawPoints, historicalPoints]);
 
     const isOnline = mcPing?.online ?? false;
 

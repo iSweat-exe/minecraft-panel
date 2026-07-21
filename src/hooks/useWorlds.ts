@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
+import { logAction } from '../lib/actionLogger';
 
 export interface WorldInfo {
     name: string;
@@ -78,6 +79,7 @@ export function useWorlds() {
 
             // Save server.properties
             await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
+            logAction('Changement du monde actif', { monde: worldName });
 
             // Warn players and wait 60s
             await tauriBridge.consoleSendCommand('/say Le serveur va redémarrer pour changer de monde dans 60 secondes...').catch(() => {});

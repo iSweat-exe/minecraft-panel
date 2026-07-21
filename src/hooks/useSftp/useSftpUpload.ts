@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { UploadFileItem } from '../../components/dialogs/UploadModal';
 import { SftpStateContext } from './types';
+import { logAction } from '../../lib/actionLogger';
 
 export function useSftpUpload(state: SftpStateContext) {
     const [isDragging, setIsDragging] = useState(false);
@@ -29,6 +30,7 @@ export function useSftpUpload(state: SftpStateContext) {
 
             try {
                 await tauriBridge.sftpUploadFile(files[i].localPath, files[i].remotePath);
+                logAction('Upload d\'un fichier', { file: files[i].remotePath });
                 setUploadFiles(prev => {
                     if (!prev) return null;
                     const next = [...prev];
@@ -73,6 +75,7 @@ export function useSftpUpload(state: SftpStateContext) {
         const file = currentFiles[index];
         try {
             await tauriBridge.sftpUploadFile(file.localPath, file.remotePath);
+            logAction('Upload d\'un fichier (écrasement)', { file: file.remotePath });
             setUploadFiles(prev => {
                 if (!prev) return null;
                 const next = [...prev];

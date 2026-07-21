@@ -3,6 +3,7 @@ import { tauriBridge, FileEntry } from '../../lib/tauriBridge';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../../components/dialogs/PromptDialog';
 import { SftpStateContext, SftpSelectionContext } from './types';
+import { logAction } from '../../lib/actionLogger';
 
 export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelectionContext) {
     const [editingFile, setEditingFile] = useState<{path: string, content: string} | null>(null);
@@ -52,6 +53,7 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
         if (!editingFile) return;
         try {
             await tauriBridge.sftpWriteFile(editingFile.path, content);
+            logAction('Edition d\'un fichier', { file: editingFile.path });
             setEditingFile(null);
             state.fetchDir(state.currentPath);
         } catch (e: any) {
@@ -70,6 +72,7 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
         const fullPath = state.currentPath === '/' ? `/${entry.name}` : `${state.currentPath}/${entry.name}`;
         try {
             await tauriBridge.sftpDelete(fullPath, entry.is_dir);
+            logAction('Suppression d\'un fichier', { file: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {
             state.setError(`Delete failed: ${err.toString()}`);
@@ -90,6 +93,7 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
         const fullPath = state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
         try {
             await tauriBridge.sftpMkdir(fullPath);
+            logAction('Création d\'un dossier', { folder: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {
             state.setError(`Mkdir failed: ${err.toString()}`);
@@ -113,6 +117,7 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
         const fullPath = state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
         try {
             await tauriBridge.sftpWriteFile(fullPath, "");
+            logAction('Création d\'un fichier', { file: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {
             state.setError(`Create file failed: ${err.toString()}`);

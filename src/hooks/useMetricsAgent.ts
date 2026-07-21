@@ -91,38 +91,54 @@ export function useMetricsAgent() {
                     console.log('Added metrics agent to crontab @reboot');
                 }
                 
-                // Fetch existing CSV history
-                try {
-                    const csvContent = await tauriBridge.sshExecute(`cat ${scriptPath.replace('.sh', '.csv')} || echo ""`);
-                    const lines = csvContent.split('\n');
-                    const history = [];
-                    for (let i = 1; i < lines.length; i++) {
-                        if (!lines[i].trim()) continue;
-                        const [tsStr, cpuStr, ramStr] = lines[i].split(',');
-                        const ts = parseInt(tsStr) * 1000;
-                        if (isNaN(ts)) continue;
-                        const time = new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-                        history.push({
-                            time,
-                            ts,
-                            cpu: parseFloat(cpuStr),
-                            ram: parseInt(ramStr),
-                            rx: 0,
-                            tx: 0
-                        });
+                // Fetch existing CSV history periodically
+                const fetchCsv = async () => {
+                    try {
+                        const csvContent = await tauriBridge.sshExecute(`cat ${scriptPath.replace('.sh', '.csv')} || echo ""`);
+                        const lines = csvContent.split('\n');
+                        const history = [];
+                        for (let i = 1; i < lines.length; i++) {
+                            if (!lines[i].trim()) continue;
+                            const [tsStr, cpuStr, ramStr] = lines[i].split(',');
+                            const ts = parseInt(tsStr) * 1000;
+                            if (isNaN(ts)) continue;
+                            const time = new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                            history.push({
+                                time,
+                                ts,
+                                cpu: parseFloat(cpuStr),
+                                ram: parseInt(ramStr),
+                                rx: 0,
+                                tx: 0
+                            });
+                        }
+                        if (history.length > 0) {
+                            useServerStatsStore.getState().loadHistory(history);
+                        }
+                    } catch (e) {
+                        console.log('No metrics history found yet', e);
                     }
-                    if (history.length > 0) {
-                        useServerStatsStore.getState().loadHistory(history);
-                        console.log('Loaded metrics history:', history.length, 'points');
-                    }
-                } catch (e) {
-                    console.log('No metrics history found yet', e);
-                }
+                };
+
+                // Initial fetch
+                await fetchCsv();
+
+                // Periodic fetch every 60s
+                const interval = setInterval(fetchCsv, 60000);
+
+                // Need to clean up on unmount or sshStatus change
+                return () => clearInterval(interval);
             } catch (err) {
                 console.error('Failed to deploy metrics agent:', err);
             }
         };
 
-        deployAgent();
+        const cleanupPromise = deployAgent();
+
+        return () => {
+            cleanupPromise.then(cleanup => {
+                if (typeof cleanup === 'function') cleanup();
+            });
+        };
     }, [sshStatus]);
 }

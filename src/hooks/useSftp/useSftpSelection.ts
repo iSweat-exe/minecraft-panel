@@ -3,6 +3,7 @@ import { SftpStateContext, SftpSelectionContext } from './types';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../../components/dialogs/PromptDialog';
+import { logAction } from '../../lib/actionLogger';
 
 export function useSftpSelection(state: SftpStateContext) {
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -35,6 +36,7 @@ export function useSftpSelection(state: SftpStateContext) {
         
         try {
             await tauriBridge.sftpRename(oldPath, newPath);
+            logAction('Renommage de fichier', { old: oldPath, new: newPath });
             setSelectedFiles(new Set());
             state.fetchDir(state.currentPath);
         } catch (err: any) {
@@ -59,8 +61,10 @@ export function useSftpSelection(state: SftpStateContext) {
                 
                 if (clipboard.action === 'copy') {
                     await tauriBridge.sshCopy(srcPath, dstPath);
+                    logAction('Copie de fichier', { src: srcPath, dst: dstPath });
                 } else {
                     await tauriBridge.sftpRename(srcPath, dstPath);
+                    logAction('Déplacement de fichier', { src: srcPath, dst: dstPath });
                 }
             }
             if (clipboard.action === 'cut') {

@@ -8,6 +8,7 @@ import { preloadModsByHashes } from '../../lib/modUtils';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { SwitchVersionModal } from '../dialogs/SwitchVersionModal';
 import { ModrinthProject, ModrinthVersion } from '../../api/modrinth';
+import { logAction } from '../../lib/actionLogger';
 
 interface SftpFileListProps {
     entries: FileEntry[];
@@ -198,6 +199,8 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             
             // 2. Download new file using sshDownloadRemote
             await tauriBridge.sshDownloadRemote(primaryFile.url, newPath);
+
+            logAction('Changement de version d\'un mod', { old: oldFilename, new: primaryFile.filename });
 
             // 3. Refresh list
             if (onRefresh) onRefresh();

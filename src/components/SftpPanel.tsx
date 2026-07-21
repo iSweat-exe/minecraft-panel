@@ -11,6 +11,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { SftpToolbar } from './sftp/SftpToolbar';
 import { SftpFileList } from './sftp/SftpFileList';
 import { useModsStore } from '../store/modsStore';
+import { logAction } from '../lib/actionLogger';
 
 export const SftpPanel: React.FC = () => {
     const location = useLocation();
@@ -167,6 +168,7 @@ export const SftpPanel: React.FC = () => {
                                         const fullPath = sftp.currentPath === '/' ? `/${name}` : `${sftp.currentPath}/${name}`;
                                         try {
                                             await tauriBridge.sftpDelete(fullPath, entry.is_dir);
+                                            logAction('Suppression de fichier', { file: fullPath });
                                         } catch(e) {
                                             console.error(e);
                                         }
@@ -225,6 +227,7 @@ export const SftpPanel: React.FC = () => {
                     const newPath = sftp.currentPath === '/' ? `/${newName}` : `${sftp.currentPath}/${newName}`;
                     try {
                         await tauriBridge.sftpRename(oldPath, newPath);
+                        logAction('Renommage de fichier', { old: oldPath, new: newPath });
                         sftp.fetchDir(sftp.currentPath);
                     } catch (e) {
                         console.error('Failed to rename file:', e);

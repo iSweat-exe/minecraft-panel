@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from './connectionStore';
+import { logAction } from '../lib/actionLogger';
 
 export interface BackupProgress {
     filename: string;
@@ -138,6 +139,9 @@ export const useBackupStore = create<BackupStore>()(
             await tauriBridge.consoleSendCommand('say Le monde a été sauvegardé avec succès !').catch(() => {});
 
             set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
+            
+            logAction('Création d\'une sauvegarde', { file: localFileName, world: worldName });
+            
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
         } catch (err: unknown) {
@@ -180,6 +184,9 @@ export const useBackupStore = create<BackupStore>()(
             await tauriBridge.sftpDelete(remotePath, false);
 
             set({ statusText: 'Restauration terminée !', success: true, currentFile: null });
+            
+            logAction('Restauration d\'une sauvegarde', { file: localFileName });
+            
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
         } catch (err: unknown) {

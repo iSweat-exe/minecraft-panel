@@ -9,6 +9,7 @@ import { ModFilters } from './mods/ModFilters';
 import { ModCard } from './mods/ModCard';
 import { ModsSettingsModal } from './dialogs/ModsSettingsModal';
 import { ClientModWarningModal } from './dialogs/ClientModWarningModal';
+import { logAction } from '../lib/actionLogger';
 
 export const ModsPanel: React.FC = () => {
     const navigate = useNavigate();
@@ -104,6 +105,8 @@ export const ModsPanel: React.FC = () => {
             
             await tauriBridge.sshDownloadRemote(file.url, finalPath);
             await fetchInstalledFiles(); // Refresh installed mods list
+            
+            logAction('Installation d\'un mod', { mod: mod.title, version: latest.version_number, file: file.filename });
         } catch (e: any) {
             console.error("Install error:", e);
             alert(`Erreur d'installation: ${e.message}`);

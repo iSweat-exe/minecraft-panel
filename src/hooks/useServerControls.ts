@@ -1,6 +1,7 @@
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore, PendingAction } from '../store/connectionStore';
 import { useConsoleStore } from '../store/consoleStore';
+import { logAction } from '../lib/actionLogger';
 
 export const ACTION_LABELS: Record<NonNullable<PendingAction>, string> = {
     starting: 'Démarrage…',
@@ -49,6 +50,7 @@ export function useServerControls() {
         };
         setPendingAction(pendingMap[action]);
         
+        let forced = false;
         try {
             if (action === 'stop' || action === 'restart') {
                 const actionFr = action === 'stop' ? "s'arrêter" : 'redémarrer';
@@ -69,7 +71,7 @@ export function useServerControls() {
                     }, 60000);
                 });
                 
-                const forced = await waitPromise;
+                forced = await waitPromise;
                 
                 setCountdownAction(null);
                 setForceActionCallback(null);
@@ -87,6 +89,10 @@ export function useServerControls() {
 
             clearConsole();
             await tauriBridge.serviceAction(action);
+            logAction(
+                action === 'start' ? 'Démarrage du serveur' : action === 'stop' ? 'Arrêt du serveur' : 'Redémarrage du serveur',
+                { forced }
+            );
         } catch (e) {
             console.error(e);
             setPendingAction(null);

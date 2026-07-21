@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
+import { logAction } from '../lib/actionLogger';
 
 export interface ServerProps {
     'max-players': string;
@@ -81,6 +82,8 @@ export function useServerOptions() {
 
             await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
             setOriginalContent(updatedLines.join('\n'));
+            
+            logAction('Modification des propriétés du serveur', { file: 'server.properties' });
             
             import('../store/toastStore').then(({ useToastStore }) => {
                 useToastStore.getState().addToast({

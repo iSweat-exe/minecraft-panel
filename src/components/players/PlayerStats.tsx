@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { mc } from '../../lib/minecraftCommands';
+import { logAction } from '../../lib/actionLogger';
 
 interface PlayerStatsProps {
     playerName: string;
@@ -39,6 +40,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         await tauriBridge.consoleSendCommand(mc.player.heal(playerName));
+                        logAction("Soin d'un joueur (Heal)", { joueur: playerName });
                         setHealthOffset(prev => prev + 4);
                     }}
                     className="w-12 flex items-center justify-center bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-white"
@@ -63,6 +65,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         await tauriBridge.consoleSendCommand(mc.player.feed(playerName));
+                        logAction("Nourriture d'un joueur (Feed)", { joueur: playerName });
                         setFoodOffset(prev => prev + 1);
                     }}
                     className="w-12 flex items-center justify-center bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-white"
@@ -86,6 +89,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         await tauriBridge.consoleSendCommand(mc.player.addXpLevels(playerName, 1));
+                        logAction("Ajout d'XP à un joueur", { joueur: playerName, niveaux: 1 });
                         setXpOffset(prev => prev + 1);
                     }}
                     className="w-12 flex items-center justify-center bg-zinc-950 hover:bg-zinc-800 border border-zinc-800 hover:border-zinc-700 rounded-lg transition-colors text-zinc-400 hover:text-white"

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConsoleStore } from '../store/consoleStore';
+import { logAction } from '../lib/actionLogger';
 
 export function useConsole() {
     const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
@@ -91,6 +92,7 @@ export function useConsole() {
         try {
             pushHistory(trimmed);
             await tauriBridge.consoleSendCommand(trimmed);
+            logAction('Commande manuelle (Console)', { commande: trimmed });
             setCommand('');
             
             // Force scroll to bottom when sending a command

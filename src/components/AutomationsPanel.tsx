@@ -7,6 +7,7 @@ import { useConnectionStore } from '../store/connectionStore';
 import { useToastStore } from '../store/toastStore';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
+import { logAction } from '../lib/actionLogger';
 
 type JobType = 'restart' | 'start' | 'stop' | 'backup' | 'clean_backups' | 'clean_logs' | 'custom';
 
@@ -147,13 +148,20 @@ export const AutomationsPanel: React.FC = () => {
         };
 
         await saveCrontab([...jobs, newJob]);
+        
+        logAction('Ajout d\'une tâche planifiée', { type: newJobType, time: newJobTime });
+        
         setIsEditing(false);
     };
 
     const handleDeleteJob = async (id: string) => {
         const ok = await ConfirmDialog.call({ message: 'Êtes-vous sûr de vouloir supprimer cette tâche planifiée ?' });
         if (ok) {
+            const job = jobs.find(j => j.id === id);
             await saveCrontab(jobs.filter(j => j.id !== id));
+            if (job) {
+                logAction('Suppression d\'une tâche planifiée', { type: job.type });
+            }
         }
     };
 

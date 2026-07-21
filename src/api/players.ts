@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tauriBridge } from '../lib/tauriBridge';
+import { logAction } from '../lib/actionLogger';
 
 export interface PlayerInfo {
     uuid: string;
@@ -28,6 +29,7 @@ export const useExecuteCommandMutation = () => {
     return useMutation({
         mutationFn: async (command: string) => {
             await tauriBridge.consoleSendCommand(command);
+            logAction('Action sur un joueur', { commande: command });
         },
         onSuccess: () => {
             // Invalidate players list after a delay to allow server to process command
