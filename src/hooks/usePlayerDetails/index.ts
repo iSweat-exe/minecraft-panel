@@ -1,4 +1,4 @@
-import { PlayerInfo } from '../usePlayers';
+import type { PlayerInfo } from '../../api/players';
 import { usePlayerConfig } from './usePlayerConfig';
 import { usePlayerSync } from './usePlayerSync';
 

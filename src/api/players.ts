@@ -10,7 +10,8 @@ export interface PlayerInfo {
 }
 
 export const fetchPlayersList = async (): Promise<PlayerInfo[]> => {
-    return await tauriBridge.getPlayersList();
+    const data = await tauriBridge.getPlayersList();
+    return data as PlayerInfo[];
 };
 
 export const usePlayersQuery = () => {

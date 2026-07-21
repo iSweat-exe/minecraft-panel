@@ -27,7 +27,7 @@ export const ModsPanel: React.FC = () => {
     const [hasSearched, setHasSearched] = useState(false);
     
     // React Query
-    const { data, isLoading: loading, error, isPlaceholderData } = useSearchModsQuery(
+    const { data, isLoading: loading, error } = useSearchModsQuery(
         searchQuery,
         selectedVersion,
         selectedLoader,
@@ -211,7 +211,7 @@ export const ModsPanel: React.FC = () => {
 
             {error && (
                 <div className="mt-4 p-3 bg-danger/10 border border-danger text-danger text-sm rounded-md">
-                    {error}
+                    {error instanceof Error ? error.message : String(error)}
                 </div>
             )}
 

@@ -5,7 +5,6 @@ import { usePlayers } from '../hooks/usePlayers';
 import { PlayerToolbar } from './players/PlayerToolbar';
 import { PlayerTable } from './players/PlayerTable';
 import { Card } from './ui/Card';
-import { Button } from './ui/Button';
 
 export const PlayersPanel: React.FC = () => {
     const {
@@ -28,15 +27,15 @@ export const PlayersPanel: React.FC = () => {
                     <h1 className="text-2xl font-bold text-foreground tracking-tight">Joueurs</h1>
                     <p className="text-muted-foreground text-sm mt-1">Gérez vos joueurs, opérateurs et bannissements</p>
                 </div>
-                <Button 
-                    onClick={fetchPlayers}
-                    disabled={loading}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                >
-                    <RefreshCw size={16} className={loading ? "animate-spin" : ""} />
-                    Refresh
-                </Button>
+                <div className="flex gap-2">
+                    <button 
+                        onClick={() => fetchPlayers()}
+                        className="px-3 py-1.5 flex items-center gap-2 text-sm font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-100 rounded-md transition-colors border border-zinc-700"
+                    >
+                        <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+                        Actualiser
+                    </button>
+                </div>
             </div>
 
             <Card className="overflow-hidden flex flex-col border-0">

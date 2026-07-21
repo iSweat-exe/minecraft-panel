@@ -248,14 +248,16 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
         // 3. Map back to filename and cache
         let resolvedCount = 0;
         for (const project of projectsData) {
-            const hash = projectIdToHash.get(project.id);
+            const hash = projectIdToHash.get(project.project_id);
             if (!hash) continue;
             
             // Add author info
             if (project.team && teamMap.has(project.team)) {
                 const user = teamMap.get(project.team);
-                project.author = user.username || project.author;
-                project.author_avatar = user.avatar_url;
+                if (user) {
+                    project.author = user.username || project.author;
+                    project.author_avatar = user.avatar_url;
+                }
             }
             
             // Find filename for this hash

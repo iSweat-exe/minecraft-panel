@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import { useAutoUpdater } from "./hooks/useAutoUpdater";
 import { ConnectionGate } from "./components/ConnectionGate";
 import { AppLayout } from "./components/AppLayout";

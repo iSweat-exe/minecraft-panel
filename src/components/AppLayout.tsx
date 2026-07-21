@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
 import { BackupProgressAlert } from './overview/BackupProgressAlert';
@@ -56,7 +56,6 @@ const BackupNavItemExtra: React.FC<{ icon: any, color?: string }> = ({ icon: Ico
 export const AppLayout: React.FC = () => {
     const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
     const [collapsed, setCollapsed] = useState(false);
-    const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {

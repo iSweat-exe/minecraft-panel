@@ -1,14 +1,14 @@
 import React from 'react';
 import { Shield, ShieldAlert, UserCheck, Ban, X, Check, UserMinus } from 'lucide-react';
-import { PlayerInfo } from '../../hooks/usePlayers';
+import type { PlayerInfoWithStatus } from '../../hooks/usePlayers';
 import { mc } from '../../lib/minecraftCommands';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../ui/Table';
 
 interface PlayerTableProps {
-    players: PlayerInfo[];
-    onSelectPlayer: (player: PlayerInfo) => void;
+    players: PlayerInfoWithStatus[];
+    onSelectPlayer: (player: PlayerInfoWithStatus) => void;
     onExecuteCommand: (command: string) => void;
 }
 
