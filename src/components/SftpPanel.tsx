@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLocation } from 'react-router-dom';
 import { useSftp } from '../hooks/useSftp';
 import { Upload, Copy, Scissors, XSquare, Trash2, Edit, CheckSquare } from 'lucide-react';
 import { FileEditor } from './FileEditor';
@@ -11,7 +12,9 @@ import { SftpToolbar } from './sftp/SftpToolbar';
 import { SftpFileList } from './sftp/SftpFileList';
 import { useModsStore } from '../store/modsStore';
 
-export const SftpPanel: React.FC<{ initialPath?: string }> = ({ initialPath = '/' }) => {
+export const SftpPanel: React.FC = () => {
+    const location = useLocation();
+    const initialPath = location.state?.initialPath || '/';
     const sftp = useSftp(initialPath);
     const { modPath } = useModsStore();
     

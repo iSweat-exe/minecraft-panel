@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Loader2, Folder, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useModrinth, ModrinthProject } from '../hooks/useModrinth';
 import { useModsStore } from '../store/modsStore';
 import { tauriBridge } from '../lib/tauriBridge';
@@ -8,11 +9,8 @@ import { ModCard } from './mods/ModCard';
 import { ModsSettingsModal } from './dialogs/ModsSettingsModal';
 import { ClientModWarningModal } from './dialogs/ClientModWarningModal';
 
-interface ModsPanelProps {
-    onOpenFiles?: (path: string) => void;
-}
-
-export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
+export const ModsPanel: React.FC = () => {
+    const navigate = useNavigate();
     const { searchMods, getLatestVersion, loading, error } = useModrinth();
     const { 
         warnOnClientMods, 
@@ -182,16 +180,14 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
                     <p className="text-muted-foreground text-sm">Cherchez et installez des mods via Modrinth.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    {onOpenFiles && (
-                        <button
-                            onClick={() => onOpenFiles(modPath)}
-                            className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-surface border border-border rounded-md transition-colors"
-                            title="Explorer les fichiers"
-                        >
-                            <Folder size={18} />
-                            <span className="text-sm font-medium">Dossier</span>
-                        </button>
-                    )}
+                    <button
+                        onClick={() => navigate('/files', { state: { initialPath: modPath } })}
+                        className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-surface border border-border rounded-md transition-colors"
+                        title="Explorer les fichiers"
+                    >
+                        <Folder size={18} />
+                        <span className="text-sm font-medium">Dossier</span>
+                    </button>
                     <button
                         onClick={() => setShowSettings(true)}
                         className="p-2 text-muted-foreground hover:text-foreground hover:bg-surface border border-border rounded-md transition-colors"

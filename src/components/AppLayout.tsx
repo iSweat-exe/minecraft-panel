@@ -1,17 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { OverviewPanel } from './OverviewPanel';
-import { OptionsPanel } from './OptionsPanel';
-import { PlayersPanel } from './PlayersPanel';
-import { ConsolePanel } from './ConsolePanel';
-import { SftpPanel } from './SftpPanel';
-import { WorldsPanel } from './WorldsPanel';
-import { BackupsPanel } from './BackupsPanel';
-import { ModsPanel } from './ModsPanel';
-import { AccessPanel } from './AccessPanel';
-import { tauriBridge } from '../lib/tauriBridge';
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
 import { BackupProgressAlert } from './overview/BackupProgressAlert';
+import { tauriBridge } from '../lib/tauriBridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { 
     Settings, 
@@ -33,30 +25,39 @@ import {
 } from 'lucide-react';
 
 const NAV_ITEMS = [
-    { id: 'server', label: 'Serveur', icon: Power },
-    { id: 'options', label: 'Options', icon: SlidersHorizontal },
-    { id: 'console', label: 'Console', icon: SquareTerminal },
-    { id: 'history', label: 'Historique', icon: FileText },
-    { id: 'players', label: 'Joueurs', icon: Users, extra: ChevronRight },
-    { id: 'version', label: 'Version', icon: Settings },
-    { id: 'files', label: 'Fichiers', icon: Folder },
-    { id: 'mods', label: 'Mods', icon: Blocks },
-    { id: 'worlds', label: 'Mondes', icon: Globe },
-    { id: 'backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-warning' },
-    { id: 'access', label: 'Accès', icon: UserCog },
+    { id: 'server', path: '/', label: 'Serveur', icon: Power },
+    { id: 'options', path: '/options', label: 'Options', icon: SlidersHorizontal },
+    { id: 'console', path: '/console', label: 'Console', icon: SquareTerminal },
+    { id: 'history', path: '/history', label: 'Historique', icon: FileText },
+    { id: 'players', path: '/players', label: 'Joueurs', icon: Users, extra: ChevronRight },
+    { id: 'version', path: '/version', label: 'Version', icon: Settings },
+    { id: 'files', path: '/files', label: 'Fichiers', icon: Folder },
+    { id: 'mods', path: '/mods', label: 'Mods', icon: Blocks },
+    { id: 'worlds', path: '/worlds', label: 'Mondes', icon: Globe },
+    { id: 'backups', path: '/backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-warning' },
+    { id: 'access', path: '/access', label: 'Accès', icon: UserCog },
 ];
 
-export const Dashboard: React.FC = () => {
-    const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
-    const [activeTab, setActiveTab] = useState<string>('server');
-    const [sftpInitialPath, setSftpInitialPath] = useState<string>('/');
+const BackupNavItemExtra: React.FC<{ icon: any, color?: string }> = ({ icon: Icon, color }) => {
     const [now, setNow] = useState(Date.now());
+    const lastBackupTime = useBackupStore(state => state.lastBackupTime);
 
     useEffect(() => {
-        // Update 'now' every minute to refresh the backup alert dynamically
         const timer = setInterval(() => setNow(Date.now()), 60000);
         return () => clearInterval(timer);
     }, []);
+
+    const showExtra = !lastBackupTime || (now - lastBackupTime > 3600000);
+
+    if (!showExtra) return null;
+    return <Icon size={16} strokeWidth={2} className={color || "text-muted-foreground"} />;
+};
+
+export const AppLayout: React.FC = () => {
+    const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
+    const [collapsed, setCollapsed] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -88,11 +89,9 @@ export const Dashboard: React.FC = () => {
         tauriBridge.onDownloadProgress(handleProgress).then(un => unlistenDown = un);
         tauriBridge.onUploadProgress(handleProgress).then(un => unlistenUp = un);
 
-        // Cleanup session on window close
         const unlistenClose = getCurrentWindow().onCloseRequested(async () => {
             const sessionUuid = localStorage.getItem('panel_session_uuid');
             if (sessionUuid) {
-                // We use a fire-and-forget SSH command to delete the file before the window dies
                 tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`).catch(() => {});
             }
         });
@@ -118,14 +117,11 @@ export const Dashboard: React.FC = () => {
         setSshStatus('disconnected');
     };
 
-    const [collapsed, setCollapsed] = useState(false);
-    const lastBackupTime = useBackupStore(state => state.lastBackupTime);
-
     const getServerIconColor = () => {
         if (pendingAction) return "text-warning";
         if (serviceStatus?.active_state === 'active') return "text-success";
         if (serviceStatus?.active_state === 'failed') return "text-danger";
-        return activeTab === 'server' ? "text-primary" : "text-muted-foreground";
+        return location.pathname === '/' ? "text-primary" : "text-muted-foreground";
     };
 
     const getServerBorderColor = () => {
@@ -152,19 +148,16 @@ export const Dashboard: React.FC = () => {
                 </button>
 
                 <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
-                    {NAV_ITEMS.map(({ id, label, icon: Icon, extra: Extra, extraColor }) => {
-                        let showExtra = !!Extra;
-                        if (id === 'backups') {
-                            showExtra = !lastBackupTime || (now - lastBackupTime > 3600000);
-                        }
+                    {NAV_ITEMS.map(({ id, path, label, icon: Icon, extra: Extra, extraColor }) => {
+                        const isActive = location.pathname === path;
                         return (
-                        <button
+                        <NavLink
                             key={id}
-                            onClick={() => setActiveTab(id)}
+                            to={path}
                             className={`w-full flex items-center py-3 text-[15px] font-medium transition-colors border-r-2 ${
                                 collapsed ? 'justify-center px-0' : 'justify-between px-5'
                             } ${
-                                activeTab === id
+                                isActive
                                     ? `text-primary-foreground bg-surface-hover ${id === 'server' ? getServerBorderColor() : 'border-primary'}`
                                     : id === 'server'
                                         ? `text-foreground bg-surface/40 hover:bg-surface-hover ${getServerBorderColor()}`
@@ -176,14 +169,18 @@ export const Dashboard: React.FC = () => {
                                 <Icon 
                                     size={20} 
                                     strokeWidth={2} 
-                                    className={id === 'server' ? getServerIconColor() : (activeTab === id ? "text-primary" : "text-muted-foreground")} 
+                                    className={id === 'server' ? getServerIconColor() : (isActive ? "text-primary" : "text-muted-foreground")} 
                                 />
                                 {!collapsed && label}
                             </div>
-                            {!collapsed && showExtra && Extra && (
-                                <Extra size={16} strokeWidth={2} className={extraColor || "text-muted-foreground"} />
+                            {!collapsed && Extra && (
+                                id === 'backups' ? (
+                                    <BackupNavItemExtra icon={Extra} color={extraColor} />
+                                ) : (
+                                    <Extra size={16} strokeWidth={2} className={extraColor || "text-muted-foreground"} />
+                                )
                             )}
-                        </button>
+                        </NavLink>
                     )})}
                 </nav>
 
@@ -191,68 +188,21 @@ export const Dashboard: React.FC = () => {
                     <BackupProgressAlert />
                 </div>
                     
-                    <button
-                        onClick={disconnect}
-                        className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-muted-foreground hover:text-danger hover:bg-surface-hover transition-colors ${
-                            collapsed ? 'justify-center px-0' : 'px-5'
-                        }`}
-                        title={collapsed ? 'Déconnexion' : undefined}
-                    >
-                        <LogOut size={18} />
-                        {!collapsed && 'Déconnexion'}
-                    </button>
+                <button
+                    onClick={disconnect}
+                    className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-muted-foreground hover:text-danger hover:bg-surface-hover transition-colors ${
+                        collapsed ? 'justify-center px-0' : 'px-5'
+                    }`}
+                    title={collapsed ? 'Déconnexion' : undefined}
+                >
+                    <LogOut size={18} />
+                    {!collapsed && 'Déconnexion'}
+                </button>
             </aside>
 
             {/* Main */}
-            <main className={`flex-1 overflow-hidden ${activeTab === 'console' ? '' : 'p-4'}`}>
-                {activeTab === 'server' && (
-                    <div className="flex flex-col gap-4 h-full">
-                        <OverviewPanel onManageFiles={() => setActiveTab('files')} />
-                    </div>
-                )}
-
-                {activeTab === 'console' && (
-                    <div className="h-full">
-                        <ConsolePanel />
-                    </div>
-                )}
-
-                {activeTab === 'options' && (
-                    <OptionsPanel />
-                )}
-
-                {activeTab === 'players' && (
-                    <PlayersPanel />
-                )}
-
-                {activeTab === 'files' && (
-                    <SftpPanel initialPath={sftpInitialPath} />
-                )}
-
-                {activeTab === 'mods' && (
-                    <ModsPanel onOpenFiles={(path) => {
-                        setSftpInitialPath(path);
-                        setActiveTab('files');
-                    }} />
-                )}
-
-                {activeTab === 'worlds' && (
-                    <WorldsPanel />
-                )}
-
-                {activeTab === 'backups' && (
-                    <BackupsPanel />
-                )}
-
-                {activeTab === 'access' && (
-                    <AccessPanel />
-                )}
-
-                {['history', 'version'].includes(activeTab) && (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-                        Section "{NAV_ITEMS.find(i => i.id === activeTab)?.label}" — En cours de développement
-                    </div>
-                )}
+            <main className={`flex-1 overflow-hidden ${location.pathname === '/console' ? '' : 'p-4'}`}>
+                <Outlet />
             </main>
         </div>
     );

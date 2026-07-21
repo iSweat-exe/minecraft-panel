@@ -1,17 +1,24 @@
 import { useEffect } from "react";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAutoUpdater } from "./hooks/useAutoUpdater";
 import { ConnectionGate } from "./components/ConnectionGate";
-import { Dashboard } from "./components/Dashboard";
+import { AppLayout } from "./components/AppLayout";
 import { ConfirmDialog } from "./components/dialogs/ConfirmDialog";
 import { PromptDialog } from "./components/dialogs/PromptDialog";
 import { ToastContainer } from "./components/ui/ToastContainer";
 import { TitleBar } from "./components/TitleBar";
 
+import { OverviewPanel } from './components/OverviewPanel';
+import { OptionsPanel } from './components/OptionsPanel';
+import { PlayersPanel } from './components/PlayersPanel';
+import { ConsolePanel } from './components/ConsolePanel';
+import { SftpPanel } from './components/SftpPanel';
+import { WorldsPanel } from './components/WorldsPanel';
+import { BackupsPanel } from './components/BackupsPanel';
+import { ModsPanel } from './components/ModsPanel';
+import { AccessPanel } from './components/AccessPanel';
+
 function App() {
-  // TODO: FUTURE UPDATE (Internationalization / i18n)
-  // i18n initialization will happen here or in main.tsx.
-  // A translation provider (e.g., <I18nextProvider>) will wrap the components below.
-  
   useAutoUpdater();
 
   useEffect(() => {
@@ -29,9 +36,29 @@ function App() {
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-background">
       <TitleBar />
       <div className="flex-1 overflow-hidden relative">
-        <ConnectionGate>
-          <Dashboard />
-        </ConnectionGate>
+        <HashRouter>
+          <ConnectionGate>
+            <Routes>
+              <Route path="/" element={<AppLayout />}>
+                <Route index element={
+                  <div className="flex flex-col gap-4 h-full">
+                    {/* Assuming we just use local navigation for files from overview, but since we have routes now, it would be better to use navigate('/files') inside OverviewPanel */}
+                    <OverviewPanel />
+                  </div>
+                } />
+                <Route path="options" element={<OptionsPanel />} />
+                <Route path="console" element={<div className="h-full"><ConsolePanel /></div>} />
+                <Route path="players" element={<PlayersPanel />} />
+                <Route path="files" element={<SftpPanel />} />
+                <Route path="mods" element={<ModsPanel />} />
+                <Route path="worlds" element={<WorldsPanel />} />
+                <Route path="backups" element={<BackupsPanel />} />
+                <Route path="access" element={<AccessPanel />} />
+                <Route path="*" element={<div className="flex items-center justify-center h-full text-muted-foreground text-sm">Section en cours de développement</div>} />
+              </Route>
+            </Routes>
+          </ConnectionGate>
+        </HashRouter>
       </div>
       <ConfirmDialog />
       <PromptDialog />

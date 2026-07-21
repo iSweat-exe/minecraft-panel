@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '../store/connectionStore';
 import { useServerStats } from '../hooks/useServerStats';
 import { useServerStatsStore } from '../store/serverStatsStore';
@@ -10,11 +11,8 @@ import { Button } from './ui/Button';
 
 type TimeRange = '1m' | '5m' | '15m' | '1h' | '1d';
 
-interface OverviewPanelProps {
-    onManageFiles?: () => void;
-}
-
-export const OverviewPanel: React.FC<OverviewPanelProps> = ({ onManageFiles }) => {
+export const OverviewPanel: React.FC = () => {
+    const navigate = useNavigate();
     const { mcPing, pendingAction, host } = useConnectionStore();
     const { metrics } = useServerStats();
     const { rawPoints, hourPoints, dayPoints } = useServerStatsStore();
@@ -140,7 +138,7 @@ export const OverviewPanel: React.FC<OverviewPanelProps> = ({ onManageFiles }) =
                 <DiskUsageCard 
                     used={metrics?.disk_used_gb ?? 0} 
                     total={metrics?.disk_total_gb ?? 0} 
-                    onManageFiles={onManageFiles}
+                    onManageFiles={() => navigate('/files')}
                 />
             </div>
         </div>
