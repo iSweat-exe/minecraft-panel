@@ -78,27 +78,40 @@ export const AppLayout: React.FC = () => {
     }, [setServiceStatus, setMcPing]);
 
     useEffect(() => {
-        let unlistenDown: () => void;
-        let unlistenUp: () => void;
+        let isMounted = true;
+        let unlistenDown: (() => void) | undefined;
+        let unlistenUp: (() => void) | undefined;
+        let unlistenClose: (() => void) | undefined;
 
         const handleProgress = (p: { filename: string; written: number; total: number }) => {
             useBackupStore.getState().handleProgressUpdate(p);
         };
 
-        tauriBridge.onDownloadProgress(handleProgress).then(un => unlistenDown = un);
-        tauriBridge.onUploadProgress(handleProgress).then(un => unlistenUp = un);
+        tauriBridge.onDownloadProgress(handleProgress).then(un => {
+            if (isMounted) unlistenDown = un;
+            else un();
+        });
+        
+        tauriBridge.onUploadProgress(handleProgress).then(un => {
+            if (isMounted) unlistenUp = un;
+            else un();
+        });
 
-        const unlistenClose = getCurrentWindow().onCloseRequested(async () => {
+        getCurrentWindow().onCloseRequested(async () => {
             const sessionUuid = localStorage.getItem('panel_session_uuid');
             if (sessionUuid) {
                 tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`).catch(() => {});
             }
+        }).then(un => {
+            if (isMounted) unlistenClose = un;
+            else un();
         });
 
         return () => {
+            isMounted = false;
             if (unlistenDown) unlistenDown();
             if (unlistenUp) unlistenUp();
-            unlistenClose.then(f => f());
+            if (unlistenClose) unlistenClose();
         };
     }, []);
 
