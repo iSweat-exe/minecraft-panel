@@ -60,7 +60,7 @@ export const tauriBridge = {
     sftpReadFile: (path: string) => invoke<string>('sftp_read_file', { path }),
     sftpReadFileBase64: (path: string) => invoke<string>('sftp_read_file_base64', { path }),
     rconExecuteMulti: (cmds: string[], port: number, password: string) => invoke<string[]>('rcon_execute_multi', { cmds, port, password }),
-    getPlayersList: () => invoke<any[]>('get_players_list'),
+    getPlayersList: () => invoke<unknown[]>('get_players_list'),
     sftpWriteFile: (path: string, content: string) => invoke<void>('sftp_write_file', { path, content }),
     sftpDelete: (path: string, is_dir: boolean) => invoke<void>('sftp_delete', { path, isDir: is_dir }),
     sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),
@@ -89,7 +89,7 @@ export const tauriBridge = {
     }): Promise<UnlistenFn> => {
         return import('@tauri-apps/api/webview').then(({ getCurrentWebview }) => {
             return getCurrentWebview().onDragDropEvent((event) => {
-                const payload = event.payload as any;
+                const payload = event.payload as { type: string; paths: string[] };
                 if (payload.type === 'drop') {
                     callbacks.onHover?.(false);
                     callbacks.onDrop(payload.paths);

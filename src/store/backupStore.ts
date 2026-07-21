@@ -140,9 +140,9 @@ export const useBackupStore = create<BackupStore>()(
             set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Backup failed:", err);
-            set({ error: err.toString(), loading: false, success: false, statusText: '', currentFile: null });
+            set({ error: err instanceof Error ? err.message : String(err), loading: false, success: false, statusText: '', currentFile: null });
         }
     },
 
@@ -182,9 +182,9 @@ export const useBackupStore = create<BackupStore>()(
             set({ statusText: 'Restauration terminée !', success: true, currentFile: null });
             setTimeout(() => set({ statusText: '', currentFile: null, loading: false, success: false }), 3000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Restore failed:", err);
-            set({ error: err.toString(), loading: false, success: false, statusText: '' });
+            set({ error: err instanceof Error ? err.message : String(err), loading: false, success: false, statusText: '' });
         }
     },
 

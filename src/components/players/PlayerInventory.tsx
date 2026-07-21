@@ -30,29 +30,31 @@ const ItemIcon = ({ id }: { id: string }) => {
     );
 };
 
-export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any[], cols: number, totalSlots: number, slotMap?: (i: number) => number }) => {
-    const getSlot = (item: any): number => {
+import { PlayerInventoryItem } from '../../types';
+
+export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: PlayerInventoryItem[], cols: number, totalSlots: number, slotMap?: (i: number) => number }) => {
+    const getSlot = (item: PlayerInventoryItem): number => {
         const val = item.Slot ?? item.slot;
         if (val === undefined || val === null) return -1;
-        return Number(typeof val === 'object' && 'value' in val ? val.value : val.valueOf());
+        return Number(typeof val === 'object' && 'value' in val ? (val as any).value : val.valueOf());
     };
 
-    const getCount = (item: any): number => {
+    const getCount = (item: PlayerInventoryItem): number => {
         const val = item.Count ?? item.count;
         if (val === undefined || val === null) return 1;
-        const num = Number(typeof val === 'object' && 'value' in val ? val.value : val.valueOf());
+        const num = Number(typeof val === 'object' && 'value' in val ? (val as any).value : val.valueOf());
         return isNaN(num) ? 1 : num;
     };
 
-    const getId = (item: any): string => {
+    const getId = (item: PlayerInventoryItem): string => {
         const val = item.id;
         if (!val) return '';
-        return String(typeof val === 'object' && 'value' in val ? val.value : val.valueOf());
+        return String(typeof val === 'object' && 'value' in val ? (val as any).value : val.valueOf());
     };
     
     // Memoize the item lookup map to avoid O(N*M) lookups during render
     const itemBySlot = useMemo(() => {
-        const map = new Map<number, any>();
+        const map = new Map<number, PlayerInventoryItem>();
         for (const item of items) {
             map.set(getSlot(item), item);
         }
@@ -98,8 +100,8 @@ export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any
 };
 
 interface PlayerInventoryProps {
-    inventory: any[];
-    enderItems: any[];
+    inventory: PlayerInventoryItem[];
+    enderItems: PlayerInventoryItem[];
 }
 
 export const PlayerInventory: React.FC<PlayerInventoryProps> = ({ inventory, enderItems }) => {

@@ -162,7 +162,7 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
         });
         
         if (!versionRes.ok) throw new Error(`Hash resolve error: ${versionRes.status}`);
-        const versionData: Record<string, any> = await versionRes.json();
+        const versionData: Record<string, { id: string, project_id: string }> = await versionRes.json();
 
         // 1.5. Check for updates
         try {
@@ -182,9 +182,9 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
                 if (updateRes.ok) {
                     const updateData = await updateRes.json();
                     
-                    for (const [hash, updateVersion] of Object.entries(updateData)) {
+                    for (const [hash, updateVersion] of Object.entries(updateData as Record<string, { id: string }>)) {
                         const currentVersion = versionData[hash];
-                        if (currentVersion && (updateVersion as any).id !== currentVersion.id) {
+                        if (currentVersion && updateVersion.id !== currentVersion.id) {
                             const filename = Object.keys(fileHashMap).find(name => fileHashMap[name] === hash);
                             if (filename) {
                                 hasUpdateCache.set(filename, true);
@@ -217,7 +217,7 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
         const projectsRes = await fetch(`https://api.modrinth.com/v2/projects?ids=${JSON.stringify(idsArray)}`);
         if (!projectsRes.ok) throw new Error(`Projects fetch error: ${projectsRes.status}`);
         
-        const projectsData: any[] = await projectsRes.json();
+        const projectsData: ModrinthProject[] = await projectsRes.json();
         
         // Fetch teams to get authors & avatars
         const teamIds = new Set<string>();
@@ -225,7 +225,7 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
             if (p.team) teamIds.add(p.team);
         });
         
-        let teamsData: any[][] = [];
+        let teamsData: { role: string; user: { username: string; avatar_url: string }; team_id: string }[][] = [];
         if (teamIds.size > 0) {
             try {
                 const tRes = await fetch(`https://api.modrinth.com/v2/teams?ids=${JSON.stringify(Array.from(teamIds))}`);
@@ -235,10 +235,10 @@ export async function preloadModsByHashes(fileHashMap: Record<string, string>) {
             }
         }
         
-        const teamMap = new Map<string, any>();
+        const teamMap = new Map<string, { username: string; avatar_url: string }>();
         teamsData.forEach(teamMembers => {
             if (teamMembers && teamMembers.length > 0) {
-                const lead = teamMembers.find((m: any) => m.role === 'Project Lead' || m.role === 'Owner') || teamMembers[0];
+                const lead = teamMembers.find((m) => m.role === 'Project Lead' || m.role === 'Owner') || teamMembers[0];
                 if (lead && lead.user) {
                     teamMap.set(lead.team_id, lead.user);
                 }
