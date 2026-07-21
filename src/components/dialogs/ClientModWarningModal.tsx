@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Package } from 'lucide-react';
-import { ModrinthProject } from '../../hooks/useModrinth';
+import { ModrinthProject } from '../../api/modrinth';
 
 interface ClientModWarningModalProps {
     mod: ModrinthProject;

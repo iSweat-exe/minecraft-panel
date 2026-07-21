@@ -1,4 +1,4 @@
-import { ModrinthProject } from '../hooks/useModrinth';
+import { ModrinthProject } from '../api/modrinth';
 import { useModsStore } from '../store/modsStore';
 
 // Cache for mod metadata to avoid redundant Modrinth API calls

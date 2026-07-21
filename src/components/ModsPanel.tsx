@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Loader2, Folder, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useModrinth, ModrinthProject } from '../hooks/useModrinth';
+import { useSearchModsQuery, fetchLatestVersion } from '../api/modrinth';
+import type { ModrinthProject } from '../api/modrinth';
 import { useModsStore } from '../store/modsStore';
 import { tauriBridge } from '../lib/tauriBridge';
 import { ModFilters } from './mods/ModFilters';
@@ -11,7 +12,6 @@ import { ClientModWarningModal } from './dialogs/ClientModWarningModal';
 
 export const ModsPanel: React.FC = () => {
     const navigate = useNavigate();
-    const { searchMods, getLatestVersion, loading, error } = useModrinth();
     const { 
         warnOnClientMods, 
         modPath, 
@@ -23,11 +23,20 @@ export const ModsPanel: React.FC = () => {
     } = useModsStore();
 
     const [searchQuery, setSearchQuery] = useState('');
-    
-    const [results, setResults] = useState<ModrinthProject[]>([]);
-    const [totalHits, setTotalHits] = useState(0);
     const [currentPage, setCurrentPage] = useState(0);
     const [hasSearched, setHasSearched] = useState(false);
+    
+    // React Query
+    const { data, isLoading: loading, error, isPlaceholderData } = useSearchModsQuery(
+        searchQuery,
+        selectedVersion,
+        selectedLoader,
+        currentPage * limit,
+        limit
+    );
+
+    const results = data?.hits || [];
+    const totalHits = data?.total_hits || 0;
     
     const [showSettings, setShowSettings] = useState(false);
     
@@ -42,7 +51,6 @@ export const ModsPanel: React.FC = () => {
             const files = await tauriBridge.sftpListDir(modPath);
             setInstalledFiles(files.map(f => f.name.toLowerCase()));
         } catch (e: any) {
-            // Ignore "No such file" error as it just means the directory doesn't exist yet
             if (e && typeof e === 'string' && !e.includes("No such file")) {
                 console.error("Failed to fetch installed mods:", e);
             }
@@ -54,25 +62,17 @@ export const ModsPanel: React.FC = () => {
         fetchInstalledFiles();
     }, [modPath]);
 
-    const handleSearch = async (page = 0) => {
-        const res = await searchMods(searchQuery, selectedVersion, selectedLoader, page * limit, limit);
-        if (res) {
-            setResults(res.hits);
-            setTotalHits(res.total_hits);
-            setCurrentPage(page);
-            setHasSearched(true);
-            
-            // Scroll back to top of results if we are paginating
-            if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+    const handleSearch = (page = 0) => {
+        setCurrentPage(page);
+        setHasSearched(true);
+        if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // Auto search on mount or when filter changes
     useEffect(() => {
-        handleSearch(0);
-    }, [selectedVersion, selectedLoader, limit]);
+        setCurrentPage(0);
+    }, [selectedVersion, selectedLoader, limit, searchQuery]);
 
     const handleInstallClick = (mod: ModrinthProject) => {
         // Check if it's a client-side only mod or unsupported on server
@@ -89,7 +89,7 @@ export const ModsPanel: React.FC = () => {
         
         try {
             // 1. Fetch latest version
-            const latest = await getLatestVersion(mod.project_id, selectedVersion, selectedLoader);
+            const latest = await fetchLatestVersion(mod.project_id, selectedVersion, selectedLoader);
             if (!latest || !latest.files || latest.files.length === 0) {
                 alert(`Aucune version compatible trouvée pour ${mod.title}`);
                 return;

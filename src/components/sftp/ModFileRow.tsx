@@ -4,7 +4,7 @@ import { Checkbox } from '../ui/Checkbox';
 import { FileEntry } from '../../lib/tauriBridge';
 import { Trash2, Package, Server, Monitor, User, ArrowRightLeft, MoreVertical } from 'lucide-react';
 import { getModMetadata, parseModFilename, extractModVersion, hasUpdateCache } from '../../lib/modUtils';
-import { ModrinthProject } from '../../hooks/useModrinth';
+import { ModrinthProject } from '../../api/modrinth';
 import { Switch } from '../ui/Switch';
 
 interface ModFileRowProps {

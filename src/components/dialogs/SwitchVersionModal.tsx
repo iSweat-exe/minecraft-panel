@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Search, Eye, EyeOff, AlertTriangle, Download, Package } from 'lucide-react';
-import { useModrinth, ModrinthProject, ModrinthVersion } from '../../hooks/useModrinth';
+import { fetchProjectVersions } from '../../api/modrinth';
+import type { ModrinthProject, ModrinthVersion } from '../../api/modrinth';
 import { MarkdownRenderer } from '../ui/MarkdownRenderer';
 
 interface SwitchVersionModalProps {
@@ -18,7 +19,7 @@ export const SwitchVersionModal: React.FC<SwitchVersionModalProps> = ({
     currentFilename,
     onSwitchVersion
 }) => {
-    const { getProjectVersions, loading } = useModrinth();
+    const [loading, setLoading] = useState(false);
     const [versions, setVersions] = useState<ModrinthVersion[]>([]);
     const [search, setSearch] = useState('');
     const [showIncompatible, setShowIncompatible] = useState(false);
@@ -32,14 +33,19 @@ export const SwitchVersionModal: React.FC<SwitchVersionModalProps> = ({
         if (!projectId) return;
 
         let mounted = true;
-        getProjectVersions(projectId).then(data => {
+        setLoading(true);
+        fetchProjectVersions(projectId).then(data => {
             if (mounted && data) {
                 setVersions(data);
             }
+        }).catch(err => {
+            console.error("Failed to fetch versions", err);
+        }).finally(() => {
+            if (mounted) setLoading(false);
         });
         
         return () => { mounted = false; };
-    }, [isOpen, project, getProjectVersions]);
+    }, [isOpen, project]);
 
     // Figure out the current version from the list by matching filename (if possible)
     const currentVersionId = useMemo(() => {

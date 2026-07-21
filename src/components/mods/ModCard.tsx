@@ -1,6 +1,6 @@
 import React from 'react';
 import { Download, Server, Monitor, Check, Loader2 } from 'lucide-react';
-import { ModrinthProject } from '../../hooks/useModrinth';
+import { ModrinthProject } from '../../api/modrinth';
 
 interface ModCardProps {
     mod: ModrinthProject;

@@ -7,7 +7,7 @@ import { ModFileRow } from './ModFileRow';
 import { preloadModsByHashes } from '../../lib/modUtils';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { SwitchVersionModal } from '../dialogs/SwitchVersionModal';
-import { ModrinthProject, ModrinthVersion } from '../../hooks/useModrinth';
+import { ModrinthProject, ModrinthVersion } from '../../api/modrinth';
 
 interface SftpFileListProps {
     entries: FileEntry[];
