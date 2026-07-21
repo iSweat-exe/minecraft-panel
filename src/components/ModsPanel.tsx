@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Settings, Loader2, Folder, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useModrinth, ModrinthProject } from '../hooks/useModrinth';
 import { useModsStore } from '../store/modsStore';
@@ -36,6 +36,8 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
     const [pendingInstallMod, setPendingInstallMod] = useState<ModrinthProject | null>(null);
     const [installingMods, setInstallingMods] = useState<Set<string>>(new Set());
     const [installedFiles, setInstalledFiles] = useState<string[]>([]);
+    
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     const fetchInstalledFiles = async () => {
         try {
@@ -63,9 +65,8 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
             setHasSearched(true);
             
             // Scroll back to top of results if we are paginating
-            const container = document.getElementById('mods-scroll-container');
-            if (container) {
-                container.scrollTo({ top: 0, behavior: 'smooth' });
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
     };
@@ -150,6 +151,28 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
         );
     };
 
+    const processedResults = useMemo(() => {
+        return results.map(mod => {
+            const slug = mod.slug.toLowerCase();
+            const title = mod.title.toLowerCase();
+            
+            const possibleMatches = Array.from(new Set([
+                slug,
+                slug.replace(/-/g, ''),
+                slug.replace(/-/g, '_'),
+                title.replace(/[^a-z0-9]/g, ''),
+                title.replace(/'s/g, '').replace(/[^a-z0-9]/g, ''),
+                slug.replace(/s-/g, '-')
+            ])).filter(m => m.length >= 3);
+
+            const isInstalled = installedFiles.some(f => 
+                possibleMatches.some(m => f.includes(m))
+            );
+
+            return { ...mod, isInstalled };
+        });
+    }, [results, installedFiles]);
+
     return (
         <div className="flex flex-col h-full overflow-hidden bg-background text-foreground">
             {/* Header */}
@@ -200,42 +223,23 @@ export const ModsPanel: React.FC<ModsPanelProps> = ({ onOpenFiles }) => {
             {renderPagination("mt-4")}
 
             {/* Results Grid */}
-            <div id="mods-scroll-container" className="flex-1 overflow-y-auto mt-4 custom-scrollbar pr-2 pb-4">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 custom-scrollbar pr-2 pb-4">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground gap-3">
                         <Loader2 size={32} className="animate-spin text-primary" />
                         <p>Recherche en cours...</p>
                     </div>
-                ) : results.length > 0 ? (
+                ) : processedResults.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                        {results.map(mod => {
-                            // Robust mod matching logic
-                            const slug = mod.slug.toLowerCase();
-                            const title = mod.title.toLowerCase();
-                            
-                            const possibleMatches = Array.from(new Set([
-                                slug, // e.g. xaeros-minimap
-                                slug.replace(/-/g, ''), // xaerosminimap
-                                slug.replace(/-/g, '_'), // xaeros_minimap
-                                title.replace(/[^a-z0-9]/g, ''), // xaerosminimap
-                                title.replace(/'s/g, '').replace(/[^a-z0-9]/g, ''), // xaerominimap
-                                slug.replace(/s-/g, '-') // xaero-minimap
-                            ])).filter(m => m.length >= 3);
-
-                            const isInstalled = installedFiles.some(f => 
-                                possibleMatches.some(m => f.includes(m))
-                            );
-
-                            return (
-                                <ModCard 
-                                    key={mod.project_id} 
-                                    mod={mod} 
-                                    onInstall={handleInstallClick}
-                                    isInstalling={installingMods.has(mod.project_id)}
-                                    isInstalled={isInstalled}
-                                />
-                            );
-                        })}
+                        {processedResults.map(mod => (
+                            <ModCard 
+                                key={mod.project_id} 
+                                mod={mod as any} 
+                                onInstall={handleInstallClick}
+                                isInstalling={installingMods.has(mod.project_id)}
+                                isInstalled={mod.isInstalled}
+                            />
+                        ))}
                     </div>
                 ) : hasSearched ? (
                     <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">

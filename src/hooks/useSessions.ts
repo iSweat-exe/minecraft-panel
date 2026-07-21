@@ -99,10 +99,13 @@ export function useSessions() {
                 os: userInfo.os
             });
 
+            const safePayload = payload.replace(/'/g, "'\\''");
+            const safeUuid = sessionUuid.replace(/'/g, "'\\''");
+
             // Heartbeat + Fetch + Cleanup (delete files older than 2 minutes to be safe)
             const script = `
                 mkdir -p /minecraft/.panel_sessions
-                echo '${payload}' > /minecraft/.panel_sessions/${sessionUuid}.json
+                echo '${safePayload}' > /minecraft/.panel_sessions/${safeUuid}.json
                 find /minecraft/.panel_sessions -type f -mmin +2 -delete
                 cat /minecraft/.panel_sessions/*.json 2>/dev/null || echo ""
             `;

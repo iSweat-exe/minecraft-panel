@@ -11,9 +11,8 @@ import { AccessPanel } from './AccessPanel';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
+import { BackupProgressAlert } from './overview/BackupProgressAlert';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { Spinner } from './ui/Spinner';
-import { Alert } from './ui/Alert';
 import { 
     Settings, 
     LogOut, 
@@ -30,7 +29,6 @@ import {
     SquareTerminal,
     PanelLeftClose,
     PanelLeftOpen,
-    CheckCircle,
     Blocks
 } from 'lucide-react';
 
@@ -121,7 +119,7 @@ export const Dashboard: React.FC = () => {
     };
 
     const [collapsed, setCollapsed] = useState(false);
-    const backupState = useBackupStore();
+    const lastBackupTime = useBackupStore(state => state.lastBackupTime);
 
     const getServerIconColor = () => {
         if (pendingAction) return "text-warning";
@@ -157,7 +155,7 @@ export const Dashboard: React.FC = () => {
                     {NAV_ITEMS.map(({ id, label, icon: Icon, extra: Extra, extraColor }) => {
                         let showExtra = !!Extra;
                         if (id === 'backups') {
-                            showExtra = !backupState.lastBackupTime || (now - backupState.lastBackupTime > 3600000);
+                            showExtra = !lastBackupTime || (now - lastBackupTime > 3600000);
                         }
                         return (
                         <button
@@ -190,42 +188,7 @@ export const Dashboard: React.FC = () => {
                 </nav>
 
                 <div className={`p-4 ${collapsed ? 'hidden' : 'block'}`}>
-                    {/* Global Backup Progress indicator */}
-                    {(backupState.loading || backupState.success) && (
-                        <Alert 
-                            variant={backupState.success ? 'success' : 'default'} 
-                            className="transition-colors duration-500"
-                            icon={false}
-                        >
-                            <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-2">
-                                    {backupState.success ? (
-                                        <CheckCircle className="text-success shrink-0" size={16} />
-                                    ) : (
-                                        <Spinner className="text-primary shrink-0" size={16} />
-                                    )}
-                                    <span className="font-medium truncate text-sm">
-                                        {backupState.statusText || 'Transfert en cours...'}
-                                        {backupState.currentFile ? ` ${backupState.currentFile}` : ''}
-                                    </span>
-                                </div>
-                                {backupState.progress && backupState.progress.total > 0 && (
-                                    <div className="space-y-1">
-                                        <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-success/20' : 'bg-surface'}`}>
-                                            <div 
-                                                className={`h-full transition-all duration-300 ${backupState.success ? 'bg-success' : 'bg-primary'}`}
-                                                style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
-                                            />
-                                        </div>
-                                        <div className={`flex justify-between text-[10px] font-medium opacity-80`}>
-                                            <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
-                                            <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </Alert>
-                    )}
+                    <BackupProgressAlert />
                 </div>
                     
                     <button
