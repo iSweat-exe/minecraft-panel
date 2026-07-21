@@ -18,6 +18,7 @@ interface StatsState {
     lastDayUpdate: number;
 
     addPoint: (point: DataPoint) => void;
+    loadHistory: (points: DataPoint[]) => void;
     clearHistory: () => void;
 }
 
@@ -55,6 +56,22 @@ export const useServerStatsStore = create<StatsState>((set) => ({
             dayPoints: day, 
             lastHourUpdate: lastH, 
             lastDayUpdate: lastD 
+        };
+    }),
+    
+    loadHistory: (points) => set((state) => {
+        // Group the points by resolution (raw, hour, day)
+        // 'points' comes from CSV (1 point per minute)
+        // Since it's 1 point per minute, we can put it in hourPoints and dayPoints
+        const now = Date.now();
+        const hour = points.filter(p => now - p.ts < 3600000);
+        const day = points;
+        
+        return {
+            ...state,
+            hourPoints: hour,
+            dayPoints: day,
+            lastDayUpdate: day.length > 0 ? day[day.length - 1].ts : 0
         };
     }),
     

@@ -62,7 +62,7 @@ export function useConsole() {
         if (containerRef.current && !isScrolledUp.current) {
             containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
-    }, [lines.length]);
+    }, [lines]);
 
     const handleScroll = useCallback(() => {
         if (!containerRef.current) return;

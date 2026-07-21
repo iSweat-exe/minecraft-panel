@@ -150,7 +150,7 @@ export const SwitchVersionModal: React.FC<SwitchVersionModalProps> = ({
                 {/* Body */}
                 <div className="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-[300px_1fr] min-h-0">
                     {/* Left Sidebar - Version List */}
-                    <div className="border-r border-border flex flex-col bg-surface/30">
+                    <div className="border-r border-border flex flex-col bg-surface/30 overflow-hidden">
                         <div className="p-4 border-b border-border shrink-0">
                             <div className="relative">
                                 <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />

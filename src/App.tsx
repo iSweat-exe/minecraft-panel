@@ -17,6 +17,7 @@ import { WorldsPanel } from './components/WorldsPanel';
 import { BackupsPanel } from './components/BackupsPanel';
 import { ModsPanel } from './components/ModsPanel';
 import { AccessPanel } from './components/AccessPanel';
+import { AutomationsPanel } from './components/AutomationsPanel';
 
 function App() {
   useAutoUpdater();
@@ -54,6 +55,7 @@ function App() {
                 <Route path="worlds" element={<WorldsPanel />} />
                 <Route path="backups" element={<BackupsPanel />} />
                 <Route path="access" element={<AccessPanel />} />
+                <Route path="automations" element={<AutomationsPanel />} />
                 <Route path="*" element={<div className="flex items-center justify-center h-full text-muted-foreground text-sm">Section en cours de développement</div>} />
               </Route>
             </Routes>

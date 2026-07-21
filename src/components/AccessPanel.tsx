@@ -1,11 +1,22 @@
 import React from 'react';
-import { useSessions } from '../hooks/useSessions';
+import { useSessionStore } from '../store/sessionStore';
 import { User, ShieldCheck } from 'lucide-react';
 import { Card } from './ui/Card';
 
 export const AccessPanel: React.FC = () => {
-    const { sessions } = useSessions();
+    const sessions = useSessionStore(state => state.sessions);
     const myUuid = localStorage.getItem('panel_session_uuid');
+
+    const formatUptime = (minutes: number) => {
+        if (minutes < 1) return '< 1m';
+        if (minutes < 60) return `${minutes}m`;
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours < 24) return `${hours}h ${mins > 0 ? `${mins}m` : ''}`;
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return `${days}j ${remainingHours > 0 ? `${remainingHours}h` : ''}`;
+    };
 
     return (
         <Card className="flex flex-col h-full bg-background/50 p-6 border-border/50 shadow-none">
@@ -25,6 +36,7 @@ export const AccessPanel: React.FC = () => {
                     const connectDate = new Date(session.connectedAt);
                     const now = Date.now();
                     const uptimeMinutes = Math.floor((now - session.connectedAt) / 60000);
+                    const isOnline = (now - session.lastSeen) < 120000; // 2 minutes
                     
                     return (
                         <div 
@@ -52,7 +64,11 @@ export const AccessPanel: React.FC = () => {
                                             </span>
                                         )}
                                         <div className="flex items-center gap-1.5 ml-1">
-                                            <span className="text-xs font-medium text-success/90">En ligne</span>
+                                            {isOnline ? (
+                                                <span className="text-xs font-medium text-success/90">En ligne</span>
+                                            ) : (
+                                                <span className="text-xs font-medium text-muted-foreground/70">Hors ligne</span>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-xs text-muted-foreground flex items-center flex-wrap gap-1.5 mt-1">
@@ -74,8 +90,15 @@ export const AccessPanel: React.FC = () => {
 
                             <div className="flex items-center mt-4 sm:mt-0 pl-14 sm:pl-0">
                                 <div className="flex flex-col sm:items-end text-sm text-muted-foreground">
-                                    <span className="font-medium">{uptimeMinutes > 0 ? `${uptimeMinutes}m` : '< 1m'}</span>
-                                    <span className="text-xs opacity-70">{connectDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                                    <span className="font-medium">
+                                        {isOnline ? `Session : ${formatUptime(uptimeMinutes)}` : 'Inactif'}
+                                    </span>
+                                    <span className="text-xs opacity-70">
+                                        {isOnline 
+                                            ? `Connecté à ${connectDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
+                                            : `Vu le ${new Date(session.lastSeen).toLocaleDateString()} à ${new Date(session.lastSeen).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`
+                                        }
+                                    </span>
                                 </div>
                             </div>
                         </div>

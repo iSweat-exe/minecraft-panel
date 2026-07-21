@@ -1,18 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 
-export interface PanelSession {
-    uuid: string;
-    name: string;
-    connectedAt: number;
-    lastSeen: number;
-    ip?: string;
-    ipv6?: string;
-    location?: string;
-    os?: string;
-    avatar?: string;
-}
+import { useSessionStore } from '../store/sessionStore';
+import type { PanelSession } from '../store/sessionStore';
+
+export type { PanelSession };
 
 let cachedUserInfo: any = null;
 async function getUserInfo() {
@@ -56,9 +49,9 @@ async function getUserInfo() {
     return cachedUserInfo;
 }
 
-export function useSessions() {
+export function useSessionPing() {
     const { sshStatus } = useConnectionStore();
-    const [sessions, setSessions] = useState<PanelSession[]>([]);
+    const setSessions = useSessionStore(state => state.setSessions);
 
     useEffect(() => {
         if (sshStatus !== 'connected') return;
@@ -67,11 +60,14 @@ export function useSessions() {
         let displayName = localStorage.getItem('panel_display_name') || 'Anonyme';
         let avatarData = localStorage.getItem('panel_avatar_base64') || '';
         
+        // Clean up old bugged localstorage value
+        localStorage.removeItem('panel_connected_at');
+        
         // Ensure connectedAt is set once per session launch
-        let connectedAt = parseInt(localStorage.getItem('panel_connected_at') || '0', 10);
+        let connectedAt = parseInt(sessionStorage.getItem('panel_connected_at') || '0', 10);
         if (!connectedAt) {
             connectedAt = Date.now();
-            localStorage.setItem('panel_connected_at', connectedAt.toString());
+            sessionStorage.setItem('panel_connected_at', connectedAt.toString());
         }
 
         const pingAndFetch = async () => {
@@ -106,7 +102,7 @@ export function useSessions() {
             const script = `
                 mkdir -p /minecraft/.panel_sessions
                 echo '${safePayload}' > /minecraft/.panel_sessions/${safeUuid}.json
-                find /minecraft/.panel_sessions -type f -mmin +2 -delete
+                find /minecraft/.panel_sessions -type f -mtime +30 -delete
                 cat /minecraft/.panel_sessions/*.json 2>/dev/null || echo ""
             `;
 
@@ -141,7 +137,4 @@ export function useSessions() {
         return () => clearInterval(interval);
     }, [sshStatus]);
 
-    return {
-        sessions
-    };
 }

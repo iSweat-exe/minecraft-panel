@@ -146,11 +146,11 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                             className="hidden" 
                         />
                         <div className="flex-1">
-                            <Label className="mb-1 block text-muted-foreground">Nom d'affichage (Display Name)</Label>
+                            <Label className="mb-1 block text-muted-foreground">Display Name</Label>
                             <Input 
                                 value={displayName} 
                                 onChange={e => setDisplayName(e.target.value)} 
-                                placeholder="Ex: iSweat"
+                                placeholder="Display Name"
                             />
                         </div>
                     </div>

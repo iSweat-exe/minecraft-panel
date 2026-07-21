@@ -42,7 +42,7 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-border)" />
-                        <YAxis domain={[0, 100]} hide />
+                        <YAxis domain={dataKey === 'cpu' ? [0, 100] : ['auto', 'auto']} hide />
                         <Tooltip 
                             contentStyle={{ 
                                 backgroundColor: 'var(--color-surface)', 

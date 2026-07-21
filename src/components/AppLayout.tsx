@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useConnectionStore } from '../store/connectionStore';
 import { useBackupStore } from '../store/backupStore';
+import { useSessionPing } from '../hooks/useSessions';
+import { useMetricsAgent } from '../hooks/useMetricsAgent';
 import { BackupProgressAlert } from './overview/BackupProgressAlert';
 import { tauriBridge } from '../lib/tauriBridge';
 import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -21,7 +23,8 @@ import {
     SquareTerminal,
     PanelLeftClose,
     PanelLeftOpen,
-    Blocks
+    Blocks,
+    Clock
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -36,6 +39,7 @@ const NAV_ITEMS = [
     { id: 'worlds', path: '/worlds', label: 'Mondes', icon: Globe },
     { id: 'backups', path: '/backups', label: 'Sauvegardes', icon: History, extra: TriangleAlert, extraColor: 'text-warning' },
     { id: 'access', path: '/access', label: 'Accès', icon: UserCog },
+    { id: 'automations', path: '/automations', label: 'Automatisations', icon: Clock },
 ];
 
 const BackupNavItemExtra: React.FC<{ icon: any, color?: string }> = ({ icon: Icon, color }) => {
@@ -57,6 +61,8 @@ export const AppLayout: React.FC = () => {
     const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
     const [collapsed, setCollapsed] = useState(false);
     const location = useLocation();
+    useSessionPing();
+    useMetricsAgent();
 
     useEffect(() => {
         const fetchStatus = async () => {

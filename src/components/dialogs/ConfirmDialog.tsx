@@ -5,9 +5,12 @@ import { Button } from '../ui/Button';
 interface Props {
     title?: string;
     message: string;
+    confirmText?: string;
+    cancelText?: string;
+    variant?: 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
 }
 
-export const ConfirmDialog = createCallable<Props, boolean>(({ call, title, message }) => {
+export const ConfirmDialog = createCallable<Props, boolean>(({ call, title, message, confirmText, cancelText, variant }) => {
     return (
         <Modal 
             isOpen={true} 
@@ -17,10 +20,10 @@ export const ConfirmDialog = createCallable<Props, boolean>(({ call, title, mess
             footer={
                 <>
                     <Button variant="ghost" onClick={() => call.end(false)}>
-                        Cancel
+                        {cancelText || "Cancel"}
                     </Button>
-                    <Button variant="danger" onClick={() => call.end(true)}>
-                        Delete
+                    <Button variant={variant || "danger"} onClick={() => call.end(true)}>
+                        {confirmText || "Delete"}
                     </Button>
                 </>
             }

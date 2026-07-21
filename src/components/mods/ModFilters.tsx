@@ -27,7 +27,7 @@ export const ModFilters: React.FC<ModFiltersProps> = ({
                 <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input 
                     type="text" 
-                    placeholder="Rechercher des mods (ex: Sodium, Lithium...)"
+                    placeholder="Rechercher des mods..."
                     className="w-full pl-10 pr-4 py-2 bg-surface border border-border rounded-md text-sm focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
