@@ -37,9 +37,19 @@ const useColumnResize = (initialWidths: Record<string, number>, storageKey: stri
     const currentColumn = React.useRef<string | null>(null);
     const startX = React.useRef(0);
     const startWidth = React.useRef(0);
+    const tableRef = React.useRef<HTMLTableElement>(null);
     
     const currentWidthsRef = React.useRef(widths);
     currentWidthsRef.current = widths;
+
+    // Apply initial CSS variables
+    React.useEffect(() => {
+        if (tableRef.current) {
+            Object.entries(widths).forEach(([key, width]) => {
+                tableRef.current?.style.setProperty(`--col-${key}`, `${width}px`);
+            });
+        }
+    }, []);
 
     const handleMouseMove = React.useCallback((e: MouseEvent) => {
         if (!isResizing.current || !currentColumn.current) return;
@@ -47,12 +57,8 @@ const useColumnResize = (initialWidths: Record<string, number>, storageKey: stri
         let newWidth = startWidth.current + diff;
         newWidth = Math.max(50, newWidth); // min width 50px
 
-        // Update DOM directly for maximum performance
-        const el = document.getElementById(`th-${currentColumn.current}`);
-        if (el) {
-            el.style.width = `${newWidth}px`;
-            el.style.minWidth = `${newWidth}px`;
-            el.style.maxWidth = `${newWidth}px`;
+        if (tableRef.current) {
+            tableRef.current.style.setProperty(`--col-${currentColumn.current}`, `${newWidth}px`);
         }
         
         currentWidthsRef.current = { ...currentWidthsRef.current, [currentColumn.current]: newWidth };
@@ -93,7 +99,7 @@ const useColumnResize = (initialWidths: Record<string, number>, storageKey: stri
         return () => clearTimeout(timeout);
     }, [widths, storageKey]);
 
-    return { widths, startResize };
+    return { tableRef, startResize };
 };
 
 const formatBytes = (bytes: number) => {
@@ -164,7 +170,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
         return () => { isMounted = false; };
     }, [entries, isModsFolder, currentPath]);
 
-    const { widths, startResize } = useColumnResize({
+    const { tableRef, startResize } = useColumnResize({
         checkbox: 48,
         name: 350,
         version: 180,
@@ -216,37 +222,37 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
 
     return (
         <div className="flex-1 overflow-auto custom-scrollbar">
-            <Table className="table-fixed w-full min-w-[800px]">
+            <Table ref={tableRef} className="table-fixed w-full min-w-[800px]">
                 <TableHeader className="sticky top-0 bg-zinc-950/90 backdrop-blur z-10">
                     <TableRow>
-                        <TableHead id="th-checkbox" className="text-center px-0 relative group" style={{ width: widths.checkbox }}>
+                        <TableHead className="text-center px-0 relative group" style={{ width: 'var(--col-checkbox)', minWidth: 'var(--col-checkbox)', maxWidth: 'var(--col-checkbox)' }}>
                             <Resizer columnKey="checkbox" />
                         </TableHead>
-                        <TableHead id="th-name" className="relative group" style={{ width: widths.name }}>
+                        <TableHead className="relative group" style={{ width: 'var(--col-name)', minWidth: 'var(--col-name)', maxWidth: 'var(--col-name)' }}>
                             <div className="cursor-pointer hover:text-foreground inline-block w-full" onClick={() => onSort('name')}>
                                 Name <SortIcon columnKey="name" />
                             </div>
                             <Resizer columnKey="name" />
                         </TableHead>
                         {isModsFolder && (
-                            <TableHead id="th-version" className="relative group" style={{ width: widths.version }}>
+                            <TableHead className="relative group" style={{ width: 'var(--col-version)', minWidth: 'var(--col-version)', maxWidth: 'var(--col-version)' }}>
                                 <span>Version</span>
                                 <Resizer columnKey="version" />
                             </TableHead>
                         )}
-                        <TableHead id="th-size" className="relative group" style={{ width: widths.size }}>
+                        <TableHead className="relative group" style={{ width: 'var(--col-size)', minWidth: 'var(--col-size)', maxWidth: 'var(--col-size)' }}>
                             <div className="cursor-pointer hover:text-foreground inline-block w-full" onClick={() => onSort('size')}>
                                 Size <SortIcon columnKey="size" />
                             </div>
                             <Resizer columnKey="size" />
                         </TableHead>
-                        <TableHead id="th-modified" className="relative group" style={{ width: widths.modified }}>
+                        <TableHead className="relative group" style={{ width: 'var(--col-modified)', minWidth: 'var(--col-modified)', maxWidth: 'var(--col-modified)' }}>
                             <div className="cursor-pointer hover:text-foreground inline-block w-full" onClick={() => onSort('modified')}>
                                 Modified <SortIcon columnKey="modified" />
                             </div>
                             <Resizer columnKey="modified" />
                         </TableHead>
-                        <TableHead id="th-actions" className="text-right relative group" style={{ width: widths.actions }}>
+                        <TableHead className="text-right relative group" style={{ width: 'var(--col-actions)', minWidth: 'var(--col-actions)', maxWidth: 'var(--col-actions)' }}>
                             Actions
                         </TableHead>
                     </TableRow>

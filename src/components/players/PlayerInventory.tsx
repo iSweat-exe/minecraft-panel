@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const ItemIcon = ({ id }: { id: string }) => {
     const cleanId = id.replace('minecraft:', '');
@@ -50,6 +50,15 @@ export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any
         return String(typeof val === 'object' && 'value' in val ? val.value : val.valueOf());
     };
     
+    // Memoize the item lookup map to avoid O(N*M) lookups during render
+    const itemBySlot = useMemo(() => {
+        const map = new Map<number, any>();
+        for (const item of items) {
+            map.set(getSlot(item), item);
+        }
+        return map;
+    }, [items]);
+
     return (
         <div 
             className="grid gap-1 bg-zinc-950 p-2 rounded-lg border border-zinc-800"
@@ -57,7 +66,7 @@ export const InventoryGrid = ({ items, cols, totalSlots, slotMap }: { items: any
         >
             {Array.from({ length: totalSlots }).map((_, i) => {
                 const actualSlot = slotMap ? slotMap(i) : i;
-                const item = items.find(it => getSlot(it) === actualSlot);
+                const item = itemBySlot.get(actualSlot);
                 
                 return (
                     <div 

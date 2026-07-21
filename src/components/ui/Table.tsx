@@ -1,10 +1,13 @@
 import React from 'react';
 
-export const Table: React.FC<React.HTMLAttributes<HTMLTableElement>> = ({ className = '', ...props }) => (
-    <div className="w-full overflow-auto custom-scrollbar">
-        <table className={`w-full text-sm text-left text-foreground ${className}`} {...props} />
-    </div>
+export const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
+    ({ className = '', ...props }, ref) => (
+        <div className="w-full overflow-auto custom-scrollbar">
+            <table ref={ref} className={`w-full text-sm text-left text-foreground ${className}`} {...props} />
+        </div>
+    )
 );
+Table.displayName = 'Table';
 
 export const TableHeader: React.FC<React.HTMLAttributes<HTMLTableSectionElement>> = ({ className = '', ...props }) => (
     <thead className={`text-xs uppercase text-muted-foreground bg-surface/50 border-b border-border ${className}`} {...props} />
