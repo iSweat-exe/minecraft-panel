@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { tauriBridge } from '../lib/tauriBridge';
+import { tauriBridge } from '../../lib/tauriBridge';
 import * as nbt from 'nbtify';
-import { PlayerInfo } from './usePlayers';
-import { mc } from '../lib/minecraftCommands';
+import { mc } from '../../lib/minecraftCommands';
+import { PlayerConfig } from './usePlayerConfig';
 
-export function usePlayerDetails(player: PlayerInfo) {
+export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [nbtData, setNbtData] = useState<any>(null);
@@ -12,85 +12,10 @@ export function usePlayerDetails(player: PlayerInfo) {
     const [healthOffset, setHealthOffset] = useState(0);
     const [foodOffset, setFoodOffset] = useState(0);
     const [xpOffset, setXpOffset] = useState(0);
-    
-    const [config, setConfig] = useState<{
-        rconEnabled: boolean;
-        rconPort: number;
-        rconPass: string;
-        actualFilePath: string;
-    } | null>(null);
-
-    useEffect(() => {
-        let isMounted = true;
-
-        const initConfig = async () => {
-            let levelName = 'world';
-            let rconEnabled = false;
-            let rconPort = 25575;
-            let rconPass = "";
-
-            try {
-                const props = await tauriBridge.sftpReadFile('/minecraft/server.properties');
-                const match = props.match(/^level-name=(.*)$/m);
-                if (match && match[1]) {
-                    levelName = match[1].trim();
-                }
-                const rconEnableMatch = props.match(/^enable-rcon=(.*)$/m);
-                if (rconEnableMatch && rconEnableMatch[1].trim() === 'true') {
-                    rconEnabled = true;
-                }
-                const rconPortMatch = props.match(/^rcon\.port=(.*)$/m);
-                if (rconPortMatch) {
-                    rconPort = parseInt(rconPortMatch[1].trim(), 10);
-                }
-                const rconPassMatch = props.match(/^rcon\.password=(.*)$/m);
-                if (rconPassMatch) {
-                    rconPass = rconPassMatch[1].trim();
-                }
-            } catch (e) {
-                // Ignore error
-            }
-
-            const possibleDirs = [
-                `/minecraft/${levelName}/playerdata`,
-                `/minecraft/${levelName}/players/data`
-            ];
-
-            let actualFilePath = "";
-            
-            for (const dir of possibleDirs) {
-                try {
-                    const files = await tauriBridge.sftpListDir(dir);
-                    const flatUuid = player.uuid.replace(/-/g, '').toLowerCase();
-                    const matchedFile = files.find(f => f.name.toLowerCase().replace(/-/g, '') === `${flatUuid}.dat`);
-                    
-                    const fileName = matchedFile ? matchedFile.name : `${player.uuid}.dat`;
-                    actualFilePath = `${dir}/${fileName}`;
-                    break;
-                } catch (e) {
-                }
-            }
-
-            if (!actualFilePath) {
-                actualFilePath = `/minecraft/${levelName}/playerdata/${player.uuid}.dat`;
-            }
-
-            if (isMounted) {
-                setConfig({ rconEnabled, rconPort, rconPass, actualFilePath });
-            }
-        };
-
-        initConfig();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [player.uuid]);
 
     useEffect(() => {
         if (!config) return;
         let isMounted = true;
-
         let timeoutId: number;
 
         const fetchLive = async () => {
@@ -118,11 +43,11 @@ export function usePlayerDetails(player: PlayerInfo) {
                 if (config.rconEnabled && config.rconPass) {
                     try {
                         const commands = [
-                            mc.data.getHealth(player.name),
-                            mc.data.getFoodLevel(player.name),
-                            mc.data.getXpLevel(player.name),
-                            mc.data.getInventory(player.name),
-                            mc.data.getEnderItems(player.name)
+                            mc.data.getHealth(playerName),
+                            mc.data.getFoodLevel(playerName),
+                            mc.data.getXpLevel(playerName),
+                            mc.data.getInventory(playerName),
+                            mc.data.getEnderItems(playerName)
                         ];
 
                         const results = await tauriBridge.rconExecuteMulti(commands, config.rconPort, config.rconPass);
@@ -190,7 +115,7 @@ export function usePlayerDetails(player: PlayerInfo) {
             if (timeoutId) window.clearTimeout(timeoutId);
             nbtDataRef.current = null;
         };
-    }, [config, player.name]);
+    }, [config, playerName]);
 
     const health = Math.min(20, (nbtData ? Math.round(Number(nbtData.Health?.valueOf() ?? 0)) : 0) + healthOffset);
     const food = Math.min(20, (nbtData ? Number(nbtData.foodLevel?.valueOf() ?? 0) : 0) + foodOffset);
