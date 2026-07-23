@@ -12,7 +12,8 @@ pub struct DaemonConfig {
 impl Default for DaemonConfig {
     fn default() -> Self {
         Self {
-            bind_addr: "0.0.0.0:8080".to_string(),
+            bind_addr: "[::]:8080".to_string(),
+
             node_id: "node-local-1".to_string(),
             node_token: "secret-node-token-change-me".to_string(),
             jwt_secret: "secret-jwt-key-change-me".to_string(),
