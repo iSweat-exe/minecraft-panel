@@ -9,8 +9,11 @@ on:
 jobs:
   build-linux-daemon:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
