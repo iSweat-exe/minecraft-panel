@@ -73,6 +73,15 @@ export const VersionPanel: React.FC = () => {
                 env.push(`VERSION=${mcVersion}`);
             }
 
+            setStatusMessage({ type: 'success', text: 'Téléchargement de l\'image Docker en cours (cela peut prendre quelques minutes)...' });
+            // Pull the image first (this is necessary if the image is not present locally)
+            await tauriBridge.nodeDockerPullImage(nodeUrl, token, image).catch(err => {
+                console.warn("Pull image warning:", err);
+                // Continue anyway, it might just already exist or the daemon might handle it
+            });
+
+            setStatusMessage({ type: 'success', text: 'Création du conteneur...' });
+
             await tauriBridge.nodeCreateServer(nodeUrl, token, {
                 server_id: 'default',
                 name: 'minecraft-server',
@@ -96,7 +105,9 @@ export const VersionPanel: React.FC = () => {
             await logAction(`Changement de version Minecraft / Environnement (${serverType} - ${mcVersion}, Java ${javaVersion})`, { serverType, mcVersion, javaVersion });
             setStatusMessage({ type: 'success', text: 'Conteneur mis à jour avec succès avec la nouvelle version/image Java !' });
         } catch (err: any) {
-            setStatusMessage({ type: 'error', text: `Échec de mise à jour : ${err.message || 'Erreur inconnue'}` });
+            const errorMsg = typeof err === 'string' ? err : (err?.message || 'Erreur inconnue');
+            console.error("Failed to apply version:", err);
+            setStatusMessage({ type: 'error', text: `Échec de mise à jour : ${errorMsg}` });
         } finally {
             setUpdating(false);
         }

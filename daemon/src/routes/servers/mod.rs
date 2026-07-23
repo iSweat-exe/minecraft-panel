@@ -24,6 +24,7 @@ pub fn router() -> Router<AppState> {
             "/api/v1/servers/{id}/command",
             post(command::server_command),
         )
+        .route("/api/v1/servers/{id}/rcon_multi", post(command::server_rcon_multi))
         .route("/api/v1/servers/{id}/inspect", get(inspect::server_inspect))
         .route(
             "/api/v1/servers/{id}",

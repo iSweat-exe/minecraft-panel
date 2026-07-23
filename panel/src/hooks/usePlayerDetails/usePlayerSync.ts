@@ -56,7 +56,13 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                             mc.data.getEnderItems(playerName)
                         ];
 
-                        const results = await tauriBridge.rconExecuteMulti(commands, config.rconPort, config.rconPass);
+                        const host = localStorage.getItem('node_host');
+                        const port = localStorage.getItem('node_port') || '8080';
+                        const token = localStorage.getItem('node_token');
+                        if (!host || !token) throw new Error("Daemon credentials missing for RCON");
+                        const nodeUrl = `http://${host}:${port}`;
+                        
+                        const results = await tauriBridge.nodeRconExecuteMulti(nodeUrl, token, "default", commands);
                         const [rawHealth, rawFood, rawXp, rawInv, rawEnder] = results;
 
                         const matchH = rawHealth.match(/data: ([\d.]+)f?/i);
@@ -68,21 +74,21 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                         const matchX = rawXp.match(/data: ([\d.]+)f?/i);
                         if (matchX) finalNbt.XpLevel = { valueOf: () => parseInt(matchX[1], 10) };
 
-                        const matchInv = rawInv.match(/data: (\[.*\])/);
+                        const matchInv = rawInv.match(/data: (\[[\s\S]*\])/);
                         if (matchInv) {
                             try {
                                 finalNbt.Inventory = nbt.parse(matchInv[1]);
                             } catch (e) {
-                                console.warn("Failed to parse live Inventory SNBT", e);
+                                console.warn("Failed to parse live Inventory SNBT", e, "Raw data:", matchInv[1]);
                             }
                         }
 
-                        const matchEnder = rawEnder.match(/data: (\[.*\])/);
+                        const matchEnder = rawEnder.match(/data: (\[[\s\S]*\])/);
                         if (matchEnder) {
                             try {
                                 finalNbt.EnderItems = nbt.parse(matchEnder[1]);
                             } catch (e) {
-                                console.warn("Failed to parse live EnderItems SNBT", e);
+                                console.warn("Failed to parse live EnderItems SNBT", e, "Raw data:", matchEnder[1]);
                             }
                         }
                         

@@ -57,6 +57,17 @@ pub async fn node_send_command(
 }
 
 #[tauri::command]
+pub async fn node_rcon_execute_multi(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+    commands: Vec<String>,
+) -> Result<Vec<String>, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.rcon_execute_multi(&server_id, commands).await
+}
+
+#[tauri::command]
 pub async fn node_inspect_container(
     node_url: String,
     node_token: String,

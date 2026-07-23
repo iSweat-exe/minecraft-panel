@@ -18,7 +18,7 @@ pub struct DaemonClient {
 impl DaemonClient {
     pub fn new(node_url: impl Into<String>, node_token: impl Into<String>) -> Self {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(300))
             .build()
             .unwrap_or_default();
 
@@ -222,6 +222,35 @@ impl DaemonClient {
         }
     }
 
+    /// Send multiple RCON commands to a server and get their responses
+    pub async fn rcon_execute_multi(&self, server_id: &str, commands: Vec<String>) -> Result<Vec<String>, AppError> {
+        let url = self.build_url(&format!("/api/v1/servers/{}/rcon_multi", server_id));
+        let payload = serde_json::json!({ "commands": commands });
+
+        let res = self
+            .client
+            .post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<Vec<String>> = res.json().await?;
+        if body.success {
+            body.data
+                .ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "RCON execution failed".into()),
+            ))
+        }
+    }
+
     /// Delete a server container on the node
     pub async fn delete_server(&self, server_id: &str) -> Result<String, AppError> {
         let url = self.build_url(&format!("/api/v1/servers/{}", server_id));
@@ -306,6 +335,7 @@ impl DaemonClient {
     }
 
     pub async fn read_file(&self, path: &str) -> Result<String, AppError> {
+        use base64::Engine;
         let url = self.build_url(&format!("/api/v1/files/read?path={}", urlencoding::encode(path)));
         let res = self.client.get(&url)
             .header(NODE_TOKEN_HEADER, &self.node_token)
@@ -313,15 +343,16 @@ impl DaemonClient {
             .send().await?;
 
         if !res.status().is_success() {
-            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+            let status = res.status();
+            if let Ok(body) = res.json::<ApiResponse<()>>().await {
+                return Err(AppError::Message(body.error.unwrap_or_else(|| format!("HTTP {}", status))));
+            }
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", status)));
         }
 
-        let body: ApiResponse<String> = res.json().await?;
-        if body.success {
-            body.data.ok_or_else(|| AppError::Message("Missing file data".into()))
-        } else {
-            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
-        }
+        let bytes = res.bytes().await.map_err(|e| AppError::Message(format!("Failed to read response bytes: {}", e)))?;
+        let base64_str = base64::engine::general_purpose::STANDARD.encode(&bytes);
+        Ok(base64_str)
     }
 
     pub async fn write_file(&self, path: &str, content: String) -> Result<(), AppError> {

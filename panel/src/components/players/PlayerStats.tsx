@@ -23,6 +23,14 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
     setFoodOffset,
     setXpOffset
 }) => {
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     return (
         <div className="space-y-3">
             {/* Santé */}
@@ -39,7 +47,8 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 </div>
                 <button
                     onClick={async () => {
-                        await tauriBridge.consoleSendCommand(mc.player.heal(playerName));
+                        const { nodeUrl, token } = getCredentials();
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.heal(playerName));
                         logAction("Soin d'un joueur (Heal)", { joueur: playerName });
                         setHealthOffset(prev => prev + 4);
                     }}
@@ -64,7 +73,8 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 </div>
                 <button
                     onClick={async () => {
-                        await tauriBridge.consoleSendCommand(mc.player.feed(playerName));
+                        const { nodeUrl, token } = getCredentials();
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.feed(playerName));
                         logAction("Nourriture d'un joueur (Feed)", { joueur: playerName });
                         setFoodOffset(prev => prev + 1);
                     }}
@@ -88,7 +98,8 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 </div>
                 <button
                     onClick={async () => {
-                        await tauriBridge.consoleSendCommand(mc.player.addXpLevels(playerName, 1));
+                        const { nodeUrl, token } = getCredentials();
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.addXpLevels(playerName, 1));
                         logAction("Ajout d'XP à un joueur", { joueur: playerName, niveaux: 1 });
                         setXpOffset(prev => prev + 1);
                     }}

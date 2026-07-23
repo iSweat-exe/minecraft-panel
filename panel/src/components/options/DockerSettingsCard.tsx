@@ -13,20 +13,25 @@ export const DockerSettingsCard: React.FC = () => {
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     useEffect(() => {
-        // Fetch host system total memory via free -m
-        tauriBridge.sshExecute(`free -m 2>/dev/null | awk '/Mem:/ {print $2}' || echo "16384"`)
-            .then(out => {
-                const mb = parseInt(out.trim(), 10);
-                if (mb > 0) {
-                    setTotalHostGb(Math.max(Math.round(mb / 1024), 2));
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) return;
+        const nodeUrl = `http://${host}:${port}`;
+
+        // Fetch host system total memory via metrics API
+        tauriBridge.nodeGetMetrics(nodeUrl, token)
+            .then(m => {
+                if (m.ram_total_mb > 0) {
+                    setTotalHostGb(Math.max(Math.round(m.ram_total_mb / 1024), 2));
                 }
             })
             .catch(() => {});
 
         // Fetch active docker container memory limit if available
-        tauriBridge.sshExecute(`docker inspect -f '{{.HostConfig.Memory}}' minecraft-panel-server 2>/dev/null || echo "0"`)
-            .then(out => {
-                const bytes = parseInt(out.trim(), 10);
+        tauriBridge.nodeInspectContainer(nodeUrl, token, 'default')
+            .then(info => {
+                const bytes = info?.HostConfig?.Memory || 0;
                 if (bytes > 0) {
                     const gb = Math.round(bytes / (1024 * 1024 * 1024));
                     if (gb > 0) setRamGb(gb);
@@ -43,7 +48,7 @@ export const DockerSettingsCard: React.FC = () => {
 
         try {
             await tauriBridge.sshExecute(
-                `docker update --memory=${validGb}g --memory-swap=${validGb}g minecraft-panel-server 2>/dev/null || true`
+                `docker update --memory=${validGb}g --memory-swap=${validGb}g mc-server-default 2>/dev/null || true`
             );
             await logAction(`Modification de l'allocation RAM Docker à ${validGb} Go`, { ramGb: validGb });
             setStatusMessage(`RAM mise à jour à ${validGb} Go (${validGb * 1024} Mo)`);

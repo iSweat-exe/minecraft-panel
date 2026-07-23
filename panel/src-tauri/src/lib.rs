@@ -75,6 +75,7 @@ pub fn run() {
             commands::node::node_create_server,
             commands::node::node_power_action,
             commands::node::node_send_command,
+            commands::node::node_rcon_execute_multi,
             commands::node::node_inspect_container,
             commands::node::node_download_remote,
             commands::node::node_delete_server,

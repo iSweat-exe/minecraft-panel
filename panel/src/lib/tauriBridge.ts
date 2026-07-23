@@ -240,6 +240,7 @@ export const tauriBridge = {
     nodeCreateServer: (nodeUrl: string, nodeToken: string, spec: ContainerSpec) => invoke<string>('node_create_server', { nodeUrl, nodeToken, spec }),
     nodePowerAction: (nodeUrl: string, nodeToken: string, serverId: string, action: string) => invoke<PowerActionResponse>('node_power_action', { nodeUrl, nodeToken, serverId, action }),
     nodeSendCommand: (nodeUrl: string, nodeToken: string, serverId: string, command: string) => invoke<string>('node_send_command', { nodeUrl, nodeToken, serverId, command }),
+    nodeRconExecuteMulti: (nodeUrl: string, nodeToken: string, serverId: string, commands: string[]) => invoke<string[]>('node_rcon_execute_multi', { nodeUrl, nodeToken, serverId, commands }),
     nodeInspectContainer: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<any>('node_inspect_container', { nodeUrl, nodeToken, serverId }),
     nodeDownloadRemote: (nodeUrl: string, nodeToken: string, url: string, dest: string) => invoke<void>('node_download_remote', { nodeUrl, nodeToken, url, dest }),
     nodeDeleteServer: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<string>('node_delete_server', { nodeUrl, nodeToken, serverId }),

@@ -31,7 +31,10 @@ export function useConsole() {
                     const staticLogs = await tauriBridge.nodeGetServerLogs(nodeUrl, token, serverId, 100);
                     if (isMounted && staticLogs && staticLogs.lines) {
                         clear(); // Clear existing to prevent duplicate appends on re-mount
-                        pushLines(staticLogs.lines.map(l => l.trimEnd()));
+                        const filtered = staticLogs.lines.filter((l: string) => {
+                            return !(l.includes('Thread RCON Client') && (l.includes('started') || l.includes('shutting down')));
+                        });
+                        pushLines(filtered.map((l: string) => l.trimEnd()));
                     }
                 } catch (e) {
                     console.warn("Failed to fetch initial server logs", e);
@@ -56,7 +59,10 @@ export function useConsole() {
                     try {
                         const payload = JSON.parse(event.data);
                         if (payload.event === 'console_output') {
-                            pushLine(payload.data.line);
+                            const line = payload.data.line;
+                            if (!(line.includes('Thread RCON Client') && (line.includes('started') || line.includes('shutting down')))) {
+                                pushLine(line);
+                            }
                         } else if (payload.event === 'error') {
                             if (payload.data.message && typeof payload.data.message === 'string' && payload.data.message.includes('No such container')) {
                                 // Ignore missing container errors silently

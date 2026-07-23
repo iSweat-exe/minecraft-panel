@@ -25,13 +25,23 @@ pub async fn server_ping(
     let mut target_port = 25565; // default fallback
     if let Some(host_config) = inspect.host_config {
         if let Some(bindings) = host_config.port_bindings {
-            for (_, host_bindings) in bindings {
-                if let Some(host_bindings) = host_bindings {
-                    if let Some(binding) = host_bindings.first() {
-                        if let Some(port) = &binding.host_port {
-                            if let Ok(p) = port.parse::<u16>() {
-                                target_port = p;
-                                break;
+            if let Some(Some(host_bindings)) = bindings.get("25565/tcp") {
+                if let Some(binding) = host_bindings.first() {
+                    if let Some(port) = &binding.host_port {
+                        if let Ok(p) = port.parse::<u16>() {
+                            target_port = p;
+                        }
+                    }
+                }
+            } else {
+                for (_, host_bindings) in bindings {
+                    if let Some(host_bindings) = host_bindings {
+                        if let Some(binding) = host_bindings.first() {
+                            if let Some(port) = &binding.host_port {
+                                if let Ok(p) = port.parse::<u16>() {
+                                    target_port = p;
+                                    break;
+                                }
                             }
                         }
                     }
