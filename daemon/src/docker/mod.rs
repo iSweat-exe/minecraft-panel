@@ -3,6 +3,7 @@ pub mod delete;
 pub mod info;
 pub mod power;
 pub mod tty;
+pub mod general;
 
 use anyhow::{Context, Result};
 use bollard::Docker;

@@ -32,7 +32,7 @@ impl DockerManager {
                     let ip = p.ip.unwrap_or_default();
                     let public = p.public_port.map(|v| v.to_string()).unwrap_or_default();
                     let private = p.private_port.to_string();
-                    let typ = p.typ.unwrap_or_default();
+                    let typ = p.typ.map(|t| t.to_string()).unwrap_or_else(|| "tcp".to_string());
                     if !ports_str.is_empty() {
                         ports_str.push_str(", ");
                     }
@@ -78,24 +78,22 @@ impl DockerManager {
 
         let mut result = Vec::new();
         for img in images {
-            let id = img.id.unwrap_or_default();
+            let id = img.id.clone();
             
             // Repotags is usually ["repository:tag"]
             let mut repository = "<none>".to_string();
             let mut tag = "<none>".to_string();
-            if let Some(repo_tags) = img.repo_tags {
-                if let Some(first) = repo_tags.first() {
-                    let parts: Vec<&str> = first.split(':').collect();
-                    if parts.len() >= 2 {
-                        repository = parts[0].to_string();
-                        tag = parts[1].to_string();
-                    } else if parts.len() == 1 {
-                        repository = parts[0].to_string();
-                    }
+            if let Some(first) = img.repo_tags.first() {
+                let parts: Vec<&str> = first.split(':').collect();
+                if parts.len() >= 2 {
+                    repository = parts[0].to_string();
+                    tag = parts[1].to_string();
+                } else if parts.len() == 1 {
+                    repository = parts[0].to_string();
                 }
             }
 
-            let size = img.size.unwrap_or(0);
+            let size = img.size;
             // Format size as MB or GB
             let size_str = if size > 1024 * 1024 * 1024 {
                 format!("{:.2} GB", size as f64 / (1024.0 * 1024.0 * 1024.0))
@@ -103,11 +101,7 @@ impl DockerManager {
                 format!("{:.2} MB", size as f64 / (1024.0 * 1024.0))
             };
 
-            let created = if let Some(ts) = img.created {
-                ts.to_string()
-            } else {
-                "Unknown".to_string()
-            };
+            let created = img.created.to_string();
 
             result.push(DockerImageInfo {
                 id,

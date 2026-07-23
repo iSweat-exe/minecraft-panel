@@ -326,7 +326,7 @@ async fn update_docker_config_impl(new_config: serde_json::Value) -> Result<Stri
         .context("Failed to write to /etc/docker/daemon.json")?;
 
     // Reload docker daemon
-    let output = Command::new("systemctl")
+    let output = StdCommand::new("systemctl")
         .arg("reload")
         .arg("docker")
         .output()
