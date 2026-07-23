@@ -301,4 +301,12 @@ pub async fn node_get_server_logs(
     let client = DaemonClient::new(node_url, node_token);
     client.get_server_logs(&server_id, lines).await
 }
-
+#[tauri::command]
+pub async fn node_host_exec(
+    node_url: String,
+    node_token: String,
+    command: String,
+) -> Result<protocol::HostExecResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.host_exec(&command).await
+}

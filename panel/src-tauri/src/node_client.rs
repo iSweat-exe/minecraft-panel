@@ -662,4 +662,27 @@ impl DaemonClient {
         let body: ApiResponse<String> = res.json().await?;
         if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
     }
+    pub async fn host_exec(&self, command: &str) -> Result<protocol::HostExecResponse, AppError> {
+        let url = self.build_url("/api/v1/system/host/exec");
+        let payload = protocol::HostExecRequest {
+            command: command.to_string(),
+        };
+
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::HostExecResponse> = res.json().await?;
+        if body.success {
+            Ok(body.data.unwrap())
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into())))
+        }
+    }
 }

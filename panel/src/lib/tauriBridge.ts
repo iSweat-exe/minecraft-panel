@@ -16,6 +16,12 @@ export interface McPing {
     sample?: { id: string; name: string }[];
 }
 
+export interface HostExecResponse {
+    stdout: string;
+    stderr: string;
+    exit_code: number | null;
+}
+
 export interface SystemMetricsResponse {
     cpu_percent: number;
     ram_used_mb: number;
@@ -260,4 +266,5 @@ export const tauriBridge = {
     nodeGetServerPing: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<MinecraftPingResponse>('node_get_server_ping', { nodeUrl, nodeToken, serverId }),
     nodeGetServerCrashes: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<ServerCrashesResponse>('node_get_server_crashes', { nodeUrl, nodeToken, serverId }),
     nodeGetServerLogs: (nodeUrl: string, nodeToken: string, serverId: string, lines?: number) => invoke<ServerLogsResponse>('node_get_server_logs', { nodeUrl, nodeToken, serverId, lines }),
+    nodeHostExec: (nodeUrl: string, nodeToken: string, command: string) => invoke<HostExecResponse>('node_host_exec', { nodeUrl, nodeToken, command }),
 };
