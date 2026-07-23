@@ -1,0 +1,58 @@
+name: Release Daemon (Linux)
+
+on:
+  push:
+    tags:
+      - 'daemon-v*'
+  workflow_dispatch:
+
+jobs:
+  build-linux-daemon:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-musl
+
+      - name: Install musl-tools
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+
+      - name: Build Static Daemon Binary
+        run: cargo build -p daemon --release --target x86_64-unknown-linux-musl
+
+      - name: Generate Release Manifest & SHA256
+        run: |
+          cd target/x86_64-unknown-linux-musl/release
+          SHA256=$(sha256sum daemon | cut -d' ' -f1)
+          VERSION=${GITHUB_REF_NAME#daemon-v}
+          
+          cat <<EOF > manifest.json
+          {
+            "target_version": "${VERSION}",
+            "download_url": "https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/daemon-x86_64-unknown-linux-musl",
+            "sha256_checksum": "${SHA256}",
+            "timestamp": $(date +%s)
+          }
+          EOF
+
+      - name: Sign Manifest with Ed25519 (Minisign)
+        env:
+          MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+        run: |
+          sudo apt-get install -y minisign
+          echo "$MINISIGN_SECRET_KEY" > minisign.key
+          minisign -S -m target/x86_64-unknown-linux-musl/release/manifest.json -s minisign.key -x target/x86_64-unknown-linux-musl/release/manifest.json.minisig
+          rm minisign.key
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/x86_64-unknown-linux-musl/release/daemon
+            target/x86_64-unknown-linux-musl/release/manifest.json
+            target/x86_64-unknown-linux-musl/release/manifest.json.minisig
