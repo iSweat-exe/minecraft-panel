@@ -1,6 +1,6 @@
 [package]
 name = "daemon"
-version = "0.1.10"
+version = "0.1.11"
 edition = "2021"
 description = "Node daemon for minecraft-panel managing Docker containers, console streams, and node security"
 authors = ["iSweat"]
@@ -24,7 +24,10 @@ futures-util = "0.3"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 sha2 = "0.10"
+sha1 = "0.10"
 sysinfo = "0.39.6"
 lazy_static = "1.5.0"
 base64 = "0.22.1"
+craftping = { version = "0.7.0", features = ["async-tokio"] }
+tracing-appender = "0.2.5"
 

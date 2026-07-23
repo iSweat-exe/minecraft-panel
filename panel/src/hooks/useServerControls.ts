@@ -40,14 +40,24 @@ export function useServerControls() {
             try {
                 const [servers, ping] = await Promise.all([
                     tauriBridge.nodeListServers(nodeUrl, token).catch(() => []),
-                    tauriBridge.mcPing().catch(() => null),
+                    tauriBridge.nodeGetServerPing(nodeUrl, token, DEFAULT_SERVER_ID).catch(() => null),
                 ]);
                 
                 const srv = servers.find(s => s.server_id === DEFAULT_SERVER_ID);
                 const srvState = srv ? srv.state : 'stopped';
                 
                 setServerState(srvState);
-                if (ping) setMcPing(ping);
+                if (ping) {
+                    setMcPing({
+                        online: true,
+                        players_online: ping.online_players,
+                        players_max: ping.max_players,
+                        latency_ms: 0,
+                        sample: []
+                    });
+                } else {
+                    setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null });
+                }
 
                 // Container states: created, running, paused, restarting, removing, exited, dead
                 const settled = ['running', 'exited', 'dead'].includes(srvState);
@@ -71,10 +81,26 @@ export function useServerControls() {
             const nodeUrl = `http://${host}:${port}`;
             
             try {
-                const servers = await tauriBridge.nodeListServers(nodeUrl, token);
+                const [servers, ping] = await Promise.all([
+                    tauriBridge.nodeListServers(nodeUrl, token).catch(() => []),
+                    tauriBridge.nodeGetServerPing(nodeUrl, token, DEFAULT_SERVER_ID).catch(() => null),
+                ]);
                 const srv = servers.find(s => s.server_id === DEFAULT_SERVER_ID);
-                if (isMounted && srv) {
-                    setServerState(srv.state);
+                if (isMounted) {
+                    if (srv) {
+                        setServerState(srv.state);
+                    }
+                    if (ping) {
+                        setMcPing({
+                            online: true,
+                            players_online: ping.online_players,
+                            players_max: ping.max_players,
+                            latency_ms: 0,
+                            sample: []
+                        });
+                    } else {
+                        setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null });
+                    }
                 }
             } catch (err) {
                 // Ignore

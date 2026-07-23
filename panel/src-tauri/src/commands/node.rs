@@ -2,7 +2,8 @@ use crate::error::AppError;
 use crate::node_client::DaemonClient;
 use protocol::{
     ContainerSpec, DaemonInfoResponse, PowerActionResponse, ServerPowerAction,
-    ServerStatusResponse, SystemMetricsResponse, FileEntry, FileAction
+    ServerStatusResponse, SystemMetricsResponse, FileEntry, FileAction,
+    SystemHostResponse, SystemHealthResponse, ServerLogsResponse, MinecraftPingResponse, ServerCrashesResponse
 };
 
 #[tauri::command]
@@ -229,5 +230,64 @@ pub async fn node_download_file(
     let bytes = res.bytes().await.map_err(|e| AppError::Message(e.to_string()))?;
     tokio::fs::write(&local_path, bytes).await.map_err(|e| AppError::Message(e.to_string()))?;
     Ok(())
+}
+
+#[tauri::command]
+pub async fn node_get_system_host(
+    node_url: String,
+    node_token: String,
+) -> Result<SystemHostResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_system_host().await
+}
+
+#[tauri::command]
+pub async fn node_get_system_health(
+    node_url: String,
+    node_token: String,
+) -> Result<SystemHealthResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_system_health().await
+}
+
+#[tauri::command]
+pub async fn node_get_system_logs(
+    node_url: String,
+    node_token: String,
+    lines: Option<usize>,
+) -> Result<ServerLogsResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_system_logs(lines).await
+}
+
+#[tauri::command]
+pub async fn node_get_server_ping(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+) -> Result<MinecraftPingResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_server_ping(&server_id).await
+}
+
+#[tauri::command]
+pub async fn node_get_server_crashes(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+) -> Result<ServerCrashesResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_server_crashes(&server_id).await
+}
+
+#[tauri::command]
+pub async fn node_get_server_logs(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+    lines: Option<usize>,
+) -> Result<ServerLogsResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_server_logs(&server_id, lines).await
 }
 

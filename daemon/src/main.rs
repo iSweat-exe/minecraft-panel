@@ -2,28 +2,48 @@ mod auth;
 mod config;
 mod console;
 mod docker;
-mod routes;
-mod update;
 mod files;
 mod metrics;
-
+mod routes;
+mod update;
 
 use anyhow::Result;
 use config::DaemonConfig;
 use docker::DockerManager;
 use routes::{create_router, AppState};
-use tracing::{info, Level};
-use tracing_subscriber::FmtSubscriber;
+use tracing::info;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let subscriber = FmtSubscriber::builder()
-        .with_max_level(Level::INFO)
-        .finish();
-    tracing::subscriber::set_global_default(subscriber)
-        .expect("setting default subscriber failed");
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() > 1 && args[1] == "update" {
+        if let Err(e) = update::AutoUpdater::perform_cli_update().await {
+            eprintln!("Update failed: {:#}", e);
+            std::process::exit(1);
+        }
+        std::process::exit(0);
+    }
 
-    info!("Starting minecraft-panel daemon v{}", env!("CARGO_PKG_VERSION"));
+    let file_appender = tracing_appender::rolling::never(".", "daemon.log");
+    let (file_writer, _guard) = tracing_appender::non_blocking(file_appender);
+
+    let console_layer = tracing_subscriber::fmt::layer().with_writer(std::io::stdout);
+
+    let file_layer = tracing_subscriber::fmt::layer()
+        .with_writer(file_writer)
+        .with_ansi(false);
+
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::new("info"))
+        .with(console_layer)
+        .with(file_layer)
+        .init();
+
+    info!(
+        "Starting minecraft-panel daemon v{}",
+        env!("CARGO_PKG_VERSION")
+    );
 
     let config = DaemonConfig::load_from_env();
     info!(bind_addr = %config.bind_addr, node_id = %config.node_id, "Configuration loaded");

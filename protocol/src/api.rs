@@ -147,3 +147,63 @@ impl<T> ApiResponse<T> {
         }
     }
 }
+
+// -- New API structures for SSH replacements --
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemMemoryResponse {
+    pub total_mb: u64,
+    pub free_mb: u64,
+    pub used_mb: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerConfigUpdateRequest {
+    pub config: serde_json::Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CrontabUpdateRequest {
+    pub content: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileHashResponse {
+    pub sha1_hex: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemHostResponse {
+    pub os_name: String,
+    pub os_version: String,
+    pub kernel_version: String,
+    pub cpu_model: String,
+    pub cpu_cores: usize,
+    pub cpu_freq_mhz: u64,
+    pub disk_total_mb: u64,
+    pub disk_free_mb: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemHealthResponse {
+    pub docker_responsive: bool,
+    pub disk_space_warning: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MinecraftPingResponse {
+    pub online_players: u32,
+    pub max_players: u32,
+    pub motd: String,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerLogsResponse {
+    pub lines: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerCrashesResponse {
+    pub crash_reports: Vec<String>,
+}

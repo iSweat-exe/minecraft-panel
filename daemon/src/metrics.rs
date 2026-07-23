@@ -9,7 +9,7 @@ lazy_static::lazy_static! {
             .with_cpu(CpuRefreshKind::everything())
             .with_memory(MemoryRefreshKind::everything())
     ));
-    
+
     static ref NETWORKS: Mutex<Networks> = Mutex::new(Networks::new_with_refreshed_list());
     static ref PREV_NET: Mutex<(u64, u64)> = Mutex::new((0, 0));
 }
@@ -31,7 +31,7 @@ pub fn get_metrics() -> Result<SystemMetricsResponse> {
 
     let mut disk_used = 0;
     let mut disk_total = 0;
-    
+
     // We get the root disk "/" or simply sum all local disks
     for disk in &disks {
         if disk.mount_point().to_string_lossy() == "/" {
@@ -40,7 +40,7 @@ pub fn get_metrics() -> Result<SystemMetricsResponse> {
             break;
         }
     }
-    
+
     if disk_total == 0 {
         // Fallback: sum all disks
         for disk in &disks {
@@ -51,11 +51,11 @@ pub fn get_metrics() -> Result<SystemMetricsResponse> {
 
     let mut total_rx = 0;
     let mut total_tx = 0;
-    for (_name, data) in nets.iter() {
+    for data in nets.values() {
         total_rx += data.total_received();
         total_tx += data.total_transmitted();
     }
-    
+
     let rx_bps = total_rx.saturating_sub(prev_net.0);
     let tx_bps = total_tx.saturating_sub(prev_net.1);
     *prev_net = (total_rx, total_tx);

@@ -90,6 +90,37 @@ export interface DockerImageInfo {
     created: string;
 }
 
+export interface SystemHostResponse {
+    os_name: string;
+    os_version: string;
+    kernel_version: string;
+    cpu_model: string;
+    cpu_cores: number;
+    cpu_freq_mhz: number;
+    disk_total_mb: number;
+    disk_free_mb: number;
+}
+
+export interface SystemHealthResponse {
+    docker_responsive: boolean;
+    disk_space_warning: boolean;
+}
+
+export interface ServerLogsResponse {
+    lines: string[];
+}
+
+export interface MinecraftPingResponse {
+    online_players: number;
+    max_players: number;
+    motd: string;
+    version: string;
+}
+
+export interface ServerCrashesResponse {
+    crash_reports: string[];
+}
+
 export const tauriBridge = {
     sshConnect: (host: string, port: number, username: string, keyPath?: string, password?: string, expectedFingerprint?: string) =>
         invoke<void>('ssh_connect', { host, port, username, keyPath, password, expectedFingerprint }),
@@ -221,4 +252,10 @@ export const tauriBridge = {
     nodeFileAction: (nodeUrl: string, nodeToken: string, path: string, action: any) => invoke<void>('node_file_action', { nodeUrl, nodeToken, path, action }),
     nodeUploadFile: (nodeUrl: string, nodeToken: string, localPath: string, remotePath: string) => invoke<void>('node_upload_file', { nodeUrl, nodeToken, localPath, remotePath }),
     nodeDownloadFile: (nodeUrl: string, nodeToken: string, remotePath: string, localPath: string) => invoke<void>('node_download_file', { nodeUrl, nodeToken, remotePath, localPath }),
+    nodeGetSystemHost: (nodeUrl: string, nodeToken: string) => invoke<SystemHostResponse>('node_get_system_host', { nodeUrl, nodeToken }),
+    nodeGetSystemHealth: (nodeUrl: string, nodeToken: string) => invoke<SystemHealthResponse>('node_get_system_health', { nodeUrl, nodeToken }),
+    nodeGetSystemLogs: (nodeUrl: string, nodeToken: string, lines?: number) => invoke<ServerLogsResponse>('node_get_system_logs', { nodeUrl, nodeToken, lines }),
+    nodeGetServerPing: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<MinecraftPingResponse>('node_get_server_ping', { nodeUrl, nodeToken, serverId }),
+    nodeGetServerCrashes: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<ServerCrashesResponse>('node_get_server_crashes', { nodeUrl, nodeToken, serverId }),
+    nodeGetServerLogs: (nodeUrl: string, nodeToken: string, serverId: string, lines?: number) => invoke<ServerLogsResponse>('node_get_server_logs', { nodeUrl, nodeToken, serverId, lines }),
 };

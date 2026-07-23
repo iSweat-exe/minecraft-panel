@@ -21,6 +21,7 @@ import { AutomationsPanel } from './components/AutomationsPanel';
 import { HistoryPanel } from './components/HistoryPanel';
 import { VersionPanel } from './components/VersionPanel';
 import { DockerPanel } from './components/DockerPanel';
+import { SystemPanel } from './components/SystemPanel';
 
 function App() {
   useAutoUpdater();
@@ -51,6 +52,7 @@ function App() {
                   </div>
                 } />
                 <Route path="options" element={<OptionsPanel />} />
+                <Route path="system" element={<SystemPanel />} />
                 <Route path="docker" element={<DockerPanel />} />
                 <Route path="console" element={<div className="h-full"><ConsolePanel /></div>} />
                 <Route path="history" element={<HistoryPanel />} />

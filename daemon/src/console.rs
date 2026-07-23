@@ -7,7 +7,6 @@ use futures_util::StreamExt;
 use tokio::sync::broadcast;
 use tracing::info;
 
-
 pub struct ConsoleStreamManager {
     docker: Arc<Docker>,
 }
@@ -34,7 +33,10 @@ impl ConsoleStreamManager {
             ..Default::default()
         };
 
-        let output = self.docker.attach_container(&container_name, Some(options)).await?;
+        let output = self
+            .docker
+            .attach_container(&container_name, Some(options))
+            .await?;
         let mut stream = output.output;
 
         info!(server_id = %server_id, "Console stream attached");
@@ -65,12 +67,14 @@ impl ConsoleStreamManager {
             ..Default::default()
         };
 
-        let mut output = self.docker.attach_container(&container_name, Some(options)).await?;
+        let mut output = self
+            .docker
+            .attach_container(&container_name, Some(options))
+            .await?;
         use tokio::io::AsyncWriteExt;
         output.input.write_all(&cmd_bytes).await?;
         output.input.flush().await?;
 
         Ok(())
     }
-
 }

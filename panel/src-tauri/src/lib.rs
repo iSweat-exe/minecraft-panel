@@ -86,7 +86,13 @@ pub fn run() {
             commands::node::node_write_file,
             commands::node::node_file_action,
             commands::node::node_upload_file,
-            commands::node::node_download_file
+            commands::node::node_download_file,
+            commands::node::node_get_system_host,
+            commands::node::node_get_system_health,
+            commands::node::node_get_system_logs,
+            commands::node::node_get_server_ping,
+            commands::node::node_get_server_crashes,
+            commands::node::node_get_server_logs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

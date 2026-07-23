@@ -81,7 +81,10 @@ where
 
         match decode::<DaemonClaims>(&token_str, &decoding_key, &validation) {
             Ok(token_data) => Ok(SessionAuth(token_data.claims)),
-            Err(_) => Err((StatusCode::UNAUTHORIZED, "Invalid or expired JWT session token")),
+            Err(_) => Err((
+                StatusCode::UNAUTHORIZED,
+                "Invalid or expired JWT session token",
+            )),
         }
     }
 }

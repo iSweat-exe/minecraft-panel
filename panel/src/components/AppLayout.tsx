@@ -28,12 +28,14 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     Blocks,
-    Clock
+    Clock,
+    Server
 } from 'lucide-react';
 
 const NAV_ITEMS = [
     { id: 'server', path: '/', label: 'Serveur', icon: Power },
     { id: 'options', path: '/options', label: 'Options', icon: SlidersHorizontal },
+    { id: 'system', path: '/system', label: 'Système', icon: Server },
     { id: 'docker', path: '/docker', label: 'Docker', icon: SiDocker },
     { id: 'console', path: '/console', label: 'Console', icon: SquareTerminal },
     { id: 'history', path: '/history', label: 'Historique', icon: FileText },

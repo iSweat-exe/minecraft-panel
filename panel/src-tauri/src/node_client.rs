@@ -387,4 +387,120 @@ impl DaemonClient {
             Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
         }
     }
+
+    pub async fn get_system_host(&self) -> Result<protocol::SystemHostResponse, AppError> {
+        let url = self.build_url("/api/v1/system/host");
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::SystemHostResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn get_system_health(&self) -> Result<protocol::SystemHealthResponse, AppError> {
+        let url = self.build_url("/api/v1/system/health");
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::SystemHealthResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn get_system_logs(&self, lines: Option<usize>) -> Result<protocol::ServerLogsResponse, AppError> {
+        let lines_query = lines.unwrap_or(100);
+        let url = self.build_url(&format!("/api/v1/system/logs?lines={}", lines_query));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::ServerLogsResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn get_server_ping(&self, server_id: &str) -> Result<protocol::MinecraftPingResponse, AppError> {
+        let url = self.build_url(&format!("/api/v1/servers/{}/ping", server_id));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::MinecraftPingResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn get_server_crashes(&self, server_id: &str) -> Result<protocol::ServerCrashesResponse, AppError> {
+        let url = self.build_url(&format!("/api/v1/servers/{}/crashes", server_id));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::ServerCrashesResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn get_server_logs(&self, server_id: &str, lines: Option<usize>) -> Result<protocol::ServerLogsResponse, AppError> {
+        let lines_query = lines.unwrap_or(100);
+        let url = self.build_url(&format!("/api/v1/servers/{}/logs?lines={}", server_id, lines_query));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::ServerLogsResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
 }

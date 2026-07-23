@@ -4,7 +4,7 @@ import { useConsoleStore } from '../store/consoleStore';
 import { logAction } from '../lib/actionLogger';
 
 export function useConsole() {
-    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
+    const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
     const [command, setCommand] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -25,6 +25,18 @@ export function useConsole() {
                 if (!host || !token) return;
 
                 const serverId = 'default';
+
+                try {
+                    const nodeUrl = `http://${host}:${port}`;
+                    const staticLogs = await tauriBridge.nodeGetServerLogs(nodeUrl, token, serverId, 100);
+                    if (isMounted && staticLogs && staticLogs.lines) {
+                        clear(); // Clear existing to prevent duplicate appends on re-mount
+                        pushLines(staticLogs.lines.map(l => l.trimEnd()));
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch initial server logs", e);
+                }
+
                 const jwtToken = await tauriBridge.nodeGenerateConsoleToken(serverId, token);
                 
                 // Use wss:// if connection is https, else ws://
