@@ -54,7 +54,7 @@ where
                 .extensions
                 .get::<DaemonConfig>()
                 .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Config missing"))?;
-            config.jwt_secret.clone()
+            config.node_token.clone()
         };
 
         // 1. Try Authorization: Bearer <token>
