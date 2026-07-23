@@ -53,10 +53,10 @@ export function useServerControls() {
                         players_online: ping.online_players,
                         players_max: ping.max_players,
                         latency_ms: 0,
-                        sample: []
+                        sample: ping.sample || []
                     });
                 } else {
-                    setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null });
+                    setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null, sample: [] });
                 }
 
                 // Container states: created, running, paused, restarting, removing, exited, dead
@@ -96,10 +96,10 @@ export function useServerControls() {
                             players_online: ping.online_players,
                             players_max: ping.max_players,
                             latency_ms: 0,
-                            sample: []
+                            sample: ping.sample || []
                         });
                     } else {
-                        setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null });
+                        setMcPing({ online: false, players_online: null, players_max: null, latency_ms: null, sample: [] });
                     }
                 }
             } catch (err) {

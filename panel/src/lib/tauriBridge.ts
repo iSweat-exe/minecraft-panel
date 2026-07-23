@@ -115,6 +115,7 @@ export interface MinecraftPingResponse {
     max_players: number;
     motd: string;
     version: string;
+    sample?: { id: string; name: string }[];
 }
 
 export interface ServerCrashesResponse {

@@ -66,6 +66,14 @@ pub async fn server_ping(
             max_players: pong.max_players as u32,
             motd: pong.description.map(|d| d.to_string()).unwrap_or_default(),
             version: pong.version,
+            sample: pong.sample.map(|s| {
+                s.into_iter()
+                    .map(|p| protocol::api::MinecraftPingPlayer {
+                        id: p.id,
+                        name: p.name,
+                    })
+                    .collect()
+            }),
         })),
         Err(e) => Json(ApiResponse::err(format!("Ping failed: {}", e))),
     }

@@ -191,11 +191,18 @@ pub struct SystemHealthResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MinecraftPingPlayer {
+    pub id: String,
+    pub name: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MinecraftPingResponse {
     pub online_players: u32,
     pub max_players: u32,
     pub motd: String,
     pub version: String,
+    pub sample: Option<Vec<MinecraftPingPlayer>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

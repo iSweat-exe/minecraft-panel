@@ -30,7 +30,8 @@ import {
     PanelLeftOpen,
     Blocks,
     Clock,
-    Server
+    Server,
+    Terminal
 } from 'lucide-react';
 
 const NAV_ITEMS = [

@@ -4,7 +4,7 @@ import { useConsole } from '../hooks/useConsole';
 import { usePermissionStore } from '../store/permissionStore';
 import { useConnectionStore } from '../store/connectionStore';
 import { tauriBridge } from '../lib/tauriBridge';
-import { ChevronRight, CornerDownLeft, ArrowDownToLine, Terminal, Bug, FileText } from 'lucide-react';
+import { ChevronRight, CornerDownLeft, ArrowDownToLine, Terminal, Bug, FileText, Server } from 'lucide-react';
 
 const LogLine: React.FC<{ line: string }> = React.memo(({ line }) => {
     const spans = colorizeLogLine(line);
@@ -43,10 +43,75 @@ export const ConsolePanel: React.FC = () => {
     const token = localStorage.getItem('node_token');
     
     const canSend = can('console.send');
-    const [viewMode, setViewMode] = React.useState<'console' | 'crashes'>('console');
+    const [viewMode, setViewMode] = React.useState<'console' | 'crashes' | 'host'>('console');
     const [crashes, setCrashes] = React.useState<string[]>([]);
     const [selectedCrashContent, setSelectedCrashContent] = React.useState<string | null>(null);
     const [isLoadingCrash, setIsLoadingCrash] = React.useState(false);
+
+    // State for Host Terminal
+    const [hostLines, setHostLines] = React.useState<{ type: 'input' | 'output' | 'error', text: string }[]>([]);
+    const [hostCommand, setHostCommand] = React.useState('');
+    const hostInputRef = React.useRef<HTMLInputElement>(null);
+    const hostContainerRef = React.useRef<HTMLDivElement>(null);
+    const [hostHistory, setHostHistory] = React.useState<string[]>([]);
+    const [hostHistoryIndex, setHostHistoryIndex] = React.useState(-1);
+    const [isHostExecuting, setIsHostExecuting] = React.useState(false);
+
+    const scrollToBottomHost = () => {
+        if (hostContainerRef.current) {
+            hostContainerRef.current.scrollTop = hostContainerRef.current.scrollHeight;
+        }
+    };
+
+    React.useEffect(() => {
+        if (viewMode === 'host') scrollToBottomHost();
+    }, [hostLines, viewMode]);
+
+    const sendHostCommand = async (e: React.FormEvent) => {
+        e.preventDefault();
+        const cmd = hostCommand.trim();
+        if (!cmd || isHostExecuting) return;
+
+        setHostCommand('');
+        setHostHistory(prev => [...prev, cmd]);
+        setHostHistoryIndex(-1);
+        setIsHostExecuting(true);
+        
+        setHostLines(prev => [...prev, { type: 'input', text: `$ ${cmd}` }]);
+
+        try {
+            const output = await tauriBridge.sshExecute(cmd);
+            if (output) {
+                setHostLines(prev => [...prev, { type: 'output', text: output }]);
+            }
+        } catch (error: any) {
+            setHostLines(prev => [...prev, { type: 'error', text: String(error) }]);
+        } finally {
+            setIsHostExecuting(false);
+            setTimeout(() => hostInputRef.current?.focus(), 10);
+        }
+    };
+
+    const handleHostKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (hostHistory.length > 0) {
+                const nextIndex = hostHistoryIndex < hostHistory.length - 1 ? hostHistoryIndex + 1 : hostHistoryIndex;
+                setHostHistoryIndex(nextIndex);
+                setHostCommand(hostHistory[hostHistory.length - 1 - nextIndex]);
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (hostHistoryIndex > 0) {
+                const nextIndex = hostHistoryIndex - 1;
+                setHostHistoryIndex(nextIndex);
+                setHostCommand(hostHistory[hostHistory.length - 1 - nextIndex]);
+            } else if (hostHistoryIndex === 0) {
+                setHostHistoryIndex(-1);
+                setHostCommand('');
+            }
+        }
+    };
 
     const loadCrashes = React.useCallback(async () => {
         if (!host || !port || !token) return;
@@ -85,7 +150,7 @@ export const ConsolePanel: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full overflow-hidden bg-surface border border-border">
-            <div className={`flex flex-col h-full overflow-hidden bg-surface ${viewMode === 'crashes' ? 'hidden' : 'flex'}`}>
+            <div className={`flex flex-col h-full overflow-hidden bg-surface ${viewMode !== 'console' ? 'hidden' : 'flex'}`}>
                 {/* Title bar mimicking a real terminal */}
                 <div className="flex items-center gap-2 px-4 py-2 bg-surface-hover border-b border-border select-none shrink-0 justify-between">
                     <div className="flex items-center gap-2">
@@ -95,10 +160,13 @@ export const ConsolePanel: React.FC = () => {
                             <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                         </div>
                         <div className="flex bg-black/20 rounded-lg p-0.5 border border-border/50">
-                            <button className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
+                            <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Terminal size={14} /> Console
                             </button>
-                            <button onClick={() => setViewMode('crashes')} className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
+                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                <Server size={14} /> Terminal Hôte
+                            </button>
+                            <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Bug size={14} /> Rapports de Crash
                             </button>
                         </div>
@@ -171,7 +239,7 @@ export const ConsolePanel: React.FC = () => {
             </div>
 
             {/* Crashes View */}
-            <div className={`flex flex-col h-full overflow-hidden bg-surface ${viewMode === 'console' ? 'hidden' : 'flex'}`}>
+            <div className={`flex flex-col h-full overflow-hidden bg-surface ${viewMode === 'crashes' ? 'flex' : 'hidden'}`}>
                 <div className="flex items-center gap-2 px-4 py-2 bg-surface-hover border-b border-border select-none shrink-0 justify-between">
                     <div className="flex items-center gap-2">
                         <div className="flex gap-1.5 mr-2">
@@ -180,10 +248,13 @@ export const ConsolePanel: React.FC = () => {
                             <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
                         </div>
                         <div className="flex bg-black/20 rounded-lg p-0.5 border border-border/50">
-                            <button onClick={() => setViewMode('console')} className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors">
+                            <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Terminal size={14} /> Console
                             </button>
-                            <button className="flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium bg-primary/20 text-primary">
+                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                <Server size={14} /> Terminal Hôte
+                            </button>
+                            <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Bug size={14} /> Rapports de Crash
                             </button>
                         </div>
@@ -217,6 +288,94 @@ export const ConsolePanel: React.FC = () => {
                             <div className="flex items-center justify-center h-full text-muted-foreground">Sélectionnez un rapport de crash à gauche pour le lire.</div>
                         )}
                     </div>
+                </div>
+            </div>
+
+            {/* Host Terminal View */}
+            <div className={`flex flex-col h-full overflow-hidden bg-surface ${viewMode === 'host' ? 'flex' : 'hidden'}`}>
+                <div className="flex items-center gap-2 px-4 py-2 bg-surface-hover border-b border-border select-none shrink-0 justify-between">
+                    <div className="flex items-center gap-2">
+                        <div className="flex gap-1.5 mr-2">
+                            <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                            <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                            <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+                        </div>
+                        <div className="flex bg-black/20 rounded-lg p-0.5 border border-border/50">
+                            <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                <Terminal size={14} /> Console
+                            </button>
+                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                <Server size={14} /> Terminal Hôte
+                            </button>
+                            <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                <Bug size={14} /> Rapports de Crash
+                            </button>
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setHostLines([])}
+                        className="text-xs text-muted-foreground hover:text-foreground transition-colors font-mono"
+                    >
+                        clear
+                    </button>
+                </div>
+
+                <div
+                    ref={hostContainerRef}
+                    className="flex-1 bg-[#0d0d0d] overflow-y-auto py-2 font-mono text-[13px]"
+                    onClick={() => hostInputRef.current?.focus()}
+                    style={{ scrollbarWidth: 'thin', scrollbarColor: '#333 #0d0d0d' }}
+                >
+                    {hostLines.length > 0 ? (
+                        hostLines.map((line, i) => (
+                            <div key={i} className={`whitespace-pre-wrap px-4 py-1 hover:bg-white/5 break-all ${
+                                line.type === 'input' ? 'text-primary font-bold' : 
+                                line.type === 'error' ? 'text-danger' : 
+                                'text-[#d4d4d4]'
+                            }`}>
+                                {line.text}
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-muted-foreground px-4 py-8 text-center flex flex-col items-center gap-2">
+                            <Terminal size={32} className="opacity-50" />
+                            <p>Prêt à exécuter des commandes sur l'hôte via SSH...</p>
+                            <p className="text-xs opacity-75">Connecté au VPN Hôte</p>
+                        </div>
+                    )}
+                    {isHostExecuting && (
+                        <div className="px-4 py-1 text-muted-foreground flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></div>
+                            Exécution en cours...
+                        </div>
+                    )}
+                </div>
+
+                <div className="bg-surface-hover/50 border-t border-border shrink-0">
+                    <form onSubmit={sendHostCommand} className="flex items-center bg-[#0d0d0d] border border-border/50 overflow-hidden">
+                        <div className="pl-3 pr-2 flex items-center justify-center select-none shrink-0 text-primary">
+                            <ChevronRight size={18} strokeWidth={2.5} />
+                        </div>
+                        <input
+                            ref={hostInputRef}
+                            type="text"
+                            disabled={isHostExecuting}
+                            placeholder={isHostExecuting ? "Veuillez patienter..." : "Exécuter une commande sur l'hôte..."}
+                            className="flex-1 bg-transparent text-[#d4d4d4] py-2.5 pr-2 font-mono text-[14px] focus:outline-none disabled:opacity-50"
+                            value={hostCommand}
+                            onChange={e => setHostCommand(e.target.value)}
+                            onKeyDown={handleHostKeyDown}
+                            spellCheck={false}
+                            autoComplete="off"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!hostCommand.trim() || isHostExecuting}
+                            className="text-muted-foreground hover:text-primary disabled:opacity-0 px-3 py-2 transition-all flex items-center justify-center"
+                        >
+                            <CornerDownLeft size={16} strokeWidth={2} />
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
