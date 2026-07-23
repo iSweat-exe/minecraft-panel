@@ -158,36 +158,36 @@ export const tauriBridge = {
     verifyPanelUser: (nodeUrl: string, nodeToken: string, username: string, password: string) => invoke<import('../types/permissions').PanelUser>('verify_panel_user', { nodeUrl, nodeToken, username, password }),
 
     // Docker Management
-    dockerListContainers: () => invoke<DockerContainerInfo[]>('docker_list_containers'),
-    dockerContainerAction: (containerId: string, action: 'start' | 'stop' | 'restart' | 'remove') =>
-        invoke<void>('docker_container_action', { containerId, action }),
-    dockerSystemPrune: () => invoke<string>('docker_system_prune'),
-    dockerContainerLogs: (containerName: string, tail?: number) =>
-        invoke<string>('docker_container_logs', { containerName, tail }),
-    dockerListImages: () => invoke<DockerImageInfo[]>('docker_list_images'),
-    dockerPullImage: (imageName: string) => invoke<string>('docker_pull_image', { imageName }),
-    dockerRemoveImage: (imageId: string) => invoke<string>('docker_remove_image', { imageId }),
-    dockerRunContainer: (options: {
+    nodeDockerListContainers: (nodeUrl: string, nodeToken: string) => invoke<DockerContainerInfo[]>('node_docker_list_containers', { nodeUrl, nodeToken }),
+    nodeDockerContainerAction: (nodeUrl: string, nodeToken: string, containerId: string, action: 'start' | 'stop' | 'restart' | 'remove') =>
+        invoke<void>('node_docker_container_action', { nodeUrl, nodeToken, containerId, action }),
+    nodeDockerSystemPrune: (nodeUrl: string, nodeToken: string) => invoke<string>('node_docker_system_prune', { nodeUrl, nodeToken }),
+    nodeDockerContainerLogs: (nodeUrl: string, nodeToken: string, containerName: string, tail?: number) =>
+        invoke<string>('node_docker_container_logs', { nodeUrl, nodeToken, containerName, tail }),
+    nodeDockerListImages: (nodeUrl: string, nodeToken: string) => invoke<DockerImageInfo[]>('node_docker_list_images', { nodeUrl, nodeToken }),
+    nodeDockerPullImage: (nodeUrl: string, nodeToken: string, imageName: string) => invoke<string>('node_docker_pull_image', { nodeUrl, nodeToken, imageName }),
+    nodeDockerRemoveImage: (nodeUrl: string, nodeToken: string, imageId: string) => invoke<string>('node_docker_remove_image', { nodeUrl, nodeToken, imageId }),
+    nodeDockerRunContainer: (nodeUrl: string, nodeToken: string, options: {
         image: string;
         name?: string;
         ports?: string;
         envVars?: string[];
         restartPolicy?: string;
-    }) => invoke<string>('docker_run_container', { ...options, envVars: options.envVars }),
-    dockerInspectContainer: (containerId: string) => invoke<string>('docker_inspect_container', { containerId }),
-    dockerUpdateContainer: (options: {
+    }) => invoke<string>('node_docker_run_container', { nodeUrl, nodeToken, ...options, envVars: options.envVars }),
+    nodeDockerInspectContainer: (nodeUrl: string, nodeToken: string, containerId: string) => invoke<string>('node_docker_inspect_container', { nodeUrl, nodeToken, containerId }),
+    nodeDockerUpdateContainer: (nodeUrl: string, nodeToken: string, options: {
         containerId: string;
         newName?: string;
         restartPolicy?: string;
-    }) => invoke<void>('docker_update_container', options),
-    dockerRecreateContainer: (options: {
+    }) => invoke<void>('node_docker_update_container', { nodeUrl, nodeToken, ...options }),
+    nodeDockerRecreateContainer: (nodeUrl: string, nodeToken: string, options: {
         containerId: string;
         image: string;
         name: string;
         ports?: string;
         envVars?: string[];
         restartPolicy?: string;
-    }) => invoke<string>('docker_recreate_container', { ...options, envVars: options.envVars }),
+    }) => invoke<string>('node_docker_recreate_container', { nodeUrl, nodeToken, ...options, envVars: options.envVars }),
 
     // VPS Interactive Terminal
     terminalStart: (cols: number, rows: number) => invoke<void>('terminal_start', { cols, rows }),

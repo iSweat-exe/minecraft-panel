@@ -113,6 +113,7 @@ export const DockerPanel: React.FC = () => {
         if (!configForm.containerId) return;
         setSavingConfig(true);
         try {
+            const { nodeUrl, token } = getCredentials();
             const hasPortsOrEnvsChanged = configForm.ports.trim().length > 0 || configForm.envVars.trim().length > 0;
 
             if (hasPortsOrEnvsChanged) {
@@ -121,7 +122,7 @@ export const DockerPanel: React.FC = () => {
                     .map(s => s.trim())
                     .filter(Boolean);
 
-                await tauriBridge.dockerRecreateContainer({
+                await tauriBridge.nodeDockerRecreateContainer(nodeUrl, token, {
                     containerId: configForm.containerId,
                     image: configForm.image,
                     name: configForm.name.trim(),
@@ -130,7 +131,7 @@ export const DockerPanel: React.FC = () => {
                     restartPolicy: configForm.restartPolicy,
                 });
             } else {
-                await tauriBridge.dockerUpdateContainer({
+                await tauriBridge.nodeDockerUpdateContainer(nodeUrl, token, {
                     containerId: configForm.containerId,
                     newName: configForm.name.trim() !== configForm.originalName ? configForm.name.trim() : undefined,
                     restartPolicy: configForm.restartPolicy,
@@ -153,16 +154,28 @@ export const DockerPanel: React.FC = () => {
 
     const { addToast } = useToastStore();
 
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Non connecté au Daemon Node");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     const fetchAllData = async () => {
         try {
+            const { nodeUrl, token } = getCredentials();
             const [containerList, imageList] = await Promise.all([
-                tauriBridge.dockerListContainers(),
-                tauriBridge.dockerListImages().catch(() => []),
+                tauriBridge.nodeDockerListContainers(nodeUrl, token),
+                tauriBridge.nodeDockerListImages(nodeUrl, token).catch(() => []),
             ]);
             setContainers(containerList);
             setImages(imageList);
         } catch (e: any) {
             console.error('Failed to fetch docker data:', e);
+            if (e.message !== "Non connecté au Daemon Node") {
+                addToast({ message: `Erreur de connexion au Daemon: ${e}`, type: 'error' });
+            }
         } finally {
             setLoading(false);
         }
@@ -177,7 +190,8 @@ export const DockerPanel: React.FC = () => {
     const handleAction = async (containerId: string, action: 'start' | 'stop' | 'restart' | 'remove') => {
         setActionLoading(`${containerId}-${action}`);
         try {
-            await tauriBridge.dockerContainerAction(containerId, action);
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeDockerContainerAction(nodeUrl, token, containerId, action);
             const targetContainer = containers.find(c => c.id === containerId);
             const name = targetContainer ? targetContainer.names : containerId.substring(0, 12);
             await logAction(`Action '${action}' sur le conteneur Docker ${name}`, { containerId, action });
@@ -194,7 +208,8 @@ export const DockerPanel: React.FC = () => {
     const handleRemoveImage = async (imageId: string) => {
         setActionLoading(`img-${imageId}-remove`);
         try {
-            await tauriBridge.dockerRemoveImage(imageId);
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeDockerRemoveImage(nodeUrl, token, imageId);
             await logAction(`Suppression de l'image Docker ${imageId.substring(0, 12)}`, { imageId });
             addToast({ message: 'Image Docker supprimée avec succès', type: 'success' });
             await fetchAllData();
@@ -209,7 +224,8 @@ export const DockerPanel: React.FC = () => {
     const handleSystemPrune = async () => {
         setPruning(true);
         try {
-            await tauriBridge.dockerSystemPrune();
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeDockerSystemPrune(nodeUrl, token);
             await logAction('Nettoyage global système Docker (System Prune)', {});
             addToast({ message: 'Docker nettoyé avec succès ! Images et volumes inutilisés supprimés.', type: 'success' });
             await fetchAllData();
@@ -223,7 +239,8 @@ export const DockerPanel: React.FC = () => {
     const openLogs = async (containerName: string) => {
         setLogModal({ open: true, containerName, logs: '', loading: true });
         try {
-            const logs = await tauriBridge.dockerContainerLogs(containerName, 150);
+            const { nodeUrl, token } = getCredentials();
+            const logs = await tauriBridge.nodeDockerContainerLogs(nodeUrl, token, containerName, 150);
             setLogModal({ open: true, containerName, logs, loading: false });
         } catch (e: any) {
             setLogModal({ open: true, containerName, logs: `Erreur lors de la récupération des logs: ${e}`, loading: false });
@@ -233,7 +250,8 @@ export const DockerPanel: React.FC = () => {
     const openInspect = async (containerId: string) => {
         setInspectModal({ open: true, containerId, data: '', loading: true });
         try {
-            const raw = await tauriBridge.dockerInspectContainer(containerId);
+            const { nodeUrl, token } = getCredentials();
+            const raw = await tauriBridge.nodeDockerInspectContainer(nodeUrl, token, containerId);
             try {
                 const parsed = JSON.parse(raw);
                 setInspectModal({ open: true, containerId, data: JSON.stringify(parsed, null, 2), loading: false });
@@ -250,7 +268,8 @@ export const DockerPanel: React.FC = () => {
         if (!pullImageName.trim()) return;
         setPulling(true);
         try {
-            await tauriBridge.dockerPullImage(pullImageName.trim());
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeDockerPullImage(nodeUrl, token, pullImageName.trim());
             await logAction(`Téléchargement de l'image Docker '${pullImageName.trim()}'`, { image: pullImageName.trim() });
             addToast({ message: `Image '${pullImageName}' téléchargée avec succès !`, type: 'success' });
             setPullImageName('');
@@ -273,7 +292,8 @@ export const DockerPanel: React.FC = () => {
                 .map(s => s.trim())
                 .filter(Boolean);
 
-            await tauriBridge.dockerRunContainer({
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeDockerRunContainer(nodeUrl, token, {
                 image: runForm.image.trim(),
                 name: runForm.name.trim() || undefined,
                 ports: runForm.ports.trim() || undefined,

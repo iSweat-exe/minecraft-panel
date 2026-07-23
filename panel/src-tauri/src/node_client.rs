@@ -503,4 +503,132 @@ impl DaemonClient {
             Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
         }
     }
+
+    pub async fn docker_list_containers(&self) -> Result<Vec<protocol::DockerContainerInfo>, AppError> {
+        let url = self.build_url("/api/v1/system/docker/containers");
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<Vec<protocol::DockerContainerInfo>> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_list_images(&self) -> Result<Vec<protocol::DockerImageInfo>, AppError> {
+        let url = self.build_url("/api/v1/system/docker/images");
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<Vec<protocol::DockerImageInfo>> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_container_action(&self, id: &str, action: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/containers/{}/action", id));
+        let payload = serde_json::json!({ "action": action });
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_container_logs(&self, id: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/containers/{}/logs", id));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_container_inspect(&self, id: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/containers/{}/inspect", id));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_run_container(&self, req: protocol::DockerRunRequest) -> Result<String, AppError> {
+        let url = self.build_url("/api/v1/system/docker/containers");
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&req)
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_update_container(&self, id: &str, req: protocol::DockerUpdateRequest) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/containers/{}", id));
+        let res = self.client.put(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&req)
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_recreate_container(&self, id: &str, req: protocol::DockerRunRequest) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/containers/{}/recreate", id));
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&req)
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_pull_image(&self, image_name: &str) -> Result<String, AppError> {
+        let url = self.build_url("/api/v1/system/docker/images/pull");
+        let payload = serde_json::json!({ "image_name": image_name });
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_remove_image(&self, id: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/system/docker/images/{}", id));
+        let res = self.client.delete(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
+
+    pub async fn docker_system_prune(&self) -> Result<String, AppError> {
+        let url = self.build_url("/api/v1/system/docker/prune");
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+        if !res.status().is_success() { return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status()))); }
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success { Ok(body.data.unwrap_or_default()) } else { Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown error".into()))) }
+    }
 }

@@ -5,6 +5,7 @@ import { usePermissionStore } from '../store/permissionStore';
 import { useBackupStore } from '../store/backupStore';
 import { useSessionPing } from '../hooks/useSessions';
 import { useMetricsAgent } from '../hooks/useMetricsAgent';
+import { useServerControls } from '../hooks/useServerControls';
 import { BackupProgressAlert } from './overview/BackupProgressAlert';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
@@ -65,13 +66,16 @@ const BackupNavItemExtra: React.FC<{ icon: any, color?: string }> = ({ icon: Ico
 };
 
 export const AppLayout: React.FC = () => {
-    const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
+    const { setSshStatus } = useConnectionStore();
     const { currentUser, fetchUsers } = usePermissionStore();
     const [collapsed, setCollapsed] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const location = useLocation();
     useSessionPing();
     useMetricsAgent();
+
+    // Call useServerControls at the AppLayout level to keep the background polling alive globally
+    const { serverState, pendingAction } = useServerControls();
 
     const username = currentUser?.username || localStorage.getItem('panel_username') || localStorage.getItem('ssh_username') || 'admin';
     const displayName = currentUser?.display_name || localStorage.getItem('panel_display_name') || '';
@@ -80,25 +84,6 @@ export const AppLayout: React.FC = () => {
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
-
-    useEffect(() => {
-        const fetchStatus = async () => {
-            try {
-                const [status, ping] = await Promise.all([
-                    tauriBridge.serviceStatus(),
-                    tauriBridge.mcPing(),
-                ]);
-                setServiceStatus(status);
-                setMcPing(ping);
-            } catch (e) {
-                console.error("Failed to fetch status:", e);
-            }
-        };
-
-        fetchStatus();
-        const interval = setInterval(fetchStatus, 3000);
-        return () => clearInterval(interval);
-    }, [setServiceStatus, setMcPing]);
 
     useEffect(() => {
         let isMounted = true;
@@ -166,15 +151,15 @@ export const AppLayout: React.FC = () => {
 
     const getServerIconColor = () => {
         if (pendingAction) return "text-warning";
-        if (serviceStatus?.active_state === 'active') return "text-success";
-        if (serviceStatus?.active_state === 'failed') return "text-danger";
+        if (serverState === 'running') return "text-success";
+        if (serverState === 'exited' || serverState === 'dead' || serverState === 'failed') return "text-danger";
         return location.pathname === '/' ? "text-primary" : "text-muted-foreground";
     };
 
     const getServerBorderColor = () => {
         if (pendingAction) return "border-warning";
-        if (serviceStatus?.active_state === 'active') return "border-success";
-        if (serviceStatus?.active_state === 'failed') return "border-danger";
+        if (serverState === 'running') return "border-success";
+        if (serverState === 'exited' || serverState === 'dead' || serverState === 'failed') return "border-danger";
         return "border-primary";
     };
 

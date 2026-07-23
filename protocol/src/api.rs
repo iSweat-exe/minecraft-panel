@@ -207,3 +207,38 @@ pub struct ServerLogsResponse {
 pub struct ServerCrashesResponse {
     pub crash_reports: Vec<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerContainerInfo {
+    pub id: String,
+    pub names: String,
+    pub image: String,
+    pub status: String,
+    pub state: String,
+    pub ports: String,
+    pub created: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerImageInfo {
+    pub id: String,
+    pub repository: String,
+    pub tag: String,
+    pub size: String,
+    pub created: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerRunRequest {
+    pub image: String,
+    pub name: Option<String>,
+    pub ports: Option<String>,
+    pub env_vars: Option<Vec<String>>,
+    pub restart_policy: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DockerUpdateRequest {
+    pub new_name: Option<String>,
+    pub restart_policy: Option<String>,
+}
