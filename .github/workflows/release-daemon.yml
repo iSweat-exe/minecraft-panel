@@ -46,7 +46,7 @@ jobs:
         run: |
           if [ -n "$MINISIGN_SECRET_KEY" ]; then
             sudo apt-get update && sudo apt-get install -y minisign
-            echo "$MINISIGN_SECRET_KEY" > minisign.key
+            printf '%s\n' "$MINISIGN_SECRET_KEY" > minisign.key
             minisign -S -m target/x86_64-unknown-linux-musl/release/manifest.json -s minisign.key -x target/x86_64-unknown-linux-musl/release/manifest.json.minisig
             rm -f minisign.key
           else
