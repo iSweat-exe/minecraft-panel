@@ -29,16 +29,21 @@ export async function logAction(action: string, details?: any) {
         
         const logLine = JSON.stringify(logEntry) + "\n";
         
-        // Base64 encode to safely transmit JSON via bash command without escaping issues
-        // Using Buffer in browser might not work, so we use btoa
-        const b64 = btoa(unescape(encodeURIComponent(logLine)));
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) return;
+        const nodeUrl = `http://${host}:${port}`;
+
+        const logPath = '/minecraft/.panel_logs/history.jsonl';
         
-        const script = `
-            mkdir -p /minecraft/.panel_logs
-            echo "${b64}" | base64 -d >> /minecraft/.panel_logs/history.jsonl
-        `;
+        // Ensure folder exists
+        await tauriBridge.nodeFileAction(nodeUrl, token, '/minecraft/.panel_logs', "mkdir").catch(() => {});
         
-        await tauriBridge.sshExecute(script);
+        // Read existing, append, write
+        const existing = await tauriBridge.nodeReadFileText(nodeUrl, token, logPath).catch(() => "");
+        await tauriBridge.nodeWriteFile(nodeUrl, token, logPath, existing + logLine);
+        
     } catch (e) {
         console.error('Failed to log action:', e);
     }

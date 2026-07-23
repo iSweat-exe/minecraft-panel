@@ -78,8 +78,50 @@ pub struct UpdateDaemonResponse {
     pub status: String,
     pub message: String,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemMetricsResponse {
+    pub cpu_percent: f64,
+    pub ram_used_mb: u64,
+    pub ram_total_mb: u64,
+    pub disk_used_gb: f64,
+    pub disk_total_gb: f64,
+    pub network_rx_bps: u64,
+    pub network_tx_bps: u64,
+}
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileEntry {
+    pub name: String,
+    pub is_dir: bool,
+    pub size: u64,
+    pub modified: u64,
+}
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FileAction {
+    Rename { new_name: String },
+    Copy { destination: String },
+    Delete,
+    Mkdir,
+    Archive { archive_name: String },
+    Extract,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileActionRequest {
+    pub action: FileAction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileWriteRequest {
+    pub content: String, // Or base64? The Panel currently sends raw string for text files, or base64 for binaries. Let's use string.
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileWriteBase64Request {
+    pub content_base64: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiResponse<T> {

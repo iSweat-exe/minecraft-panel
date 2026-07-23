@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
-import { tauriBridge, SystemMetrics } from '../lib/tauriBridge';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { tauriBridge, SystemMetricsResponse } from '../lib/tauriBridge';
 import { useServerStatsStore } from '../store/serverStatsStore';
 
 export function useServerStats() {
-    const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
+    const [metrics, setMetrics] = useState<SystemMetricsResponse | null>(null);
     const addPoint = useServerStatsStore(state => state.addPoint);
+    const isMounted = useRef(true);
 
-    const handleMetrics = useCallback((m: SystemMetrics) => {
+    const handleMetrics = useCallback((m: SystemMetricsResponse) => {
         setMetrics(m);
         
         const now = new Date();
@@ -25,23 +26,36 @@ export function useServerStats() {
     }, [addPoint]);
 
     useEffect(() => {
-        // Subscribe to streaming metrics (opens a pe.rsistent SSH channel)
-        tauriBridge.metricsSubscribe().catch(e => console.error('Failed to subscribe to metrics:', e));
+        isMounted.current = true;
+        
+        const fetchMetrics = async () => {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            
+            if (!host || !token) return;
+            
+            try {
+                const nodeUrl = `http://${host}:${port}`;
+                const result = await tauriBridge.nodeGetMetrics(nodeUrl, token);
+                if (isMounted.current) {
+                    handleMetrics(result);
+                }
+            } catch (err) {
+                console.error("Failed to fetch node metrics:", err);
+            }
+        };
 
-        let unlisten: (() => void) | undefined;
-        let isMounted = true;
-
-        tauriBridge.onMetricsUpdate(handleMetrics).then(fn => {
-            if (!isMounted) fn();
-            else unlisten = fn;
-        });
+        // Fetch immediately then every 2 seconds
+        fetchMetrics();
+        const interval = setInterval(fetchMetrics, 2000);
 
         return () => {
-            isMounted = false;
-            if (unlisten) unlisten();
-            tauriBridge.metricsUnsubscribe().catch(e => console.error('Failed to unsubscribe from metrics:', e));
+            isMounted.current = false;
+            clearInterval(interval);
         };
     }, [handleMetrics]);
 
     return { metrics };
 }
+

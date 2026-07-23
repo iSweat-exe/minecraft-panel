@@ -25,10 +25,19 @@ export function useServerOptions() {
     const [saving, setSaving] = useState(false);
     const [savedSuccess, setSavedSuccess] = useState(false);
 
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     const fetchProperties = async () => {
         setLoading(true);
         try {
-            const content = await tauriBridge.sftpReadFile('/minecraft/server.properties');
+            const { nodeUrl, token } = getCredentials();
+            const content = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
             setOriginalContent(content);
             const lines = content.split('\n');
             const props: any = {};
@@ -45,7 +54,8 @@ export function useServerOptions() {
         }
 
         try {
-            const base64 = await tauriBridge.sftpReadFileBase64('/minecraft/server-icon.png');
+            const { nodeUrl, token } = getCredentials();
+            const base64 = await tauriBridge.nodeReadFile(nodeUrl, token, '/minecraft/server-icon.png');
             setServerIcon(`data:image/png;base64,${base64}`);
         } catch (error) {
             // Icon might not exist, silently ignore
@@ -81,7 +91,8 @@ export function useServerOptions() {
                 }
             }
 
-            await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeWriteFile(nodeUrl, token, '/minecraft/server.properties', updatedLines.join('\n'));
             setOriginalContent(updatedLines.join('\n'));
             setSavedSuccess(true);
             setTimeout(() => setSavedSuccess(false), 2500);

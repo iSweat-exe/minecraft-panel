@@ -15,7 +15,7 @@ import { logAction } from '../lib/actionLogger';
 
 export const SftpPanel: React.FC = () => {
     const location = useLocation();
-    const initialPath = location.state?.initialPath || '/';
+    const initialPath = location.state?.initialPath || '/minecraft';
     const sftp = useSftp(initialPath);
     const { modPath } = useModsStore();
     
@@ -23,6 +23,14 @@ export const SftpPanel: React.FC = () => {
     const normCurrent = sftp.currentPath.replace(/^\//, '').replace(/\/$/, '');
     const normMod = modPath.replace(/^\//, '').replace(/\/$/, '');
     const isModsFolder = normCurrent === normMod || (normMod.length > 0 && normCurrent.endsWith(normMod));
+
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
 
     if (sftp.editingFile) {
         return (
@@ -87,7 +95,7 @@ export const SftpPanel: React.FC = () => {
                 searchQuery={sftp.searchQuery}
                 setSearchQuery={sftp.setSearchQuery}
                 onNavigateUp={sftp.handleNavigateUp}
-                onNavigateHome={() => sftp.fetchDir('/')}
+                onNavigateHome={() => sftp.fetchDir('/minecraft')}
                 onNavigate={(path) => sftp.fetchDir(path)}
                 onMkfile={sftp.handleMkfile}
                 onMkdir={sftp.handleMkdir}
@@ -162,12 +170,13 @@ export const SftpPanel: React.FC = () => {
                                 });
                                 if (!confirmed) return;
                                 
+                                const { nodeUrl, token } = getCredentials();
                                 for (const name of Array.from(sftp.selectedFiles)) {
                                     const entry = sftp.entries.find(e => e.name === name);
                                     if (entry) {
                                         const fullPath = sftp.currentPath === '/' ? `/${name}` : `${sftp.currentPath}/${name}`;
                                         try {
-                                            await tauriBridge.sftpDelete(fullPath, entry.is_dir);
+                                            await tauriBridge.nodeFileAction(nodeUrl, token, fullPath, { Delete: null });
                                             logAction('Suppression de fichier', { file: fullPath });
                                         } catch(e) {
                                             console.error(e);
@@ -226,7 +235,8 @@ export const SftpPanel: React.FC = () => {
                     const oldPath = sftp.currentPath === '/' ? `/${oldName}` : `${sftp.currentPath}/${oldName}`;
                     const newPath = sftp.currentPath === '/' ? `/${newName}` : `${sftp.currentPath}/${newName}`;
                     try {
-                        await tauriBridge.sftpRename(oldPath, newPath);
+                        const { nodeUrl, token } = getCredentials();
+                        await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { Rename: { new_name: newPath } });
                         logAction('Renommage de fichier', { old: oldPath, new: newPath });
                         sftp.fetchDir(sftp.currentPath);
                     } catch (e) {
@@ -238,3 +248,4 @@ export const SftpPanel: React.FC = () => {
         </Card>
     );
 };
+

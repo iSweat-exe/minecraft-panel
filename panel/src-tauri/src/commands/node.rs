@@ -2,7 +2,7 @@ use crate::error::AppError;
 use crate::node_client::DaemonClient;
 use protocol::{
     ContainerSpec, DaemonInfoResponse, PowerActionResponse, ServerPowerAction,
-    ServerStatusResponse,
+    ServerStatusResponse, SystemMetricsResponse, FileEntry, FileAction
 };
 
 #[tauri::command]
@@ -45,6 +45,51 @@ pub async fn node_power_action(
 }
 
 #[tauri::command]
+pub async fn node_send_command(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+    command: String,
+) -> Result<String, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.send_command(&server_id, &command).await
+}
+
+#[tauri::command]
+pub async fn node_inspect_container(
+    node_url: String,
+    node_token: String,
+    server_id: String,
+) -> Result<serde_json::Value, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.inspect_container(&server_id).await
+}
+
+#[tauri::command]
+pub async fn node_download_remote(
+    node_url: String,
+    node_token: String,
+    url: String,
+    dest: String,
+) -> Result<(), AppError> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| AppError::Message(e.to_string()))?;
+        
+    let res = client.get(&url).send().await.map_err(|e| AppError::Message(e.to_string()))?;
+    
+    if !res.status().is_success() {
+        return Err(AppError::Message(format!("Failed to download {}: HTTP {}", url, res.status())));
+    }
+    
+    let bytes = res.bytes().await.map_err(|e| AppError::Message(e.to_string()))?;
+    
+    let daemon = DaemonClient::new(node_url, node_token);
+    daemon.upload_file(&dest, bytes.to_vec()).await
+}
+
+#[tauri::command]
 pub async fn node_delete_server(
     node_url: String,
     node_token: String,
@@ -71,3 +116,118 @@ pub fn node_generate_console_token(
 
     DaemonClient::mint_session_jwt(&user_sub, &server_id, permissions, &jwt_secret, duration)
 }
+
+#[tauri::command]
+pub async fn node_get_metrics(
+    node_url: String,
+    node_token: String,
+) -> Result<SystemMetricsResponse, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.get_metrics().await
+}
+
+#[tauri::command]
+pub async fn node_list_dir(
+    node_url: String,
+    node_token: String,
+    path: String,
+) -> Result<Vec<FileEntry>, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.list_dir(&path).await
+}
+
+#[tauri::command]
+pub async fn node_read_file(
+    node_url: String,
+    node_token: String,
+    path: String,
+) -> Result<String, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.read_file(&path).await
+}
+
+#[tauri::command]
+pub async fn node_read_file_text(
+    node_url: String,
+    node_token: String,
+    path: String,
+) -> Result<String, AppError> {
+    use base64::Engine;
+    let client = DaemonClient::new(node_url, node_token);
+    let base64_str = client.read_file(&path).await?;
+    let bytes = base64::engine::general_purpose::STANDARD.decode(&base64_str)
+        .map_err(|e| AppError::Message(format!("Base64 decode error: {}", e)))?;
+    String::from_utf8(bytes).map_err(|e| AppError::Message(format!("UTF-8 decode error: {}", e)))
+}
+
+#[tauri::command]
+pub async fn node_write_file(
+    node_url: String,
+    node_token: String,
+    path: String,
+    content: String,
+) -> Result<(), AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.write_file(&path, content).await
+}
+
+#[tauri::command]
+pub async fn node_file_action(
+    node_url: String,
+    node_token: String,
+    path: String,
+    action: FileAction,
+) -> Result<(), AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    client.file_action(&path, action).await
+}
+
+#[tauri::command]
+pub async fn node_upload_file(
+    node_url: String,
+    node_token: String,
+    local_path: String,
+    remote_path: String,
+) -> Result<(), AppError> {
+    let client = DaemonClient::new(node_url, node_token);
+    let content = tokio::fs::read(&local_path)
+        .await
+        .map_err(|e| AppError::Message(format!("Local file read error: {}", e)))?;
+    client.upload_file(&remote_path, content).await
+}
+
+#[tauri::command]
+pub async fn node_download_file(
+    node_url: String,
+    node_token: String,
+    remote_path: String,
+    local_path: String,
+) -> Result<(), AppError> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(300))
+        .build()
+        .map_err(|e| AppError::Message(e.to_string()))?;
+        
+    let mut url = node_url;
+    if url.ends_with('/') {
+        url.pop();
+    }
+    
+    let download_url = format!("{}/api/v1/files/download?path={}", url, urlencoding::encode(&remote_path));
+    
+    let res = client.get(&download_url)
+        .header(protocol::NODE_TOKEN_HEADER, node_token)
+        .header(protocol::PROTOCOL_VERSION_HEADER, protocol::PROTOCOL_VERSION.to_string())
+        .send()
+        .await
+        .map_err(|e| AppError::Message(e.to_string()))?;
+        
+    if !res.status().is_success() {
+        return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+    }
+    
+    let bytes = res.bytes().await.map_err(|e| AppError::Message(e.to_string()))?;
+    tokio::fs::write(&local_path, bytes).await.map_err(|e| AppError::Message(e.to_string()))?;
+    Ok(())
+}
+

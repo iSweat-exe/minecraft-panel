@@ -16,6 +16,9 @@ use tracing::{error, info};
 use crate::auth::{NodeAuth, SessionAuth};
 use crate::config::DaemonConfig;
 use crate::docker::DockerManager;
+use protocol::{
+    FileEntry, FileActionRequest, FileWriteRequest, SystemMetricsResponse
+};
 
 #[derive(Clone)]
 pub struct AppState {
@@ -27,14 +30,25 @@ pub struct AppState {
 pub fn create_router(state: AppState) -> axum::Router {
     axum::Router::new()
         .route("/api/v1/info", get(get_info))
+        .route("/api/v1/metrics", get(get_metrics))
         .route("/api/v1/update", post(trigger_update))
         .route("/api/v1/servers", get(list_servers).post(create_server))
         .route("/api/v1/servers/{id}/power", post(server_power))
+        .route("/api/v1/servers/{id}/command", post(server_command))
+        .route("/api/v1/servers/{id}/inspect", get(server_inspect))
         .route("/api/v1/servers/{id}", axum::routing::delete(delete_server))
         .route("/api/v1/servers/{id}/ws", get(ws_console_handler))
+        .route("/api/v1/files/list", get(list_files))
+        .route("/api/v1/files/read", get(read_file))
+        .route("/api/v1/files/download", get(download_file))
+        .route("/api/v1/files/write", post(write_file))
+        .route("/api/v1/files/upload", post(upload_file))
+        .route("/api/v1/files/action", post(file_action))
         .layer(axum::Extension(state.config.clone()))
         .with_state(state)
 }
+
+
 
 async fn trigger_update(
     _auth: NodeAuth,
@@ -46,6 +60,99 @@ async fn trigger_update(
     }
 }
 
+async fn get_metrics(_auth: NodeAuth) -> Json<ApiResponse<SystemMetricsResponse>> {
+    match crate::metrics::get_metrics() {
+        Ok(data) => Json(ApiResponse::ok(data)),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+#[derive(serde::Deserialize)]
+struct FileQuery {
+    path: String,
+}
+
+async fn list_files(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+) -> Json<ApiResponse<Vec<FileEntry>>> {
+    match crate::files::list_dir(&query.path).await {
+        Ok(data) => Json(ApiResponse::ok(data)),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+async fn read_file(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+) -> Json<ApiResponse<String>> {
+    match crate::files::read_file(&query.path).await {
+        Ok(data) => {
+            // Using base64 to avoid JSON encoding issues with binary files
+            use base64::{Engine as _, engine::general_purpose::STANDARD};
+            Json(ApiResponse::ok(STANDARD.encode(&data)))
+        }
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+async fn download_file(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+) -> impl IntoResponse {
+    match crate::files::read_file(&query.path).await {
+        Ok(data) => {
+            let filename = std::path::Path::new(&query.path)
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
+            (
+                axum::http::StatusCode::OK,
+                [(axum::http::header::CONTENT_TYPE, "application/octet-stream"),
+                 (axum::http::header::CONTENT_DISPOSITION, &format!("attachment; filename=\"{}\"", filename))],
+                data,
+            ).into_response()
+        }
+        Err(err) => {
+            (axum::http::StatusCode::INTERNAL_SERVER_ERROR, err.to_string()).into_response()
+        }
+    }
+}
+
+async fn write_file(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+    Json(payload): Json<FileWriteRequest>,
+) -> Json<ApiResponse<String>> {
+    match crate::files::write_file(&query.path, payload.content.as_bytes()).await {
+        Ok(_) => Json(ApiResponse::ok("File written".to_string())),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+async fn upload_file(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+    body: axum::body::Bytes,
+) -> Json<ApiResponse<String>> {
+    match crate::files::write_file(&query.path, &body).await {
+        Ok(_) => Json(ApiResponse::ok("File uploaded".to_string())),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+
+async fn file_action(
+    _auth: NodeAuth,
+    axum::extract::Query(query): axum::extract::Query<FileQuery>,
+    Json(payload): Json<FileActionRequest>,
+) -> Json<ApiResponse<String>> {
+    match crate::files::perform_action(&query.path, payload.action).await {
+        Ok(_) => Json(ApiResponse::ok("Action executed".to_string())),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
 
 async fn get_info(
     _auth: NodeAuth,
@@ -112,6 +219,37 @@ async fn delete_server(
 ) -> Json<ApiResponse<String>> {
     match state.docker.remove_container(&id).await {
         Ok(_) => Json(ApiResponse::ok(format!("Server {} removed", id))),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+#[derive(serde::Deserialize)]
+pub struct ServerCommandRequest {
+    pub command: String,
+}
+
+async fn server_command(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+    Json(payload): Json<ServerCommandRequest>,
+) -> Json<ApiResponse<String>> {
+    let console_mgr = crate::console::ConsoleStreamManager::new(
+        Arc::new(state.docker.docker_client().clone()),
+    );
+    match console_mgr.send_command(&id, &payload.command).await {
+        Ok(_) => Json(ApiResponse::ok("Command sent".to_string())),
+        Err(err) => Json(ApiResponse::err(err.to_string())),
+    }
+}
+
+async fn server_inspect(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+    Path(id): Path<String>,
+) -> Json<ApiResponse<bollard::models::ContainerInspectResponse>> {
+    match state.docker.docker_client().inspect_container(&id, None).await {
+        Ok(info) => Json(ApiResponse::ok(info)),
         Err(err) => Json(ApiResponse::err(err.to_string())),
     }
 }

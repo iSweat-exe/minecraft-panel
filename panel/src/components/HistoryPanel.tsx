@@ -82,13 +82,17 @@ export const HistoryPanel: React.FC = () => {
         setLoading(true);
         setError(null);
         try {
-            const exists = await tauriBridge.sshExecute(`test -f /minecraft/.panel_logs/history.jsonl && echo "yes" || echo "no"`);
-            if (exists.trim() === 'no') {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            const content = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/.panel_logs/history.jsonl').catch(() => null);
+            if (!content) {
                 setLogs([]);
                 return;
             }
-
-            const content = await tauriBridge.sshExecute(`cat /minecraft/.panel_logs/history.jsonl`);
             
             // Fix concatenated JSON objects caused by missing newline bug
             const fixedContent = content.replace(/\}\{/g, '}\n{');

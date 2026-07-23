@@ -11,6 +11,14 @@ export interface PlayerConfig {
 export function usePlayerConfig(playerUuid: string) {
     const [config, setConfig] = useState<PlayerConfig | null>(null);
 
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     useEffect(() => {
         let isMounted = true;
 
@@ -21,7 +29,8 @@ export function usePlayerConfig(playerUuid: string) {
             let rconPass = "";
 
             try {
-                const props = await tauriBridge.sftpReadFile('/minecraft/server.properties');
+                const { nodeUrl, token } = getCredentials();
+                const props = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
                 const match = props.match(/^level-name=(.*)$/m);
                 if (match && match[1]) {
                     levelName = match[1].trim();
@@ -51,7 +60,8 @@ export function usePlayerConfig(playerUuid: string) {
             
             for (const dir of possibleDirs) {
                 try {
-                    const files = await tauriBridge.sftpListDir(dir);
+                    const { nodeUrl, token } = getCredentials();
+                    const files = await tauriBridge.nodeListDir(nodeUrl, token, dir);
                     const flatUuid = playerUuid.replace(/-/g, '').toLowerCase();
                     const matchedFile = files.find(f => f.name.toLowerCase().replace(/-/g, '') === `${flatUuid}.dat`);
                     

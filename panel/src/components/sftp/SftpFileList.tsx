@@ -185,7 +185,6 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
         if (!currentPath) return;
         
         try {
-            // Find the primary file to download
             const primaryFile = newVersion.files.find(f => f.primary) || newVersion.files[0];
             if (!primaryFile) {
                 console.error("No file found in version", newVersion);
@@ -194,12 +193,18 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
 
             const oldPath = currentPath === '/' ? `/${oldFilename}` : `${currentPath}/${oldFilename}`;
             const newPath = currentPath === '/' ? `/${primaryFile.filename}` : `${currentPath}/${primaryFile.filename}`;
+            
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
 
             // 1. Delete old file
-            await tauriBridge.sftpDelete(oldPath, false);
+            await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { action: "Delete" });
             
-            // 2. Download new file using sshDownloadRemote
-            await tauriBridge.sshDownloadRemote(primaryFile.url, newPath);
+            // 2. Download new file using nodeDownloadRemote
+            await tauriBridge.nodeDownloadRemote(nodeUrl, token, primaryFile.url, newPath);
 
             logAction('Changement de version d\'un mod', { old: oldFilename, new: primaryFile.filename });
 

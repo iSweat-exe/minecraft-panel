@@ -11,7 +11,13 @@ export interface PlayerInfo {
 }
 
 export const fetchPlayersList = async (): Promise<PlayerInfo[]> => {
-    const data = await tauriBridge.getPlayersList();
+    const host = localStorage.getItem('node_host');
+    const port = localStorage.getItem('node_port') || '8080';
+    const token = localStorage.getItem('node_token');
+    if (!host || !token) throw new Error("Daemon credentials missing");
+    const nodeUrl = `http://${host}:${port}`;
+    
+    const data = await tauriBridge.getPlayersList(nodeUrl, token);
     return data as PlayerInfo[];
 };
 
@@ -28,7 +34,13 @@ export const useExecuteCommandMutation = () => {
     
     return useMutation({
         mutationFn: async (command: string) => {
-            await tauriBridge.consoleSendCommand(command);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', command);
             logAction('Action sur un joueur', { commande: command });
         },
         onSuccess: () => {

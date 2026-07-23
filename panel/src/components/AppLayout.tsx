@@ -121,7 +121,13 @@ export const AppLayout: React.FC = () => {
         getCurrentWindow().onCloseRequested(async () => {
             const sessionUuid = localStorage.getItem('panel_session_uuid');
             if (sessionUuid) {
-                tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`).catch(() => {});
+                const host = localStorage.getItem('node_host');
+                const port = localStorage.getItem('node_port') || '8080';
+                const token = localStorage.getItem('node_token');
+                if (host && token) {
+                    const nodeUrl = `http://${host}:${port}`;
+                    tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${sessionUuid}.json`, 'delete').catch(() => {});
+                }
             }
         }).then(un => {
             if (isMounted) unlistenClose = un;
@@ -141,9 +147,14 @@ export const AppLayout: React.FC = () => {
             await logAction('Déconnexion du panel');
             const sessionUuid = localStorage.getItem('panel_session_uuid');
             if (sessionUuid) {
-                await tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`);
+                const host = localStorage.getItem('node_host');
+                const port = localStorage.getItem('node_port') || '8080';
+                const token = localStorage.getItem('node_token');
+                if (host && token) {
+                    const nodeUrl = `http://${host}:${port}`;
+                    await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${sessionUuid}.json`, 'delete').catch(() => {});
+                }
             }
-            await tauriBridge.sshDisconnect();
         } catch (e) {
             console.error(e);
         }

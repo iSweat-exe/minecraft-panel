@@ -4,6 +4,8 @@ mod console;
 mod docker;
 mod routes;
 mod update;
+mod files;
+mod metrics;
 
 
 use anyhow::Result;

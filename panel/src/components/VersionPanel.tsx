@@ -20,12 +20,21 @@ export const VersionPanel: React.FC = () => {
     const fetchDockerConfig = async () => {
         setLoading(true);
         try {
-            const envType = await tauriBridge.sshExecute(`docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' minecraft-panel-server 2>/dev/null | grep "^TYPE=" | cut -d= -f2 || echo "CUSTOM"`);
-            const envVersion = await tauriBridge.sshExecute(`docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' minecraft-panel-server 2>/dev/null | grep "^VERSION=" | cut -d= -f2 || echo "LATEST"`);
-            const imageTag = await tauriBridge.sshExecute(`docker inspect -f '{{.Config.Image}}' minecraft-panel-server 2>/dev/null || echo "itzg/minecraft-server"`);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
 
-            if (envType.trim()) setServerType(envType.trim());
-            if (envVersion.trim()) setMcVersion(envVersion.trim());
+            const info = await tauriBridge.nodeInspectContainer(nodeUrl, token, 'default');
+            const envVars: string[] = info?.Config?.Env || [];
+            
+            const envType = envVars.find(e => e.startsWith('TYPE='))?.split('=')[1] || 'CUSTOM';
+            const envVersion = envVars.find(e => e.startsWith('VERSION='))?.split('=')[1] || 'LATEST';
+            const imageTag = info?.Config?.Image || 'itzg/minecraft-server:java21';
+
+            setServerType(envType);
+            setMcVersion(envVersion);
             
             if (imageTag.includes(':')) {
                 const tag = imageTag.split(':')[1];
@@ -43,26 +52,47 @@ export const VersionPanel: React.FC = () => {
         setStatusMessage(null);
 
         try {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
             const image = `itzg/minecraft-server:${javaVersion}`;
             
+            // Delete old server
+            await tauriBridge.nodeDeleteServer(nodeUrl, token, 'default').catch(() => {});
+            
             // Re-create container with new version/type settings
-            const recreateScript = `
-                docker stop minecraft-panel-server 2>/dev/null || true
-                docker rm minecraft-panel-server 2>/dev/null || true
-                docker run -d \
-                    --name minecraft-panel-server \
-                    --restart unless-stopped \
-                    -v /minecraft:/data \
-                    -p 25565:25565 \
-                    -p 25575:25575 \
-                    -e EULA=TRUE \
-                    -e TYPE=${serverType} \
-                    ${serverType !== 'CUSTOM' ? `-e VERSION=${mcVersion}` : ''} \
-                    -e MEMORY=4G \
-                    ${image}
-            `;
+            const env = [
+                'EULA=TRUE',
+                `TYPE=${serverType}`,
+                'MEMORY=4G'
+            ];
+            if (serverType !== 'CUSTOM') {
+                env.push(`VERSION=${mcVersion}`);
+            }
 
-            await tauriBridge.sshExecute(recreateScript);
+            await tauriBridge.nodeCreateServer(nodeUrl, token, {
+                server_id: 'default',
+                name: 'minecraft-server',
+                image,
+                env,
+                ports: [
+                    { host_port: 25565, container_port: 25565, protocol: 'tcp' },
+                    { host_port: 25575, container_port: 25575, protocol: 'tcp' }
+                ],
+                volumes: [
+                    { host_path: '/minecraft', container_path: '/data', read_only: false }
+                ],
+                resources: {
+                    memory_limit_bytes: null,
+                    cpu_quota: null,
+                    cpu_period: null
+                },
+                owner: undefined
+            });
+
             await logAction(`Changement de version Minecraft / Environnement (${serverType} - ${mcVersion}, Java ${javaVersion})`, { serverType, mcVersion, javaVersion });
             setStatusMessage({ type: 'success', text: 'Conteneur mis à jour avec succès avec la nouvelle version/image Java !' });
         } catch (err: any) {

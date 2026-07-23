@@ -8,6 +8,14 @@ import { logAction } from '../../lib/actionLogger';
 export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelectionContext) {
     const [editingFile, setEditingFile] = useState<{path: string, content: string} | null>(null);
 
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     const handleNavigate = (e: React.MouseEvent, entry: FileEntry) => {
         if (e.ctrlKey || e.metaKey) {
             e.stopPropagation();
@@ -42,8 +50,9 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
     const openEditor = async (filename: string) => {
         const fullPath = state.currentPath === '/' ? `/${filename}` : `${state.currentPath}/${filename}`;
         try {
-            const content = await tauriBridge.sftpReadFile(fullPath);
-            setEditingFile({ path: fullPath, content });
+            const { nodeUrl, token } = getCredentials();
+            const content = await tauriBridge.nodeReadFile(nodeUrl, token, fullPath);
+            setEditingFile({ path: fullPath, content: atob(content) }); // Decode base64
         } catch (e: any) {
             state.setError(`Cannot read file: ${e.toString()}`);
         }
@@ -52,7 +61,8 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
     const saveEditor = async (content: string) => {
         if (!editingFile) return;
         try {
-            await tauriBridge.sftpWriteFile(editingFile.path, content);
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeWriteFile(nodeUrl, token, editingFile.path, content);
             logAction('Edition d\'un fichier', { file: editingFile.path });
             setEditingFile(null);
             state.fetchDir(state.currentPath);
@@ -71,7 +81,8 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
         
         const fullPath = state.currentPath === '/' ? `/${entry.name}` : `${state.currentPath}/${entry.name}`;
         try {
-            await tauriBridge.sftpDelete(fullPath, entry.is_dir);
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeFileAction(nodeUrl, token, fullPath, "delete");
             logAction('Suppression d\'un fichier', { file: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {
@@ -92,7 +103,8 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
 
         const fullPath = state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
         try {
-            await tauriBridge.sftpMkdir(fullPath);
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeFileAction(nodeUrl, token, fullPath, "mkdir");
             logAction('Création d\'un dossier', { folder: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {
@@ -116,7 +128,8 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
 
         const fullPath = state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
         try {
-            await tauriBridge.sftpWriteFile(fullPath, "");
+            const { nodeUrl, token } = getCredentials();
+            await tauriBridge.nodeWriteFile(nodeUrl, token, fullPath, "");
             logAction('Création d\'un fichier', { file: fullPath });
             state.fetchDir(state.currentPath);
         } catch (err: any) {

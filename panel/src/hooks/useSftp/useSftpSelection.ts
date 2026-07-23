@@ -35,7 +35,13 @@ export function useSftpSelection(state: SftpStateContext) {
         const newPath = state.currentPath === '/' ? `/${newName}` : `${state.currentPath}/${newName}`;
         
         try {
-            await tauriBridge.sftpRename(oldPath, newPath);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { rename: { new_name: newPath } });
             logAction('Renommage de fichier', { old: oldPath, new: newPath });
             setSelectedFiles(new Set());
             state.fetchDir(state.currentPath);
@@ -47,6 +53,12 @@ export function useSftpSelection(state: SftpStateContext) {
     const handlePaste = async () => {
         if (!clipboard) return;
         try {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
             for (const file of clipboard.files) {
                 if (state.entries.some(e => e.name === file)) {
                     const confirmed = await ConfirmDialog.call({
@@ -60,10 +72,10 @@ export function useSftpSelection(state: SftpStateContext) {
                 const dstPath = state.currentPath === '/' ? `/${file}` : `${state.currentPath}/${file}`;
                 
                 if (clipboard.action === 'copy') {
-                    await tauriBridge.sshCopy(srcPath, dstPath);
+                    await tauriBridge.nodeFileAction(nodeUrl, token, srcPath, { copy: { destination: dstPath } });
                     logAction('Copie de fichier', { src: srcPath, dst: dstPath });
                 } else {
-                    await tauriBridge.sftpRename(srcPath, dstPath);
+                    await tauriBridge.nodeFileAction(nodeUrl, token, srcPath, { rename: { new_name: dstPath } });
                     logAction('Déplacement de fichier', { src: srcPath, dst: dstPath });
                 }
             }

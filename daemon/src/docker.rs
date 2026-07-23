@@ -121,6 +121,7 @@ impl DockerManager {
                 "seccomp=unconfined".to_string(),
                 "apparmor=unconfined".to_string(),
             ]),
+            privileged: Some(true),
             ..Default::default()
         };
 

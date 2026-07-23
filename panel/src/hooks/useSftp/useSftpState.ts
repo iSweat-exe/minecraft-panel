@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { tauriBridge, FileEntry } from '../../lib/tauriBridge';
 import { SftpStateContext } from './types';
 
-export function useSftpState(initialPath: string = '/') {
+export function useSftpState(initialPath: string = '/minecraft') {
     const [currentPath, setCurrentPath] = useState<string>(initialPath);
     const [rawEntries, setRawEntries] = useState<FileEntry[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -49,7 +49,13 @@ export function useSftpState(initialPath: string = '/') {
         setLoading(true);
         setError(null);
         try {
-            const data = await tauriBridge.sftpListDir(path);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            const data = await tauriBridge.nodeListDir(nodeUrl, token, path);
             setRawEntries(data);
             setCurrentPath(path);
         } catch (e: any) {
@@ -78,3 +84,4 @@ export function useSftpState(initialPath: string = '/') {
         setSortConfig
     };
 }
+

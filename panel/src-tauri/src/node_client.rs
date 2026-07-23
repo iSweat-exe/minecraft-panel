@@ -164,6 +164,64 @@ impl DaemonClient {
         }
     }
 
+    /// Inspect a server container
+    pub async fn inspect_container(&self, server_id: &str) -> Result<serde_json::Value, AppError> {
+        let url = self.build_url(&format!("/api/v1/servers/{}/inspect", server_id));
+        let res = self
+            .client
+            .get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<serde_json::Value> = res.json().await?;
+        if body.success {
+            body.data
+                .ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "Inspect failed".into()),
+            ))
+        }
+    }
+
+    /// Send a console command to a server container
+    pub async fn send_command(&self, server_id: &str, command: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/servers/{}/command", server_id));
+        let payload = serde_json::json!({ "command": command });
+
+        let res = self
+            .client
+            .post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!(
+                "Daemon returned HTTP {}",
+                res.status()
+            )));
+        }
+
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success {
+            body.data
+                .ok_or_else(|| AppError::Message("Missing response data".into()))
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "Command execution failed".into()),
+            ))
+        }
+    }
+
     /// Delete a server container on the node
     pub async fn delete_server(&self, server_id: &str) -> Result<String, AppError> {
         let url = self.build_url(&format!("/api/v1/servers/{}", server_id));
@@ -207,5 +265,126 @@ impl DaemonClient {
 
         encode(&Header::default(), &claims, &encoding_key)
             .map_err(|e| AppError::Message(format!("JWT encoding error: {}", e)))
+    }
+
+    pub async fn get_metrics(&self) -> Result<protocol::SystemMetricsResponse, AppError> {
+        let url = self.build_url("/api/v1/metrics");
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<protocol::SystemMetricsResponse> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing metrics data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn list_dir(&self, path: &str) -> Result<Vec<protocol::FileEntry>, AppError> {
+        let url = self.build_url(&format!("/api/v1/files/list?path={}", urlencoding::encode(path)));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<Vec<protocol::FileEntry>> = res.json().await?;
+        if body.success {
+            Ok(body.data.unwrap_or_default())
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn read_file(&self, path: &str) -> Result<String, AppError> {
+        let url = self.build_url(&format!("/api/v1/files/read?path={}", urlencoding::encode(path)));
+        let res = self.client.get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success {
+            body.data.ok_or_else(|| AppError::Message("Missing file data".into()))
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn write_file(&self, path: &str, content: String) -> Result<(), AppError> {
+        let url = self.build_url(&format!("/api/v1/files/write?path={}", urlencoding::encode(path)));
+        let payload = protocol::FileWriteRequest { content };
+
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success {
+            Ok(())
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn upload_file(&self, path: &str, content: Vec<u8>) -> Result<(), AppError> {
+        let url = self.build_url(&format!("/api/v1/files/upload?path={}", urlencoding::encode(path)));
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .body(content)
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success {
+            Ok(())
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
+    }
+
+    pub async fn file_action(&self, path: &str, action: protocol::FileAction) -> Result<(), AppError> {
+        let url = self.build_url(&format!("/api/v1/files/action?path={}", urlencoding::encode(path)));
+        let payload = protocol::FileActionRequest { action };
+
+        let res = self.client.post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(&payload)
+            .send().await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        }
+
+        let body: ApiResponse<String> = res.json().await?;
+        if body.success {
+            Ok(())
+        } else {
+            Err(AppError::Message(body.error.unwrap_or_else(|| "Unknown daemon error".into())))
+        }
     }
 }

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useConnectionGate } from '../hooks/useConnectionGate';
-import { FileUp } from 'lucide-react';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
@@ -13,55 +12,14 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         setHost,
         port,
         setPort,
-        username,
-        setUsername,
         subUsername,
         setSubUsername,
-        keyPath,
-        setKeyPath,
-        verifyingKey,
         connect,
-        pickKeyFile,
-        dismissKeyVerification,
-        acceptFingerprint,
         loginMode,
         setLoginMode,
-        adminAuthMode,
-        setAdminAuthMode,
         password,
         setPassword,
     } = useConnectionGate();
-
-
-
-    if (verifyingKey) {
-        return (
-            <div className="flex items-center justify-center h-full bg-background text-foreground">
-                <Card className="max-w-md w-full mx-4">
-                    <CardHeader>
-                        <CardTitle className="text-sm text-muted-foreground uppercase tracking-wider">Host Key Verification</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-3">The server presented this fingerprint:</p>
-                        <div className="bg-background border border-border rounded-md p-3 font-mono text-xs text-foreground break-all mb-4">
-                            {verifyingKey}
-                        </div>
-                        <p className="text-xs text-warning mb-5">
-                            If you don't recognize this fingerprint, the connection may not be secure.
-                        </p>
-                        <div className="flex gap-3">
-                            <Button variant="secondary" className="flex-1" onClick={dismissKeyVerification}>
-                                Dismiss
-                            </Button>
-                            <Button variant="primary" className="flex-1" onClick={acceptFingerprint}>
-                                Accept & Connect
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     if (sshStatus === 'connected') {
         return <>{children}</>;
@@ -78,7 +36,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                                 loginMode === 'admin' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            Admin
+                            Administrateur
                         </button>
                         <button
                             onClick={() => setLoginMode('subuser')}
@@ -90,13 +48,13 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                         </button>
                     </div>
                     <CardTitle className="text-xs text-muted-foreground tracking-wider uppercase">
-                        {loginMode === 'admin' ? 'Connexion Administrateur Root' : 'Connexion Membre du Panel'}
+                        {loginMode === 'admin' ? 'Connexion Daemon (Admin)' : 'Connexion Membre du Panel'}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-3">
                         <div className="flex-1">
-                            <Label className="mb-1 block text-muted-foreground">Hôte / IP VPS</Label>
+                            <Label className="mb-1 block text-muted-foreground">Hôte / IP Daemon</Label>
                             <Input 
                                 value={host} 
                                 onChange={e => setHost(e.target.value)} 
@@ -108,7 +66,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                             <Input 
                                 type="number"
                                 value={port} 
-                                onChange={e => setPort(parseInt(e.target.value) || 22)} 
+                                onChange={e => setPort(parseInt(e.target.value) || 8080)} 
                             />
                         </div>
                     </div>
@@ -116,59 +74,13 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                     {loginMode === 'admin' ? (
                         <>
                             <div>
-                                <Label className="mb-1 block text-muted-foreground">Utilisateur (SSH)</Label>
+                                <Label className="mb-1 block text-muted-foreground">Token Node (Mot de passe)</Label>
                                 <Input 
-                                    value={username} 
-                                    onChange={e => setUsername(e.target.value)} 
-                                    placeholder="root"
+                                    type="password"
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)} 
+                                    placeholder="Daemon Token"
                                 />
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label className="text-muted-foreground">Méthode d'auth SSH</Label>
-                                    <div className="flex bg-surface border border-border rounded-md p-0.5 text-[11px] font-mono">
-                                        <button
-                                            type="button"
-                                            onClick={() => setAdminAuthMode('key')}
-                                            className={`px-2 py-0.5 rounded transition-all ${
-                                                adminAuthMode === 'key' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'
-                                            }`}
-                                        >
-                                            Clé SSH
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => setAdminAuthMode('password')}
-                                            className={`px-2 py-0.5 rounded transition-all ${
-                                                adminAuthMode === 'password' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'
-                                            }`}
-                                        >
-                                            Mot de passe
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {adminAuthMode === 'key' ? (
-                                    <div className="flex gap-2">
-                                        <Input 
-                                            className="flex-1" 
-                                            value={keyPath} 
-                                            onChange={e => setKeyPath(e.target.value)} 
-                                            placeholder="~/.ssh/id_ed25519"
-                                        />
-                                        <Button variant="secondary" onClick={pickKeyFile}>
-                                            <FileUp size={18} />
-                                        </Button>
-                                    </div>
-                                ) : (
-                                    <Input 
-                                        type="password"
-                                        value={password} 
-                                        onChange={e => setPassword(e.target.value)} 
-                                        placeholder="Mot de passe SSH root"
-                                    />
-                                )}
                             </div>
                         </>
                     ) : (
@@ -193,7 +105,6 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                         </>
                     )}
                 </CardContent>
-
 
                 <CardFooter className="flex flex-col gap-4">
                     <Button 

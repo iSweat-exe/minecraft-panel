@@ -65,8 +65,14 @@ export const ModsPanel: React.FC = () => {
     const fetchInstalledFiles = async () => {
         try {
             const resolvedPath = getResolvedModPath(modPath);
-            await tauriBridge.sshExecute(`mkdir -p ${resolvedPath}`).catch(() => {});
-            const files = await tauriBridge.sftpListDir(resolvedPath);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) return;
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, { action: { mkdir: {} } }).catch(() => {});
+            const files = await tauriBridge.nodeListDir(nodeUrl, token, resolvedPath);
             setInstalledFiles(files.map(f => f.name.toLowerCase()));
         } catch (e: any) {
             if (e && typeof e === 'string' && !e.includes("No such file")) {
@@ -118,10 +124,16 @@ export const ModsPanel: React.FC = () => {
             
             // 2. Download to server
             const resolvedDir = getResolvedModPath(modPath);
-            await tauriBridge.sshExecute(`mkdir -p ${resolvedDir}`).catch(() => {});
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedDir, { action: { mkdir: {} } }).catch(() => {});
             const finalPath = resolvedDir.endsWith('/') ? `${resolvedDir}${file.filename}` : `${resolvedDir}/${file.filename}`;
             
-            await tauriBridge.sshDownloadRemote(file.url, finalPath);
+            await tauriBridge.nodeDownloadRemote(nodeUrl, token, file.url, finalPath);
             await fetchInstalledFiles(); // Refresh installed mods list
             
             logAction('Installation d\'un mod', { mod: mod.title, version: latest.version_number, file: file.filename });
@@ -147,8 +159,14 @@ export const ModsPanel: React.FC = () => {
 
         try {
             const resolvedPath = getResolvedModPath(modPath);
-            await tauriBridge.sshExecute(`mkdir -p ${resolvedPath}`).catch(() => {});
-            await tauriBridge.sshDownloadRemote(primaryFile.url, `${resolvedPath}/${primaryFile.filename}`);
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, { action: { mkdir: {} } }).catch(() => {});
+            await tauriBridge.nodeDownloadRemote(nodeUrl, token, primaryFile.url, `${resolvedPath}/${primaryFile.filename}`);
             logAction('INSTALL_MOD', `Installed ${selectedModDetails.title} version ${version.version_number}`);
             await fetchInstalledFiles();
         } catch (e: any) {

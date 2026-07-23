@@ -16,7 +16,7 @@ export interface McPing {
     sample?: { id: string; name: string }[];
 }
 
-export interface SystemMetrics {
+export interface SystemMetricsResponse {
     cpu_percent: number;
     ram_used_mb: number;
     ram_total_mb: number;
@@ -24,6 +24,45 @@ export interface SystemMetrics {
     disk_total_gb: number;
     network_rx_bps: number;
     network_tx_bps: number;
+}
+
+export interface DaemonInfoResponse {
+    version: string;
+    protocol_version: number;
+    node_id: string;
+    docker_version: string;
+    total_servers: number;
+    running_servers: number;
+    uptime_seconds: number;
+}
+
+export interface ServerStatusResponse {
+    server_id: string;
+    container_id: string | null;
+    name: string;
+    image: string;
+    state: string;
+    memory_used_bytes: number;
+    memory_limit_bytes: number;
+    cpu_percent: number;
+}
+
+export interface PowerActionResponse {
+    server_id: string;
+    action: string;
+    success: boolean;
+    message: string;
+}
+
+export interface ContainerSpec {
+    server_id: string;
+    name: string;
+    owner?: string;
+    image: string;
+    ports: Array<{ container_port: number; host_port: number; protocol: string }>;
+    volumes: Array<{ host_path: string; container_path: string; read_only: boolean }>;
+    env: string[];
+    resources: { memory_limit_bytes: number | null; cpu_quota: number | null; cpu_period: number | null };
 }
 
 export interface FileEntry {
@@ -79,13 +118,13 @@ export const tauriBridge = {
     sftpReadFile: (path: string) => invoke<string>('sftp_read_file', { path }),
     sftpReadFileBase64: (path: string) => invoke<string>('sftp_read_file_base64', { path }),
     rconExecuteMulti: (cmds: string[], port: number, password: string) => invoke<string[]>('rcon_execute_multi', { cmds, port, password }),
-    getPlayersList: () => invoke<unknown[]>('get_players_list'),
+    getPlayersList: (nodeUrl: string, nodeToken: string) => invoke<unknown[]>('get_players_list', { nodeUrl, nodeToken }),
     
     // Sub-users & Permissions
-    getPanelUsers: () => invoke<import('../types/permissions').PanelUser[]>('get_panel_users'),
-    savePanelUser: (user: import('../types/permissions').PanelUser) => invoke<import('../types/permissions').PanelUser[]>('save_panel_user', { user }),
-    deletePanelUser: (username: string) => invoke<import('../types/permissions').PanelUser[]>('delete_panel_user', { username }),
-    verifyPanelUser: (username: string, password: string) => invoke<import('../types/permissions').PanelUser>('verify_panel_user', { username, password }),
+    getPanelUsers: (nodeUrl: string, nodeToken: string) => invoke<import('../types/permissions').PanelUser[]>('get_panel_users', { nodeUrl, nodeToken }),
+    savePanelUser: (nodeUrl: string, nodeToken: string, user: import('../types/permissions').PanelUser) => invoke<import('../types/permissions').PanelUser[]>('save_panel_user', { nodeUrl, nodeToken, user }),
+    deletePanelUser: (nodeUrl: string, nodeToken: string, username: string) => invoke<import('../types/permissions').PanelUser[]>('delete_panel_user', { nodeUrl, nodeToken, username }),
+    verifyPanelUser: (nodeUrl: string, nodeToken: string, username: string, password: string) => invoke<import('../types/permissions').PanelUser>('verify_panel_user', { nodeUrl, nodeToken, username, password }),
 
     // Docker Management
     dockerListContainers: () => invoke<DockerContainerInfo[]>('docker_list_containers'),
@@ -122,21 +161,10 @@ export const tauriBridge = {
     // VPS Interactive Terminal
     terminalStart: (cols: number, rows: number) => invoke<void>('terminal_start', { cols, rows }),
     terminalWrite: (data: number[]) => invoke<void>('terminal_write', { data }),
-    terminalResize: (cols: number, rows: number) => invoke<void>('terminal_resize', { cols, rows }),
-    onTerminalData: (callback: (data: number[]) => void): Promise<UnlistenFn> =>
-        listen<number[]>('terminal-data', (event) => callback(event.payload)),
-    onTerminalExit: (callback: () => void): Promise<UnlistenFn> =>
-        listen<void>('terminal-exit', () => callback()),
-
-    sftpWriteFile: (path: string, content: string) => invoke<void>('sftp_write_file', { path, content }),
-    sftpDelete: (path: string, is_dir: boolean) => invoke<void>('sftp_delete', { path, isDir: is_dir }),
-    sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),
-    sftpMkdir: (path: string) => invoke<void>('sftp_mkdir', { path }),
-    sshCopy: (src: string, dest: string) => invoke<void>('ssh_copy', { src, dest }),
-    sshDownloadRemote: (url: string, dest: string) => invoke<void>('ssh_download_remote', { url, dest }),
-    sftpDownloadFile: (remotePath: string, localPath: string) => invoke<void>('sftp_download_file', { remotePath, localPath }),
-    cancelBackup: () => invoke<void>('cancel_backup'),
     sftpUploadFile: (localPath: string, remotePath: string) => invoke<void>('sftp_upload_file', { localPath, remotePath }),
+    sftpDownloadFile: (remotePath: string, localPath: string) => invoke<void>('sftp_download_file', { remotePath, localPath }),
+    
+    cancelBackup: () => invoke<void>('cancel_backup'),
     
     onConsoleLine: (callback: (line: string) => void): Promise<UnlistenFn> =>
         listen<string>('console-line', (event) => callback(event.payload)),
@@ -144,8 +172,8 @@ export const tauriBridge = {
     onConsoleLines: (callback: (lines: string[]) => void): Promise<UnlistenFn> =>
         listen<string[]>('console-lines', (event) => callback(event.payload)),
     
-    onMetricsUpdate: (callback: (metrics: SystemMetrics) => void): Promise<UnlistenFn> =>
-        listen<SystemMetrics>('metrics-update', (event) => callback(event.payload)),
+    onMetricsUpdate: (callback: (metrics: SystemMetricsResponse) => void): Promise<UnlistenFn> =>
+        listen<SystemMetricsResponse>('metrics-update', (event) => callback(event.payload)),
     
     onHostKeyVerificationNeeded: (callback: (fingerprint: string) => void): Promise<UnlistenFn> =>
         listen<string>('host-key-verification-needed', (event) => callback(event.payload)),
@@ -174,4 +202,23 @@ export const tauriBridge = {
 
     onDownloadProgress: (callback: (progress: { filename: string; written: number; total: number }) => void): Promise<UnlistenFn> =>
         listen<{ filename: string; written: number; total: number }>('download-progress', (event) => callback(event.payload)),
+
+    // Daemon API
+    nodeGetInfo: (nodeUrl: string, nodeToken: string) => invoke<DaemonInfoResponse>('node_get_info', { nodeUrl, nodeToken }),
+    nodeListServers: (nodeUrl: string, nodeToken: string) => invoke<ServerStatusResponse[]>('node_list_servers', { nodeUrl, nodeToken }),
+    nodeCreateServer: (nodeUrl: string, nodeToken: string, spec: ContainerSpec) => invoke<string>('node_create_server', { nodeUrl, nodeToken, spec }),
+    nodePowerAction: (nodeUrl: string, nodeToken: string, serverId: string, action: string) => invoke<PowerActionResponse>('node_power_action', { nodeUrl, nodeToken, serverId, action }),
+    nodeSendCommand: (nodeUrl: string, nodeToken: string, serverId: string, command: string) => invoke<string>('node_send_command', { nodeUrl, nodeToken, serverId, command }),
+    nodeInspectContainer: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<any>('node_inspect_container', { nodeUrl, nodeToken, serverId }),
+    nodeDownloadRemote: (nodeUrl: string, nodeToken: string, url: string, dest: string) => invoke<void>('node_download_remote', { nodeUrl, nodeToken, url, dest }),
+    nodeDeleteServer: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<string>('node_delete_server', { nodeUrl, nodeToken, serverId }),
+    nodeGenerateConsoleToken: (serverId: string, jwtSecret: string) => invoke<string>('node_generate_console_token', { serverId, jwtSecret }),
+    nodeGetMetrics: (nodeUrl: string, nodeToken: string) => invoke<SystemMetricsResponse>('node_get_metrics', { nodeUrl, nodeToken }),
+    nodeListDir: (nodeUrl: string, nodeToken: string, path: string) => invoke<FileEntry[]>('node_list_dir', { nodeUrl, nodeToken, path }),
+    nodeReadFile: (nodeUrl: string, nodeToken: string, path: string) => invoke<string>('node_read_file', { nodeUrl, nodeToken, path }),
+    nodeReadFileText: (nodeUrl: string, nodeToken: string, path: string) => invoke<string>('node_read_file_text', { nodeUrl, nodeToken, path }),
+    nodeWriteFile: (nodeUrl: string, nodeToken: string, path: string, content: string) => invoke<void>('node_write_file', { nodeUrl, nodeToken, path, content }),
+    nodeFileAction: (nodeUrl: string, nodeToken: string, path: string, action: any) => invoke<void>('node_file_action', { nodeUrl, nodeToken, path, action }),
+    nodeUploadFile: (nodeUrl: string, nodeToken: string, localPath: string, remotePath: string) => invoke<void>('node_upload_file', { nodeUrl, nodeToken, localPath, remotePath }),
+    nodeDownloadFile: (nodeUrl: string, nodeToken: string, remotePath: string, localPath: string) => invoke<void>('node_download_file', { nodeUrl, nodeToken, remotePath, localPath }),
 };

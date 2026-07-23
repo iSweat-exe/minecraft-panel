@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore } from '../store/connectionStore';
 
 import { useSessionStore } from '../store/sessionStore';
 import type { PanelSession } from '../store/sessionStore';
@@ -50,12 +49,17 @@ async function getUserInfo() {
 }
 
 export function useSessionPing() {
-    const { sshStatus } = useConnectionStore();
     const setSessions = useSessionStore(state => state.setSessions);
 
-    useEffect(() => {
-        if (sshStatus !== 'connected') return;
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
 
+    useEffect(() => {
         const sessionUuid = localStorage.getItem('panel_session_uuid');
         let displayName = localStorage.getItem('panel_display_name') || 'Anonyme';
         let avatarData = localStorage.getItem('panel_avatar_base64') || '';
@@ -72,54 +76,56 @@ export function useSessionPing() {
 
         const pingAndFetch = async () => {
             if (!sessionUuid) return;
-            displayName = localStorage.getItem('panel_display_name') || 'Anonyme';
-            avatarData = localStorage.getItem('panel_avatar_base64') || '';
-            
-            // Protect against huge base64 strings crashing the SSH channel
-            if (avatarData.length > 100000) {
-                avatarData = '';
-                localStorage.removeItem('panel_avatar_base64');
-            }
-            
-            const userInfo = await getUserInfo();
-
-            const payload = JSON.stringify({
-                uuid: sessionUuid,
-                name: displayName,
-                avatar: avatarData,
-                connectedAt,
-                lastSeen: Date.now(),
-                ip: userInfo.ip,
-                ipv6: userInfo.ipv6,
-                location: userInfo.location,
-                os: userInfo.os
-            });
-
-            const safePayload = payload.replace(/'/g, "'\\''");
-            const safeUuid = sessionUuid.replace(/'/g, "'\\''");
-
-            // Heartbeat + Fetch + Cleanup (delete files older than 2 minutes to be safe)
-            const script = `
-                mkdir -p /minecraft/.panel_sessions
-                echo '${safePayload}' > /minecraft/.panel_sessions/${safeUuid}.json
-                find /minecraft/.panel_sessions -type f -mtime +30 -delete
-                cat /minecraft/.panel_sessions/*.json 2>/dev/null || echo ""
-            `;
-
             try {
-                const output = await tauriBridge.sshExecute(script);
-                const lines = output.split('\n').filter(l => l.trim().startsWith('{'));
+                const { nodeUrl, token } = getCredentials();
+                displayName = localStorage.getItem('panel_display_name') || 'Anonyme';
+                avatarData = localStorage.getItem('panel_avatar_base64') || '';
                 
+                if (avatarData.length > 100000) {
+                    avatarData = '';
+                    localStorage.removeItem('panel_avatar_base64');
+                }
+                
+                const userInfo = await getUserInfo();
+
+                const payload = JSON.stringify({
+                    uuid: sessionUuid,
+                    name: displayName,
+                    avatar: avatarData,
+                    connectedAt,
+                    lastSeen: Date.now(),
+                    ip: userInfo.ip,
+                    ipv6: userInfo.ipv6,
+                    location: userInfo.location,
+                    os: userInfo.os
+                });
+
+                // Write session file
+                const sessionPath = `/minecraft/.panel_sessions/${sessionUuid}.json`;
+                
+                // Ensure directory exists by attempting to write to it
+                await tauriBridge.nodeWriteFile(nodeUrl, token, sessionPath, payload);
+
+                // List files
+                const files = await tauriBridge.nodeListDir(nodeUrl, token, '/minecraft/.panel_sessions').catch(() => []);
                 const activeSessions: PanelSession[] = [];
-                for (const line of lines) {
-                    try {
-                        activeSessions.push(JSON.parse(line));
-                    } catch (e) {
-                        // ignore malformed JSON
+                const now = Date.now();
+                
+                for (const f of files) {
+                    if (!f.is_dir && f.name.endsWith('.json')) {
+                        try {
+                            const text = await tauriBridge.nodeReadFileText(nodeUrl, token, `/minecraft/.panel_sessions/${f.name}`);
+                            const session = JSON.parse(text);
+                            // Delete if older than 30 days
+                            if (now - session.lastSeen > 30 * 24 * 60 * 60 * 1000) {
+                                await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${f.name}`, "delete").catch(() => {});
+                            } else {
+                                activeSessions.push(session);
+                            }
+                        } catch (e) {}
                     }
                 }
                 
-                // Sort by connected time
                 activeSessions.sort((a, b) => a.connectedAt - b.connectedAt);
                 setSessions(activeSessions);
 
@@ -128,13 +134,10 @@ export function useSessionPing() {
             }
         };
 
-        // Run immediately
         pingAndFetch();
-
-        // Then every 10 seconds
         const interval = setInterval(pingAndFetch, 10000);
 
         return () => clearInterval(interval);
-    }, [sshStatus]);
-
+    }, []);
 }
+

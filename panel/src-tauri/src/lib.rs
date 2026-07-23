@@ -74,10 +74,20 @@ pub fn run() {
             commands::node::node_list_servers,
             commands::node::node_create_server,
             commands::node::node_power_action,
+            commands::node::node_send_command,
+            commands::node::node_inspect_container,
+            commands::node::node_download_remote,
             commands::node::node_delete_server,
-            commands::node::node_generate_console_token
+            commands::node::node_generate_console_token,
+            commands::node::node_get_metrics,
+            commands::node::node_list_dir,
+            commands::node::node_read_file,
+            commands::node::node_read_file_text,
+            commands::node::node_write_file,
+            commands::node::node_file_action,
+            commands::node::node_upload_file,
+            commands::node::node_download_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-

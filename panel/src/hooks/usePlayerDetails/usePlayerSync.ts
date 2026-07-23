@@ -24,7 +24,13 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                 if (!nbtDataRef.current) {
                     let base64;
                     try {
-                        base64 = await tauriBridge.sftpReadFileBase64(config.actualFilePath);
+                        const host = localStorage.getItem('node_host');
+                        const port = localStorage.getItem('node_port') || '8080';
+                        const token = localStorage.getItem('node_token');
+                        if (!host || !token) throw new Error("Daemon credentials missing");
+                        const nodeUrl = `http://${host}:${port}`;
+                        
+                        base64 = await tauriBridge.nodeReadFile(nodeUrl, token, config.actualFilePath);
                     } catch (e) {
                         throw new Error(`Fichier introuvable (${config.actualFilePath}).`);
                     }

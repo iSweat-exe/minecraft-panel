@@ -4,38 +4,74 @@ import { useConsoleStore } from '../store/consoleStore';
 import { logAction } from '../lib/actionLogger';
 
 export function useConsole() {
-    const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
+    const { lines, pushLine, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
     const [command, setCommand] = useState('');
     const containerRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const [isScrolledUpState, setIsScrolledUpState] = useState(storeIsScrolledUp);
     const isScrolledUp = useRef(storeIsScrolledUp);
+    const wsRef = useRef<WebSocket | null>(null);
 
     useEffect(() => {
-        const init = async () => {
+        let isMounted = true;
+        let ws: WebSocket | null = null;
+
+        const connectWs = async () => {
             try {
-                await tauriBridge.consoleSubscribe();
+                const host = localStorage.getItem('node_host');
+                const port = localStorage.getItem('node_port') || '8080';
+                const token = localStorage.getItem('node_token');
+                if (!host || !token) return;
+
+                const serverId = 'default';
+                const jwtToken = await tauriBridge.nodeGenerateConsoleToken(serverId, token);
+                
+                // Use wss:// if connection is https, else ws://
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${host}:${port}/api/v1/servers/${serverId}/ws?token=${jwtToken}`;
+
+                if (!isMounted) return;
+
+                ws = new WebSocket(wsUrl);
+                wsRef.current = ws;
+
+                ws.onopen = () => {
+                    console.log("WebSocket console connected");
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const payload = JSON.parse(event.data);
+                        if (payload.event === 'console_output') {
+                            pushLine(payload.data.line);
+                        } else if (payload.event === 'error') {
+                            console.error("Console WS error:", payload.data.message);
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse console WS message", e);
+                    }
+                };
+
+                ws.onclose = () => {
+                    console.log("WebSocket console disconnected");
+                };
+
             } catch (e) {
-                console.error("Failed to subscribe to console", e);
+                console.error("Failed to connect to console WS", e);
             }
         };
-        init();
 
-        const unlistenLines = tauriBridge.onConsoleLines((newLines) => {
-            pushLines(newLines);
-        });
-
-        const unlisten = tauriBridge.onConsoleLine((line) => {
-            pushLine(line);
-        });
+        connectWs();
 
         return () => {
-            unlisten.then(f => f());
-            unlistenLines.then(f => f());
-            tauriBridge.consoleUnsubscribe().catch(e => console.error("Failed to unsubscribe console", e));
+            isMounted = false;
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
+            }
         };
-    }, [pushLine, pushLines]);
+    }, [pushLine]);
 
     // Initial scroll on mount & save on unmount
     useEffect(() => {
@@ -93,7 +129,16 @@ export function useConsole() {
             pushHistory(trimmed);
             pushLine(`> ${trimmed}`);
             setCommand('');
-            await tauriBridge.consoleSendCommand(trimmed);
+            
+            if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+                wsRef.current.send(JSON.stringify({
+                    event: 'send_command',
+                    data: { command: trimmed }
+                }));
+            } else {
+                console.warn("WebSocket not connected. Cannot send command.");
+            }
+
             logAction('Commande manuelle (Console)', { commande: trimmed });
             
             // Force scroll to bottom when sending a command
@@ -139,3 +184,4 @@ export function useConsole() {
         isScrolledUp: isScrolledUpState
     };
 }
+

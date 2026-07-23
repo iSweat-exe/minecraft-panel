@@ -1,6 +1,5 @@
 use crate::error::AppError;
-use crate::state::SshState;
-use tauri::State;
+use crate::node_client::DaemonClient;
 use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 
@@ -25,26 +24,30 @@ struct BasePlayer {
 }
 
 #[tauri::command]
-pub async fn get_players_list(state: State<'_, SshState>) -> Result<Vec<PlayerInfo>, AppError> {
-    let sftp = crate::commands::sftp::get_sftp_session(&state).await?;
+pub async fn get_players_list(node_url: String, node_token: String) -> Result<Vec<PlayerInfo>, AppError> {
+    let client = DaemonClient::new(node_url, node_token);
 
-    let (usercache_bytes, ops_bytes, banned_bytes, whitelist_bytes) = tokio::join!(
-        sftp.read("/minecraft/usercache.json"),
-        sftp.read("/minecraft/ops.json"),
-        sftp.read("/minecraft/banned-players.json"),
-        sftp.read("/minecraft/whitelist.json")
+    let (usercache_res, ops_res, banned_res, whitelist_res) = tokio::join!(
+        client.read_file("/minecraft/usercache.json"),
+        client.read_file("/minecraft/ops.json"),
+        client.read_file("/minecraft/banned-players.json"),
+        client.read_file("/minecraft/whitelist.json")
     );
 
-    let parse = |res: Result<Vec<u8>, _>| -> Vec<BasePlayer> {
+    let parse = |res: Result<String, _>| -> Vec<BasePlayer> {
         res.ok()
+            .and_then(|b64| {
+                use base64::Engine;
+                base64::engine::general_purpose::STANDARD.decode(&b64).ok()
+            })
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or_default()
     };
 
-    let usercache = parse(usercache_bytes);
-    let ops = parse(ops_bytes);
-    let banned = parse(banned_bytes);
-    let whitelist = parse(whitelist_bytes);
+    let usercache = parse(usercache_res);
+    let ops = parse(ops_res);
+    let banned = parse(banned_res);
+    let whitelist = parse(whitelist_res);
 
     let mut op_uuids = HashSet::new();
     for p in &ops { op_uuids.insert(p.uuid.clone()); }

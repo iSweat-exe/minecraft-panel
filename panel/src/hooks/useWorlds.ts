@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore } from '../store/connectionStore';
 import { logAction } from '../lib/actionLogger';
 
 export interface WorldInfo {
@@ -8,35 +7,51 @@ export interface WorldInfo {
     isActive: boolean;
 }
 
+const DEFAULT_SERVER_ID = "minecraft-server";
+
 export function useWorlds() {
-    const { sshStatus } = useConnectionStore();
     const [worlds, setWorlds] = useState<WorldInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    const getCredentials = () => {
+        const host = localStorage.getItem('node_host');
+        const port = localStorage.getItem('node_port') || '8080';
+        const token = localStorage.getItem('node_token');
+        if (!host || !token) throw new Error("Daemon credentials missing");
+        return { nodeUrl: `http://${host}:${port}`, token };
+    };
+
     const fetchWorlds = useCallback(async () => {
-        if (sshStatus !== 'connected') return;
         setLoading(true);
         setError(null);
         try {
+            const { nodeUrl, token } = getCredentials();
             // Read server.properties
-            const output = await tauriBridge.sftpReadFile('/minecraft/server.properties').catch(() => "");
+            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties').catch(() => "");
             let activeWorldName = 'world';
             const match = output.match(/^level-name=(.+)$/m);
             if (match) {
                 activeWorldName = match[1].trim();
             }
 
-            // 1. Find all world folders by checking for level.dat via SSH
-            const findOutput = await tauriBridge.sshExecute('ls -d /minecraft/*/level.dat 2>/dev/null || true');
-            const validWorlds = findOutput
-                .split('\n')
-                .filter(line => line.trim().length > 0)
-                .map(line => {
-                    // /minecraft/worldName/level.dat -> worldName
-                    const parts = line.split('/');
-                    return parts[parts.length - 2];
-                });
+            // 1. Find all world folders by checking for level.dat via Daemon
+            const validWorlds: string[] = [];
+            try {
+                const dirList = await tauriBridge.nodeListDir(nodeUrl, token, '/minecraft');
+                for (const item of dirList) {
+                    if (item.is_dir) {
+                        try {
+                            const subDir = await tauriBridge.nodeListDir(nodeUrl, token, `/minecraft/${item.name}`);
+                            if (subDir.some(f => f.name === 'level.dat')) {
+                                validWorlds.push(item.name);
+                            }
+                        } catch (e) {}
+                    }
+                }
+            } catch (e) {
+                console.warn("Failed to list directories:", e);
+            }
 
             // Ensure the active world is always in the list even if it failed to read (edge case)
             if (!validWorlds.includes(activeWorldName)) {
@@ -54,14 +69,16 @@ export function useWorlds() {
         } finally {
             setLoading(false);
         }
-    }, [sshStatus]);
+    }, []);
 
     const setActiveWorld = async (worldName: string) => {
         setLoading(true);
         setError(null);
         try {
+            const { nodeUrl, token } = getCredentials();
+
             // Read server.properties
-            const props = await tauriBridge.sftpReadFile('/minecraft/server.properties');
+            const props = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
             const lines = props.split('\n');
             
             let found = false;
@@ -78,15 +95,15 @@ export function useWorlds() {
             }
 
             // Save server.properties
-            await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
+            await tauriBridge.nodeWriteFile(nodeUrl, token, '/minecraft/server.properties', updatedLines.join('\n'));
             logAction('Changement du monde actif', { monde: worldName });
 
             // Warn players and wait 60s
-            await tauriBridge.consoleSendCommand('/say Le serveur va redémarrer pour changer de monde dans 60 secondes...').catch(() => {});
+            await tauriBridge.nodeSendCommand(nodeUrl, token, DEFAULT_SERVER_ID, 'say Le serveur va redémarrer pour changer de monde dans 60 secondes...').catch(() => {});
             await new Promise(resolve => setTimeout(resolve, 60000));
 
             // Restart server
-            await tauriBridge.serviceAction('restart');
+            await tauriBridge.nodePowerAction(nodeUrl, token, DEFAULT_SERVER_ID, 'Restart');
 
             // Refresh list
             await fetchWorlds();

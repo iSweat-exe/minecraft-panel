@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore } from './connectionStore';
 import { logAction } from '../lib/actionLogger';
 
 export interface BackupProgress {
@@ -96,11 +95,14 @@ export const useBackupStore = create<BackupStore>()(
     }),
 
     createBackup: async () => {
-        const { sshStatus } = useConnectionStore.getState();
-        if (sshStatus !== 'connected') return;
-
         try {
             set({ error: null });
+
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
             
             const now = new Date();
             const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -119,24 +121,23 @@ export const useBackupStore = create<BackupStore>()(
             set({ loading: true, success: false, statusText: 'Préparation de la sauvegarde...', currentFile: null });
             get().clearProgress();
 
-            const output = await tauriBridge.sftpReadFile('/minecraft/server.properties').catch(() => "");
+            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties').catch(() => "");
             const match = output.match(/^level-name=(.+)$/m);
             const worldName = match ? match[1].trim() : 'world';
 
             set({ statusText: 'Compression du monde sur le serveur...' });
             const remotePath = `/minecraft/${worldName}_backup.tar.gz`;
-            const tarCmd = `cd /minecraft && tar -czf "${worldName}_backup.tar.gz" "${worldName}"`;
             
-            await tauriBridge.sshExecute(tarCmd);
+            await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/${worldName}`, { archive: { archive_name: remotePath } });
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Téléchargement de', currentFile: localFileName });
-            await tauriBridge.sftpDownloadFile(remotePath, localPath);
+            await tauriBridge.nodeDownloadFile(nodeUrl, token, remotePath, localPath);
 
             set({ statusText: 'Nettoyage...', currentFile: null });
-            await tauriBridge.sftpDelete(remotePath, false);
+            await tauriBridge.nodeFileAction(nodeUrl, token, remotePath, "delete");
 
-            await tauriBridge.consoleSendCommand('say Le monde a été sauvegardé avec succès !').catch(() => {});
+            await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', 'say Le monde a été sauvegardé avec succès !').catch(() => {});
 
             set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
             
@@ -151,11 +152,14 @@ export const useBackupStore = create<BackupStore>()(
     },
 
     restoreBackup: async () => {
-        const { sshStatus } = useConnectionStore.getState();
-        if (sshStatus !== 'connected') return;
-
         try {
             set({ error: null });
+
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
             
             const selected = await open({
                 filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],
@@ -169,19 +173,18 @@ export const useBackupStore = create<BackupStore>()(
             set({ loading: true, success: false, statusText: 'Préparation de la restauration...', currentFile: null });
             get().clearProgress();
 
-            await tauriBridge.serviceAction('stop');
+            await tauriBridge.nodePowerAction(nodeUrl, token, "default", 'Stop');
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Envoi de', currentFile: localFileName });
             const remotePath = '/minecraft/restore_backup.tar.gz';
-            await tauriBridge.sftpUploadFile(localPath, remotePath);
+            await tauriBridge.nodeUploadFile(nodeUrl, token, localPath, remotePath);
 
             set({ statusText: 'Restauration...', currentFile: null });
-            const extractCmd = `cd /minecraft && tar -xzf restore_backup.tar.gz && rm restore_backup.tar.gz`;
-            await tauriBridge.sshExecute(extractCmd);
+            await tauriBridge.nodeFileAction(nodeUrl, token, remotePath, "extract");
 
             set({ statusText: 'Nettoyage...' });
-            await tauriBridge.sftpDelete(remotePath, false);
+            await tauriBridge.nodeFileAction(nodeUrl, token, remotePath, "delete");
 
             set({ statusText: 'Restauration terminée !', success: true, currentFile: null });
             
@@ -197,8 +200,8 @@ export const useBackupStore = create<BackupStore>()(
 
     cancelBackup: async () => {
         try {
-            await tauriBridge.cancelBackup();
-            set({ loading: false, success: false, statusText: 'Annulé par l\'utilisateur', error: null });
+            // Cancel backup is no longer supported directly via daemon without a specific task ID implementation
+            set({ loading: false, success: false, statusText: 'Annulé', error: null });
             get().clearProgress();
         } catch (e) {
             console.error("Failed to cancel backup", e);
