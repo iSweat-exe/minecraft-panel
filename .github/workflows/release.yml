@@ -33,7 +33,7 @@ jobs:
       - name: Rust cache
         uses: swatinem/rust-cache@v2
         with:
-          workspaces: 'src-tauri'
+          workspaces: 'panel/src-tauri'
 
       - name: Install dependencies (Ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
@@ -42,6 +42,7 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install frontend dependencies
+        working-directory: ./panel
         run: bun install
 
       - name: Build and release Tauri app
@@ -51,6 +52,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          projectPath: './panel'
           tagName: ${{ github.ref_name }}
           releaseName: "Minecraft Panel ${{ github.ref_name }}"
           releaseBody: "See the assets to download this version and install."
