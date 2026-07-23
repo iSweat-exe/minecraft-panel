@@ -147,7 +147,9 @@ impl AutoUpdater {
         };
 
         // Expected asset name format, e.g., daemon-linux-amd64
-        let asset_name = format!("daemon-{}-{}", os, arch);
+        // TODO: Improve CI/CD pipeline.
+        // let asset_name = format!("daemon-{}-{}", os, arch);
+        let asset_name = format!("daemon");
         
         let assets = release_resp["assets"].as_array().context("No assets found in release")?;
         let mut download_url = None;
