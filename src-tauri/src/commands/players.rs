@@ -89,7 +89,7 @@ pub async fn get_players_list(state: State<'_, SshState>) -> Result<Vec<PlayerIn
 
     let mut result: Vec<PlayerInfo> = all_players_map.into_values().collect();
     // Sort alphabetically by name
-    result.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    result.sort_by_key(|a| a.name.to_lowercase());
 
     Ok(result)
 }

@@ -91,9 +91,10 @@ export function useConsole() {
         if (!trimmed) return;
         try {
             pushHistory(trimmed);
+            pushLine(`> ${trimmed}`);
+            setCommand('');
             await tauriBridge.consoleSendCommand(trimmed);
             logAction('Commande manuelle (Console)', { commande: trimmed });
-            setCommand('');
             
             // Force scroll to bottom when sending a command
             scrollToBottom();

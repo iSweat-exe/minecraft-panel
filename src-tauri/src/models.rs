@@ -71,3 +71,21 @@ pub struct TransferProgress {
     pub written: u64,
     pub total: u64,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PanelUser {
+    pub uuid: Option<String>,
+    pub username: String,
+    pub role: String,
+    pub permissions: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password_hash: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar_base64: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}

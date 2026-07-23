@@ -33,6 +33,24 @@ export interface FileEntry {
     modified: number;
 }
 
+export interface DockerContainerInfo {
+    id: string;
+    names: string;
+    image: string;
+    status: string;
+    state: string;
+    ports: string;
+    created: string;
+}
+
+export interface DockerImageInfo {
+    id: string;
+    repository: string;
+    tag: string;
+    size: string;
+    created: string;
+}
+
 export const tauriBridge = {
     sshConnect: (host: string, port: number, username: string, keyPath: string, expectedFingerprint?: string) =>
         invoke<void>('ssh_connect', { host, port, username, keyPath, expectedFingerprint }),
@@ -61,6 +79,54 @@ export const tauriBridge = {
     sftpReadFileBase64: (path: string) => invoke<string>('sftp_read_file_base64', { path }),
     rconExecuteMulti: (cmds: string[], port: number, password: string) => invoke<string[]>('rcon_execute_multi', { cmds, port, password }),
     getPlayersList: () => invoke<unknown[]>('get_players_list'),
+    
+    // Sub-users & Permissions
+    getPanelUsers: () => invoke<import('../types/permissions').PanelUser[]>('get_panel_users'),
+    savePanelUser: (user: import('../types/permissions').PanelUser) => invoke<import('../types/permissions').PanelUser[]>('save_panel_user', { user }),
+    deletePanelUser: (username: string) => invoke<import('../types/permissions').PanelUser[]>('delete_panel_user', { username }),
+    verifyPanelUser: (username: string, password: string) => invoke<import('../types/permissions').PanelUser>('verify_panel_user', { username, password }),
+
+    // Docker Management
+    dockerListContainers: () => invoke<DockerContainerInfo[]>('docker_list_containers'),
+    dockerContainerAction: (containerId: string, action: 'start' | 'stop' | 'restart' | 'remove') =>
+        invoke<void>('docker_container_action', { containerId, action }),
+    dockerSystemPrune: () => invoke<string>('docker_system_prune'),
+    dockerContainerLogs: (containerName: string, tail?: number) =>
+        invoke<string>('docker_container_logs', { containerName, tail }),
+    dockerListImages: () => invoke<DockerImageInfo[]>('docker_list_images'),
+    dockerPullImage: (imageName: string) => invoke<string>('docker_pull_image', { imageName }),
+    dockerRemoveImage: (imageId: string) => invoke<string>('docker_remove_image', { imageId }),
+    dockerRunContainer: (options: {
+        image: string;
+        name?: string;
+        ports?: string;
+        envVars?: string[];
+        restartPolicy?: string;
+    }) => invoke<string>('docker_run_container', { ...options, envVars: options.envVars }),
+    dockerInspectContainer: (containerId: string) => invoke<string>('docker_inspect_container', { containerId }),
+    dockerUpdateContainer: (options: {
+        containerId: string;
+        newName?: string;
+        restartPolicy?: string;
+    }) => invoke<void>('docker_update_container', options),
+    dockerRecreateContainer: (options: {
+        containerId: string;
+        image: string;
+        name: string;
+        ports?: string;
+        envVars?: string[];
+        restartPolicy?: string;
+    }) => invoke<string>('docker_recreate_container', { ...options, envVars: options.envVars }),
+
+    // VPS Interactive Terminal
+    terminalStart: (cols: number, rows: number) => invoke<void>('terminal_start', { cols, rows }),
+    terminalWrite: (data: number[]) => invoke<void>('terminal_write', { data }),
+    terminalResize: (cols: number, rows: number) => invoke<void>('terminal_resize', { cols, rows }),
+    onTerminalData: (callback: (data: number[]) => void): Promise<UnlistenFn> =>
+        listen<number[]>('terminal-data', (event) => callback(event.payload)),
+    onTerminalExit: (callback: () => void): Promise<UnlistenFn> =>
+        listen<void>('terminal-exit', () => callback()),
+
     sftpWriteFile: (path: string, content: string) => invoke<void>('sftp_write_file', { path, content }),
     sftpDelete: (path: string, is_dir: boolean) => invoke<void>('sftp_delete', { path, isDir: is_dir }),
     sftpRename: (old_path: string, new_path: string) => invoke<void>('sftp_rename', { oldPath: old_path, newPath: new_path }),

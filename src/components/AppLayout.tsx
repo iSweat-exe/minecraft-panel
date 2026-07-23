@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 import { useConnectionStore } from '../store/connectionStore';
+import { usePermissionStore } from '../store/permissionStore';
 import { useBackupStore } from '../store/backupStore';
 import { useSessionPing } from '../hooks/useSessions';
 import { useMetricsAgent } from '../hooks/useMetricsAgent';
 import { BackupProgressAlert } from './overview/BackupProgressAlert';
 import { tauriBridge } from '../lib/tauriBridge';
+import { logAction } from '../lib/actionLogger';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { UserProfileSettingsModal } from './dialogs/UserProfileSettingsModal';
+import { SiDocker } from 'react-icons/si';
 import { 
     Settings, 
     LogOut, 
@@ -30,6 +34,7 @@ import {
 const NAV_ITEMS = [
     { id: 'server', path: '/', label: 'Serveur', icon: Power },
     { id: 'options', path: '/options', label: 'Options', icon: SlidersHorizontal },
+    { id: 'docker', path: '/docker', label: 'Docker', icon: SiDocker },
     { id: 'console', path: '/console', label: 'Console', icon: SquareTerminal },
     { id: 'history', path: '/history', label: 'Historique', icon: FileText },
     { id: 'players', path: '/players', label: 'Joueurs', icon: Users, extra: ChevronRight },
@@ -59,10 +64,20 @@ const BackupNavItemExtra: React.FC<{ icon: any, color?: string }> = ({ icon: Ico
 
 export const AppLayout: React.FC = () => {
     const { setSshStatus, setServiceStatus, setMcPing, serviceStatus, pendingAction } = useConnectionStore();
+    const { currentUser, fetchUsers } = usePermissionStore();
     const [collapsed, setCollapsed] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
     const location = useLocation();
     useSessionPing();
     useMetricsAgent();
+
+    const username = currentUser?.username || localStorage.getItem('panel_username') || localStorage.getItem('ssh_username') || 'admin';
+    const displayName = currentUser?.display_name || localStorage.getItem('panel_display_name') || '';
+    const userAvatar = currentUser?.avatar_base64 || localStorage.getItem('panel_avatar_base64') || '';
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
 
     useEffect(() => {
         const fetchStatus = async () => {
@@ -79,7 +94,7 @@ export const AppLayout: React.FC = () => {
         };
 
         fetchStatus();
-        const interval = setInterval(fetchStatus, 15000);
+        const interval = setInterval(fetchStatus, 3000);
         return () => clearInterval(interval);
     }, [setServiceStatus, setMcPing]);
 
@@ -123,6 +138,7 @@ export const AppLayout: React.FC = () => {
 
     const disconnect = async () => {
         try {
+            await logAction('Déconnexion du panel');
             const sessionUuid = localStorage.getItem('panel_session_uuid');
             if (sessionUuid) {
                 await tauriBridge.sshExecute(`rm -f /minecraft/.panel_sessions/${sessionUuid}.json`);
@@ -208,7 +224,7 @@ export const AppLayout: React.FC = () => {
                     
                 <button
                     onClick={disconnect}
-                    className={`w-full flex items-center gap-3 py-4 text-[15px] font-medium text-muted-foreground hover:text-danger hover:bg-surface-hover transition-colors ${
+                    className={`w-full flex items-center gap-3 py-3 text-[14px] font-medium text-muted-foreground hover:text-danger hover:bg-surface-hover transition-colors ${
                         collapsed ? 'justify-center px-0' : 'px-5'
                     }`}
                     title={collapsed ? 'Déconnexion' : undefined}
@@ -216,12 +232,50 @@ export const AppLayout: React.FC = () => {
                     <LogOut size={18} />
                     {!collapsed && 'Déconnexion'}
                 </button>
+
+                {/* User Profile Footer */}
+                <div className="border-t border-border p-3 flex items-center justify-between bg-surface-hover/30 shrink-0">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        {userAvatar ? (
+                            <img src={userAvatar} alt={username} className="w-9 h-9 rounded-full object-cover shrink-0 border border-border/80 shadow-sm" />
+                        ) : (
+                            <div className="w-9 h-9 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center font-bold text-xs shrink-0 uppercase">
+                                {(username || 'AD').substring(0, 2)}
+                            </div>
+                        )}
+                        {!collapsed && (
+                            <div className="flex flex-col truncate">
+                                <span className="text-xs font-bold text-foreground truncate leading-tight">
+                                    {displayName || username}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground truncate font-mono mt-0.5">
+                                    @{username}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                    {!collapsed && (
+                        <button
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface transition-colors shrink-0"
+                            title="Paramètres de l'utilisateur"
+                            onClick={() => setIsProfileModalOpen(true)}
+                        >
+                            <Settings size={16} />
+                        </button>
+                    )}
+                </div>
             </aside>
 
             {/* Main */}
             <main className={`flex-1 overflow-hidden ${location.pathname === '/console' ? '' : 'p-4'}`}>
                 <Outlet />
             </main>
+
+            {/* User Profile Settings Modal */}
+            <UserProfileSettingsModal 
+                isOpen={isProfileModalOpen}
+                onClose={() => setIsProfileModalOpen(false)}
+            />
         </div>
     );
 };

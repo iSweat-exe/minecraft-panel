@@ -52,7 +52,7 @@ export function useServerControls() {
         
         let forced = false;
         try {
-            if (action === 'stop' || action === 'restart') {
+            if ((action === 'stop' || action === 'restart') && isOnline) {
                 const actionFr = action === 'stop' ? "s'arrêter" : 'redémarrer';
                 await tauriBridge.consoleSendCommand(`/say Le serveur va ${actionFr} dans 60 secondes...`).catch(() => {});
                 
@@ -102,8 +102,8 @@ export function useServerControls() {
         pollUntilSettled();
     };
 
-    const isActive = serviceStatus?.active_state === 'active';
     const isOnline = mcPing?.online ?? false;
+    const isActive = serviceStatus?.active_state === 'active' || isOnline;
     const isBusy = pendingAction !== null;
 
     return {

@@ -19,6 +19,8 @@ import { ModsPanel } from './components/ModsPanel';
 import { AccessPanel } from './components/AccessPanel';
 import { AutomationsPanel } from './components/AutomationsPanel';
 import { HistoryPanel } from './components/HistoryPanel';
+import { VersionPanel } from './components/VersionPanel';
+import { DockerPanel } from './components/DockerPanel';
 
 function App() {
   useAutoUpdater();
@@ -49,9 +51,11 @@ function App() {
                   </div>
                 } />
                 <Route path="options" element={<OptionsPanel />} />
+                <Route path="docker" element={<DockerPanel />} />
                 <Route path="console" element={<div className="h-full"><ConsolePanel /></div>} />
                 <Route path="history" element={<HistoryPanel />} />
                 <Route path="players" element={<PlayersPanel />} />
+                <Route path="version" element={<VersionPanel />} />
                 <Route path="files" element={<SftpPanel />} />
                 <Route path="mods" element={<ModsPanel />} />
                 <Route path="worlds" element={<WorldsPanel />} />

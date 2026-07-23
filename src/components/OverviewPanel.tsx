@@ -8,6 +8,7 @@ import { ServerControls } from './ServerControls';
 import { MetricChart, NetworkChart, DiskUsageCard } from './overview/ResourceCharts';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
+import { StatusIndicator, StatusType } from './ui/StatusIndicator';
 
 type TimeRange = '1m' | '5m' | '15m' | '1h' | '1d';
 
@@ -32,29 +33,22 @@ export const OverviewPanel: React.FC = () => {
 
     const isOnline = mcPing?.online ?? false;
 
-    const getStatusIndicator = () => {
+    const getStatusInfo = (): { status: StatusType; label: string } => {
         if (pendingAction) {
             const labels: Record<string, string> = {
                 'starting': 'Démarrage...',
                 'stopping': 'Arrêt...',
                 'restarting': 'Redémarrage...'
             };
-            return (
-                <>
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    <span className="text-sm text-amber-400 font-medium">{labels[pendingAction]}</span>
-                </>
-            );
+            return { status: 'pending', label: labels[pendingAction] || 'Action en cours...' };
         }
-        return (
-            <>
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-success' : 'bg-danger'}`} />
-                <span className="text-sm text-muted-foreground font-medium">
-                    {isOnline ? 'En ligne' : 'Hors ligne'}
-                </span>
-            </>
-        );
+        return {
+            status: isOnline ? 'online' : 'offline',
+            label: isOnline ? 'En ligne' : 'Hors ligne'
+        };
     };
+
+    const statusInfo = getStatusInfo();
 
     return (
         <div className="h-full overflow-y-auto p-6 space-y-6">
@@ -66,7 +60,7 @@ export const OverviewPanel: React.FC = () => {
                     <div>
                         <h2 className="text-xl font-bold text-foreground tracking-tight">{host || 'Minecraft Server'}</h2>
                         <div className="flex items-center gap-2 mt-1">
-                            {getStatusIndicator()}
+                            <StatusIndicator status={statusInfo.status} label={statusInfo.label} size="sm" />
                         </div>
                     </div>
                 </div>
@@ -74,7 +68,7 @@ export const OverviewPanel: React.FC = () => {
                 <div className="flex gap-8">
                     <div className="flex flex-col items-end justify-center">
                         <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">
-                            <Users size={14} /> Players
+                            <Users size={14} /> Joueurs
                         </div>
                         <div className="text-2xl font-mono text-foreground">
                             {mcPing?.players_online ?? 0} <span className="text-muted-foreground text-lg">/ {mcPing?.players_max ?? 0}</span>
@@ -83,7 +77,7 @@ export const OverviewPanel: React.FC = () => {
                     <div className="w-px h-12 bg-border" />
                     <div className="flex flex-col items-end justify-center">
                         <div className="flex items-center gap-2 text-muted-foreground text-xs font-semibold uppercase tracking-wider mb-1">
-                            <Activity size={14} /> Latency
+                            <Activity size={14} /> Latence
                         </div>
                         <div className="text-2xl font-mono text-foreground">
                             {mcPing?.latency_ms ?? 0} <span className="text-muted-foreground text-lg">ms</span>

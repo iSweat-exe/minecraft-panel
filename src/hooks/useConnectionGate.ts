@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { open } from '@tauri-apps/plugin-dialog';
+import { logAction } from '../lib/actionLogger';
 
 export function useConnectionGate() {
     const { sshStatus, setSshStatus, setHost: setStoreHost } = useConnectionStore();
@@ -20,15 +21,18 @@ export function useConnectionGate() {
         return newUuid;
     });
     
+    const [sshUsername, setSshUsername] = useState(() => localStorage.getItem('ssh_username') || 'root');
+    const [subUsername, setSubUsername] = useState(() => localStorage.getItem('sub_username') || '');
+    const [loginMode, setLoginMode] = useState<'admin' | 'subuser'>(() => (localStorage.getItem('panel_login_mode') as 'admin' | 'subuser') || 'admin');
+    const [password, setPassword] = useState('');
+    
     const [verifyingKey, setVerifyingKey] = useState<string | null>(null);
 
     useEffect(() => {
         const autoConnect = localStorage.getItem('ssh_auto_connect') === 'true';
         tauriBridge.sshStatus().then(status => {
             setSshStatus(status);
-            // If the backend says disconnected but we have auto-connect on, try connecting
             if (status === 'disconnected' && autoConnect) {
-                // Since this runs on mount, the connect() function captures the initial state from localStorage
                 connect();
             }
         }).catch(console.error);
@@ -47,26 +51,41 @@ export function useConnectionGate() {
         try {
             setSshStatus('reconnecting');
             const targetFingerprint = overrideFingerprint || expectedFingerprint;
-            await tauriBridge.sshConnect(host, port, username, keyPath, targetFingerprint);
             
+            const targetSshUser = loginMode === 'admin' ? username : (sshUsername || 'root');
+            await tauriBridge.sshConnect(host, port, targetSshUser, keyPath, targetFingerprint);
+            
+            const activePanelUser = loginMode === 'subuser' ? subUsername : username;
+
+            if (loginMode === 'subuser') {
+                try {
+                    await tauriBridge.verifyPanelUser(subUsername, password);
+                } catch (verifyErr) {
+                    await tauriBridge.sshDisconnect();
+                    throw new Error("Nom d'utilisateur ou mot de passe incorrect");
+                }
+            }
+
             // Save settings for next time
             localStorage.setItem('ssh_host', host);
             localStorage.setItem('ssh_port', port.toString());
-            localStorage.setItem('ssh_username', username);
+            localStorage.setItem('ssh_username', targetSshUser);
+            localStorage.setItem('sub_username', subUsername);
+            localStorage.setItem('panel_username', activePanelUser);
             localStorage.setItem('ssh_keyPath', keyPath);
+            localStorage.setItem('panel_login_mode', loginMode);
             localStorage.setItem('ssh_auto_connect', 'true');
             localStorage.setItem('panel_display_name', displayName);
             localStorage.setItem('panel_avatar_base64', avatarBase64);
             
             setStoreHost(host);
             setSshStatus('connected');
-        } catch (err) {
+            logAction('Connexion au panel', { mode: loginMode === 'admin' ? 'Administrateur' : 'Sous-utilisateur' });
+        } catch (err: any) {
             console.error(err);
             setSshStatus('disconnected');
             localStorage.removeItem('ssh_auto_connect');
-            // If the error is just the key rejection, we don't need to alert if verifyingKey will be set
-            // But we can just alert anyway, or suppress if it's a known error.
-            alert(`Connection failed: ${err}`);
+            alert(`Connexion échouée : ${err?.message || err}`);
         }
     };
 
@@ -107,6 +126,10 @@ export function useConnectionGate() {
         setPort,
         username,
         setUsername,
+        sshUsername,
+        setSshUsername,
+        subUsername,
+        setSubUsername,
         keyPath,
         setKeyPath,
         verifyingKey,
@@ -118,6 +141,10 @@ export function useConnectionGate() {
         setDisplayName,
         avatarBase64,
         setAvatarBase64,
-        sessionUuid
+        sessionUuid,
+        loginMode,
+        setLoginMode,
+        password,
+        setPassword,
     };
 }

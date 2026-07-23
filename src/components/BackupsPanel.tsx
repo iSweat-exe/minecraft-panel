@@ -4,6 +4,7 @@ import { Archive, Download, Upload, AlertCircle, CheckCircle } from 'lucide-reac
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Spinner } from './ui/Spinner';
+import { ProgressBar } from './ui/ProgressBar';
 
 export const BackupsPanel: React.FC = () => {
     const { loading, success, statusText, currentFile, error, createBackup, restoreBackup, cancelBackup, progress, speed, eta } = useBackupStore();
@@ -104,39 +105,13 @@ export const BackupsPanel: React.FC = () => {
                     </div>
 
                     {progress && progress.total > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <div className="flex justify-between items-end">
-                                <span className={`text-sm font-medium truncate pr-4 ${success ? 'text-success/80' : 'text-foreground/80'}`}>
-                                    {progress.filename}
-                                </span>
-                                <span className={`text-sm font-bold ${success ? 'text-success' : 'text-primary'}`}>
-                                    {Math.round((progress.written / progress.total) * 100)}%
-                                </span>
-                            </div>
-
-                            <div className={`h-2.5 rounded-full overflow-hidden ${success ? 'bg-success/20' : 'bg-surface-hover'}`}>
-                                <div 
-                                    className={`h-full transition-all duration-300 ${success ? 'bg-success' : 'bg-primary'}`}
-                                    style={{ width: `${(progress.written / progress.total) * 100}%` }}
-                                />
-                            </div>
-
-                            <div className="flex justify-between items-center text-xs text-muted-foreground font-medium mt-1">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-muted-foreground/80">
-                                        {(speed / 1024 / 1024).toFixed(1)} MB/s
-                                    </span>
-                                    {!success && speed > 0 && (
-                                        <span className="text-muted-foreground/80">
-                                            ETA: {formatETA(eta)}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className={`tabular-nums ${success ? 'text-success/70' : ''}`}>
-                                    {(progress.written / 1024 / 1024).toFixed(1)} MB / {(progress.total / 1024 / 1024).toFixed(1)} MB
-                                </span>
-                            </div>
-                        </div>
+                        <ProgressBar
+                            value={(progress.written / progress.total) * 100}
+                            variant={success ? 'success' : 'default'}
+                            label={progress.filename}
+                            showLabel
+                            sublabel={`${(speed / 1024 / 1024).toFixed(1)} MB/s ${!success && speed > 0 ? `• ETA: ${formatETA(eta)}` : ''} • ${(progress.written / 1024 / 1024).toFixed(1)} MB / ${(progress.total / 1024 / 1024).toFixed(1)} MB`}
+                        />
                     )}
                     
                     {(!progress || progress.total === 0) && statusText.includes('Téléchargement') && (

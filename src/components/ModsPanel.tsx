@@ -9,6 +9,8 @@ import { ModFilters } from './mods/ModFilters';
 import { ModCard } from './mods/ModCard';
 import { ModsSettingsModal } from './dialogs/ModsSettingsModal';
 import { ClientModWarningModal } from './dialogs/ClientModWarningModal';
+import { ModDetailsModal } from './dialogs/ModDetailsModal';
+import type { ModrinthVersion } from '../api/modrinth';
 import { logAction } from '../lib/actionLogger';
 
 export const ModsPanel: React.FC = () => {
@@ -26,6 +28,9 @@ export const ModsPanel: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
     const [hasSearched, setHasSearched] = useState(false);
+    
+    // Mod Details Modal
+    const [selectedModDetails, setSelectedModDetails] = useState<ModrinthProject | null>(null);
     
     // React Query
     const { data, isLoading: loading, error } = useSearchModsQuery(
@@ -47,9 +52,21 @@ export const ModsPanel: React.FC = () => {
     
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+    const getResolvedModPath = (rawPath: string): string => {
+        const trimmed = (rawPath || '').trim();
+        if (!trimmed || trimmed === 'mods' || trimmed === 'mods/' || trimmed === './mods' || trimmed === './mods/') {
+            return '/minecraft/mods';
+        }
+        if (trimmed.startsWith('/')) return trimmed;
+        if (trimmed.startsWith('~/')) return trimmed;
+        return `/minecraft/${trimmed.replace(/^\.\//, '')}`;
+    };
+
     const fetchInstalledFiles = async () => {
         try {
-            const files = await tauriBridge.sftpListDir(modPath);
+            const resolvedPath = getResolvedModPath(modPath);
+            await tauriBridge.sshExecute(`mkdir -p ${resolvedPath}`).catch(() => {});
+            const files = await tauriBridge.sftpListDir(resolvedPath);
             setInstalledFiles(files.map(f => f.name.toLowerCase()));
         } catch (e: any) {
             if (e && typeof e === 'string' && !e.includes("No such file")) {
@@ -100,8 +117,9 @@ export const ModsPanel: React.FC = () => {
             const file = latest.files.find(f => f.primary) || latest.files[0];
             
             // 2. Download to server
-            // Mod path could be relative like ~/minecraft/mods or absolute
-            const finalPath = modPath.endsWith('/') ? `${modPath}${file.filename}` : `${modPath}/${file.filename}`;
+            const resolvedDir = getResolvedModPath(modPath);
+            await tauriBridge.sshExecute(`mkdir -p ${resolvedDir}`).catch(() => {});
+            const finalPath = resolvedDir.endsWith('/') ? `${resolvedDir}${file.filename}` : `${resolvedDir}/${file.filename}`;
             
             await tauriBridge.sshDownloadRemote(file.url, finalPath);
             await fetchInstalledFiles(); // Refresh installed mods list
@@ -115,6 +133,31 @@ export const ModsPanel: React.FC = () => {
                 const newSet = new Set(prev);
                 newSet.delete(mod.project_id);
                 return newSet;
+            });
+        }
+    };
+
+    const executeInstallSpecificVersion = async (version: ModrinthVersion) => {
+        if (!selectedModDetails) return;
+        const primaryFile = version.files.find(f => f.primary) || version.files[0];
+        if (!primaryFile) return;
+
+        const modId = selectedModDetails.project_id;
+        setInstallingMods(prev => new Set(prev).add(modId));
+
+        try {
+            const resolvedPath = getResolvedModPath(modPath);
+            await tauriBridge.sshExecute(`mkdir -p ${resolvedPath}`).catch(() => {});
+            await tauriBridge.sshDownloadRemote(primaryFile.url, `${resolvedPath}/${primaryFile.filename}`);
+            logAction('INSTALL_MOD', `Installed ${selectedModDetails.title} version ${version.version_number}`);
+            await fetchInstalledFiles();
+        } catch (e: any) {
+            alert(`Erreur d'installation de la version: ${e?.message || e}`);
+        } finally {
+            setInstallingMods(prev => {
+                const next = new Set(prev);
+                next.delete(modId);
+                return next;
             });
         }
     };
@@ -184,7 +227,7 @@ export const ModsPanel: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <button
-                        onClick={() => navigate('/files', { state: { initialPath: modPath } })}
+                        onClick={() => navigate('/files', { state: { initialPath: getResolvedModPath(modPath) } })}
                         className="flex items-center gap-2 px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-surface border border-border rounded-md transition-colors"
                         title="Explorer les fichiers"
                     >
@@ -235,6 +278,7 @@ export const ModsPanel: React.FC = () => {
                                 key={mod.project_id} 
                                 mod={mod as any} 
                                 onInstall={handleInstallClick}
+                                onViewDetails={(m) => setSelectedModDetails(m)}
                                 isInstalling={installingMods.has(mod.project_id)}
                                 isInstalled={mod.isInstalled}
                             />
@@ -266,6 +310,14 @@ export const ModsPanel: React.FC = () => {
                     onCancel={() => setPendingInstallMod(null)}
                 />
             )}
+
+            <ModDetailsModal
+                isOpen={Boolean(selectedModDetails)}
+                onClose={() => setSelectedModDetails(null)}
+                modIdOrSlug={selectedModDetails?.project_id || selectedModDetails?.slug || null}
+                onInstallVersion={executeInstallSpecificVersion}
+                isInstalling={selectedModDetails ? installingMods.has(selectedModDetails.project_id) : false}
+            />
         </div>
     );
 };

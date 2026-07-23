@@ -6,3 +6,6 @@ pub mod metrics;
 pub mod sftp;
 pub mod rcon;
 pub mod players;
+pub mod users;
+pub mod docker;
+pub mod terminal;

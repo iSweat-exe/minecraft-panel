@@ -29,6 +29,9 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
 
+  /* Official Brand Colors */
+  --color-docker: #2496ed;
+
   /* Shared Radiuses */
   --radius-sm: calc(var(--radius) - 2px);
   --radius: 0.5rem; /* 8px */

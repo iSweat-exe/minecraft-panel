@@ -1,5 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 interface SpinnerProps {
     size?: number;
@@ -9,7 +10,7 @@ interface SpinnerProps {
 
 export const Spinner: React.FC<SpinnerProps> = ({ 
     size = 20, 
-    className = '',
+    className,
     variant = 'current'
 }) => {
     const variantClasses = {
@@ -22,7 +23,7 @@ export const Spinner: React.FC<SpinnerProps> = ({
     return (
         <Loader2 
             size={size} 
-            className={`animate-spin ${variantClasses[variant]} ${className}`} 
+            className={cn('animate-spin', variantClasses[variant], className)} 
         />
     );
 };

@@ -15,7 +15,7 @@ export interface ActionLog {
  */
 export async function logAction(action: string, details?: any) {
     try {
-        const user = localStorage.getItem('panel_display_name') || 'Anonyme';
+        const user = localStorage.getItem('panel_username') || localStorage.getItem('panel_display_name') || localStorage.getItem('ssh_username') || 'Anonyme';
         const userId = localStorage.getItem('panel_session_uuid') || 'unknown';
         
         const logEntry: ActionLog = {

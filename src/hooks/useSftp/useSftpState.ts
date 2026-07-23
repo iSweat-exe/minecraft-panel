@@ -41,6 +41,10 @@ export function useSftpState(initialPath: string = '/') {
         stateRef.current = { currentPath, entries: rawEntries };
     }, [currentPath, rawEntries]);
 
+    useEffect(() => {
+        fetchDir(initialPath);
+    }, [initialPath]);
+
     const fetchDir = async (path: string) => {
         setLoading(true);
         setError(null);

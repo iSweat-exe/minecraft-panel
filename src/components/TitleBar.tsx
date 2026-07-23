@@ -31,10 +31,11 @@ export function TitleBar() {
           <Square size={13} />
         </button>
         <button
-          className="inline-flex justify-center items-center w-11 h-full hover:bg-danger hover:text-danger-foreground transition-colors"
+          className="inline-flex justify-center items-center w-11 h-full hover:bg-danger hover:text-danger-foreground transition-colors group"
           onClick={() => appWindow.close()}
+          title="Fermer"
         >
-          <X size={16} />
+          <X size={16} className="transition-transform duration-300 group-hover:rotate-180" />
         </button>
       </div>
     </div>

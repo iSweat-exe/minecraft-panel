@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert } from '../ui/Alert';
 import { Spinner } from '../ui/Spinner';
+import { ProgressBar } from '../ui/ProgressBar';
 import { CheckCircle } from 'lucide-react';
 import { useBackupStore } from '../../store/backupStore';
 
@@ -30,18 +31,13 @@ export const BackupProgressAlert: React.FC = () => {
                     </span>
                 </div>
                 {backupState.progress && backupState.progress.total > 0 && (
-                    <div className="space-y-1">
-                        <div className={`h-1.5 rounded-full overflow-hidden ${backupState.success ? 'bg-success/20' : 'bg-surface'}`}>
-                            <div 
-                                className={`h-full transition-all duration-300 ${backupState.success ? 'bg-success' : 'bg-primary'}`}
-                                style={{ width: `${(backupState.progress.written / backupState.progress.total) * 100}%` }}
-                            />
-                        </div>
-                        <div className={`flex justify-between text-[10px] font-medium opacity-80`}>
-                            <span>{(backupState.speed / 1024 / 1024).toFixed(1)} MB/s</span>
-                            <span>{Math.round((backupState.progress.written / backupState.progress.total) * 100)}%</span>
-                        </div>
-                    </div>
+                    <ProgressBar
+                        value={(backupState.progress.written / backupState.progress.total) * 100}
+                        variant={backupState.success ? 'success' : 'default'}
+                        size="sm"
+                        showLabel
+                        sublabel={`${(backupState.speed / 1024 / 1024).toFixed(1)} MB/s`}
+                    />
                 )}
             </div>
         </Alert>

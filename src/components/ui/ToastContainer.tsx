@@ -1,6 +1,7 @@
 import React from 'react';
 import { useToastStore } from '../../store/toastStore';
 import { CheckCircle, AlertCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export const ToastContainer: React.FC = () => {
     const { toasts, removeToast } = useToastStore();
@@ -25,7 +26,10 @@ export const ToastContainer: React.FC = () => {
                 return (
                     <div 
                         key={toast.id}
-                        className={`pointer-events-auto flex items-start gap-3 p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all transform animate-in slide-in-from-top-5 fade-in duration-300 min-w-[300px] max-w-[400px] ${borders[toast.type]}`}
+                        className={cn(
+                            'pointer-events-auto flex items-start gap-3 p-4 rounded-xl border backdrop-blur-md shadow-lg transition-all transform animate-in slide-in-from-top-5 fade-in duration-300 min-w-[300px] max-w-[400px]',
+                            borders[toast.type]
+                        )}
                     >
                         <div className="shrink-0 mt-0.5">{icons[toast.type]}</div>
                         <div className="flex-1 mr-4">
@@ -36,9 +40,10 @@ export const ToastContainer: React.FC = () => {
                         </div>
                         <button 
                             onClick={() => removeToast(toast.id)}
-                            className="shrink-0 text-zinc-500 hover:text-zinc-300 transition-colors"
+                            className="shrink-0 text-zinc-500 hover:text-zinc-200 transition-all group p-1 rounded-md hover:bg-white/5"
+                            title="Fermer"
                         >
-                            <X size={16} />
+                            <X size={16} className="transition-transform duration-300 group-hover:rotate-180" />
                         </button>
                     </div>
                 );

@@ -18,6 +18,40 @@ export interface ModrinthProject {
     date_modified: string;
 }
 
+export interface ModrinthGalleryImage {
+    url: string;
+    featured: boolean;
+    title?: string;
+    description?: string;
+    created: string;
+    ordering?: number;
+}
+
+export interface ModrinthFullProject {
+    id: string;
+    slug: string;
+    title: string;
+    description: string;
+    body: string;
+    categories: string[];
+    client_side: 'required' | 'optional' | 'unsupported';
+    server_side: 'required' | 'optional' | 'unsupported';
+    downloads: number;
+    followers: number;
+    icon_url: string;
+    color?: number;
+    issues_url?: string;
+    source_url?: string;
+    wiki_url?: string;
+    discord_url?: string;
+    donation_urls?: { id: string; platform: string; url: string }[];
+    license?: { id: string; name: string; url?: string };
+    gallery: ModrinthGalleryImage[];
+    versions: string[];
+    date_created: string;
+    date_modified: string;
+}
+
 export interface SearchResult {
     hits: ModrinthProject[];
     offset: number;
@@ -81,6 +115,13 @@ export const fetchMods = async (
     return response.json();
 };
 
+export const fetchFullProject = async (idOrSlug: string): Promise<ModrinthFullProject> => {
+    const url = `https://api.modrinth.com/v2/project/${idOrSlug}`;
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
+    return response.json();
+};
+
 export const fetchLatestVersion = async (
     projectId: string,
     version?: string,
@@ -122,6 +163,24 @@ export const useSearchModsQuery = (
         queryKey: ['mods', query, version, loader, offset, limit],
         queryFn: () => fetchMods(query, version, loader, offset, limit),
         staleTime: 60000,
-        placeholderData: (prev) => prev // keeps old data while fetching new page
+        placeholderData: (prev) => prev
+    });
+};
+
+export const useFullProjectQuery = (idOrSlug: string | null) => {
+    return useQuery({
+        queryKey: ['modrinth-project', idOrSlug],
+        queryFn: () => (idOrSlug ? fetchFullProject(idOrSlug) : Promise.reject('No ID')),
+        enabled: Boolean(idOrSlug),
+        staleTime: 300000, // 5 min
+    });
+};
+
+export const useProjectVersionsQuery = (projectId: string | null) => {
+    return useQuery({
+        queryKey: ['modrinth-project-versions', projectId],
+        queryFn: () => (projectId ? fetchProjectVersions(projectId) : Promise.resolve([])),
+        enabled: Boolean(projectId),
+        staleTime: 300000,
     });
 };

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
-import { History, Search, RefreshCw, AlertCircle } from 'lucide-react';
+import { usePermissionStore } from '../store/permissionStore';
+import { History, RefreshCw, AlertCircle } from 'lucide-react';
 import { ActionLog } from '../lib/actionLogger';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui/Table';
-import { useSessionStore } from '../store/sessionStore';
+import { Button } from './ui/Button';
+import { SearchInput } from './ui/SearchInput';
 
 const formatTime = (ts: number) => {
     return new Date(ts).toLocaleString('fr-FR', {
@@ -42,11 +44,38 @@ const renderDetails = (details: any) => {
 
 export const HistoryPanel: React.FC = () => {
     const { sshStatus } = useConnectionStore();
-    const { sessions } = useSessionStore();
+    const { users, fetchUsers } = usePermissionStore();
     const [logs, setLogs] = useState<ActionLog[]>([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [error, setError] = useState<string | null>(null);
+
+    const currentUsername = localStorage.getItem('panel_username') || localStorage.getItem('ssh_username') || '';
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
+    const getUserInfo = (logUser: string, logUserId: string) => {
+        const match = users.find(u => 
+            u.username.toLowerCase() === logUser.toLowerCase() || 
+            (u.uuid && u.uuid === logUserId)
+        );
+
+        let avatarUrl = match?.avatar_base64 || null;
+        let displayName = match?.display_name || null;
+
+        if (logUser.toLowerCase() === currentUsername.toLowerCase()) {
+            if (!avatarUrl) avatarUrl = localStorage.getItem('panel_avatar_base64') || null;
+            if (!displayName) displayName = localStorage.getItem('panel_display_name') || null;
+        }
+
+        return {
+            displayName: displayName || logUser,
+            username: logUser,
+            avatarUrl
+        };
+    };
 
     const fetchLogs = async () => {
         if (sshStatus !== 'connected') return;
@@ -110,27 +139,24 @@ export const HistoryPanel: React.FC = () => {
                             Traçabilité complète et indélébile de toutes les actions sur le serveur
                         </p>
                     </div>
-                    <button 
+                    <Button 
                         onClick={fetchLogs} 
                         disabled={loading}
-                        className="bg-surface hover:bg-surface-hover text-foreground px-4 py-2 rounded-lg flex items-center gap-2 border border-border transition-colors disabled:opacity-50 font-medium"
+                        variant="secondary"
+                        className="gap-2 font-medium"
                     >
                         <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
                         Actualiser
-                    </button>
+                    </Button>
                 </div>
                 
                 {/* Search Bar */}
-                <div className="relative flex-1 max-w-2xl">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
-                    <input 
-                        type="text" 
-                        placeholder="Rechercher une action, un utilisateur, un fichier..." 
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-surface border border-border rounded-lg pl-10 pr-4 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium text-[15px] shadow-sm"
-                    />
-                </div>
+                <SearchInput 
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Rechercher une action, un utilisateur, un fichier..."
+                    className="max-w-2xl"
+                />
             </div>
 
             {/* Content */}
@@ -162,22 +188,43 @@ export const HistoryPanel: React.FC = () => {
                                 </TableCell>
                             </TableRow>
                         ) : (
-                            filteredLogs.map((log) => (
-                                <TableRow key={log.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-surface-hover overflow-hidden border border-border/50 shrink-0">
-                                                <img 
-                                                    src={sessions.find(s => s.uuid === log.userId)?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${log.user}&backgroundColor=1a1a1a&textColor=ffffff`}
-                                                    alt={log.user}
-                                                    className="w-full h-full object-cover"
-                                                />
+                            filteredLogs.map((log) => {
+                                const { displayName, username, avatarUrl } = getUserInfo(log.user, log.userId);
+                                return (
+                                    <TableRow key={log.id}>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-primary/20 text-primary border border-primary/30 flex items-center justify-center font-bold text-xs uppercase overflow-hidden shrink-0">
+                                                    {avatarUrl ? (
+                                                        <img 
+                                                            src={avatarUrl} 
+                                                            alt={displayName} 
+                                                            className="w-full h-full object-cover" 
+                                                        />
+                                                    ) : (
+                                                        <span>{(displayName || username || 'AD').substring(0, 2)}</span>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold text-foreground leading-tight">{displayName}</span>
+                                                    {displayName !== username && (
+                                                        <span className="text-[10px] text-muted-foreground font-mono">@{username}</span>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="font-semibold text-foreground">{log.user}</span>
-                                        </div>
-                                    </TableCell>
+                                        </TableCell>
                                     <TableCell>
-                                        <span className="font-medium text-foreground">{log.action}</span>
+                                        {log.action.includes('Connexion') ? (
+                                            <span className="inline-flex items-center">
+                                                {log.action}
+                                            </span>
+                                        ) : log.action.includes('Déconnexion') ? (
+                                            <span className="inline-flex items-center">
+                                                {log.action}
+                                            </span>
+                                        ) : (
+                                            <span className="font-medium text-foreground">{log.action}</span>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         <div className="max-w-[400px] whitespace-normal">
@@ -188,7 +235,8 @@ export const HistoryPanel: React.FC = () => {
                                         {formatTime(log.timestamp)}
                                     </TableCell>
                                 </TableRow>
-                            ))
+                            );
+                        })
                         )}
                     </TableBody>
                 </Table>

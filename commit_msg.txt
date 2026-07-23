@@ -1,8 +1,0 @@
-feat(panel): advanced metrics, automations, updater and bug fixes
-
-- feat(dashboard): deploy background bash agent to collect and chart RAM/CPU history
-- feat(automations): add scheduled cron tasks for server start/stop/restart, backups, and log cleanup
-- feat(updater): add interactive confirm modal for app updates instead of forcing
-- fix(access): keep users in history rather than removing on disconnect, properly track session login time
-- fix(console): fix sticky scroll position stopping when max log lines reached
-- fix(versions): make SwitchVersionModal scrollable when content overflows

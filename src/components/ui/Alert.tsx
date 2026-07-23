@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle, Info, XCircle } from 'lucide-react';
+import { cn } from '../../lib/utils';
 
 export type AlertVariant = 'default' | 'success' | 'warning' | 'danger';
 
@@ -15,7 +16,7 @@ export const Alert: React.FC<AlertProps> = ({
     variant = 'default', 
     title, 
     children, 
-    className = '',
+    className,
     icon = true
 }) => {
     const variants = {
@@ -33,7 +34,7 @@ export const Alert: React.FC<AlertProps> = ({
     };
 
     return (
-        <div className={`p-4 rounded-xl border flex gap-3 ${variants[variant]} ${className}`}>
+        <div className={cn('p-4 rounded-xl border flex gap-3', variants[variant], className)}>
             {icon && (
                 <div className="shrink-0 mt-0.5">
                     {icons[variant]}
@@ -41,7 +42,7 @@ export const Alert: React.FC<AlertProps> = ({
             )}
             <div className="flex flex-col gap-1 w-full">
                 {title && <h5 className="font-semibold text-foreground">{title}</h5>}
-                <div className={`text-sm ${title ? 'text-muted-foreground' : ''} leading-relaxed`}>
+                <div className={cn('text-sm leading-relaxed', title && 'text-muted-foreground')}>
                     {children}
                 </div>
             </div>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw, Save } from 'lucide-react';
+import { RefreshCw, Save, Check } from 'lucide-react';
 import { useServerOptions } from '../hooks/useServerOptions';
 import { ServerHeaderCard } from './options/ServerHeaderCard';
 import { PropertiesForm } from './options/PropertiesForm';
@@ -11,6 +11,7 @@ export const OptionsPanel: React.FC = () => {
         serverIcon,
         loading,
         saving,
+        savedSuccess,
         updateProp,
         handleSave,
         fetchProperties
@@ -52,20 +53,26 @@ export const OptionsPanel: React.FC = () => {
                 />
             </div>
             
-            {/* Floating Save Button */}
+            {/* Floating Save Button with Animated Success Feedback */}
             <div className="absolute bottom-6 right-6 z-50">
                 <Button
                     onClick={handleSave}
                     disabled={saving}
-                    variant="primary"
-                    className="gap-2 rounded-full px-6 py-6 shadow-lg shadow-primary/20"
+                    variant={savedSuccess ? "secondary" : "primary"}
+                    className={`gap-2 rounded-full px-6 py-6 shadow-lg transition-all duration-200 ${
+                        savedSuccess ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-500 shadow-emerald-500/20' : 'shadow-primary/20'
+                    }`}
                 >
                     {saving ? (
                         <RefreshCw size={18} className="animate-spin" />
+                    ) : savedSuccess ? (
+                        <Check size={18} className="animate-in zoom-in-50" />
                     ) : (
                         <Save size={18} />
                     )}
-                    <span className="font-semibold text-[15px]">{saving ? 'Sauvegarde...' : 'Sauvegarder'}</span>
+                    <span className="font-semibold text-[15px]">
+                        {saving ? 'Sauvegarde...' : savedSuccess ? 'Enregistré !' : 'Sauvegarder'}
+                    </span>
                 </Button>
             </div>
         </div>

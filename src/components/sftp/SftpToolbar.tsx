@@ -1,6 +1,7 @@
 import React from 'react';
-import { CornerLeftUp, Home, ChevronRight, Folder, FileText, FolderPlus, RefreshCw, Search } from 'lucide-react';
+import { CornerLeftUp, Home, ChevronRight, Folder, FileText, FolderPlus, RefreshCw } from 'lucide-react';
 import { FileEntry } from '../../lib/tauriBridge';
+import { SearchInput } from '../ui/SearchInput';
 
 interface SftpToolbarProps {
     currentPath: string;
@@ -90,16 +91,12 @@ export const SftpToolbar: React.FC<SftpToolbarProps> = ({
                 )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
-                <div className="relative mr-2">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="bg-background border border-border/80 rounded-md py-1.5 pl-8 pr-3 text-xs w-48 text-foreground placeholder:text-muted-foreground/70 focus:outline-none focus:border-primary/50 transition-colors"
-                    />
-                </div>
+                <SearchInput
+                    value={searchQuery}
+                    onChange={setSearchQuery}
+                    placeholder="Rechercher..."
+                    className="w-48 mr-2"
+                />
                 <button onClick={onMkfile} className="p-1.5 text-muted-foreground hover:text-primary hover:bg-surface-hover rounded transition-colors" title="New File">
                     <FileText size={16} />
                 </button>

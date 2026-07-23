@@ -1,23 +1,26 @@
 import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DOMPurify from 'dompurify';
+import { cn } from '../../lib/utils';
 
 interface MarkdownRendererProps {
     content: string;
     className?: string;
 }
 
-export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className = '' }) => {
-    // Sanitize markdown before parsing
+export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ content, className }) => {
+    // Sanitize markdown and normalize HTML breaks (<br>, <br/>, </br>) to real newlines
     const cleanContent = useMemo(() => {
-        return DOMPurify.sanitize(content, {
-            USE_PROFILES: { html: true }, // allow basic html if necessary, but react-markdown handles most
+        if (!content) return '';
+        const normalized = content.replace(/<br\s*\/?>|<\/br>/gi, '\n');
+        return DOMPurify.sanitize(normalized, {
+            USE_PROFILES: { html: true },
             FORBID_ATTR: ['style', 'on*', 'class', 'id', 'name'],
         });
     }, [content]);
 
     return (
-        <div className={`text-sm text-muted-foreground prose prose-invert max-w-none ${className}`}>
+        <div className={cn('text-sm text-muted-foreground prose prose-invert max-w-none', className)}>
             <ReactMarkdown
                 components={{
                     a: ({ node, ...props }) => (

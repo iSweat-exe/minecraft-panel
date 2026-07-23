@@ -19,7 +19,7 @@ interface ModsState {
 export const useModsStore = create<ModsState>()(
     persist(
         (set) => ({
-            modPath: 'mods/',
+            modPath: '/minecraft/mods',
             curseforgeApiKey: '',
             warnOnClientMods: true,
             modsPerPage: 15,

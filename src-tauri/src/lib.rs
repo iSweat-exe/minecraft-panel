@@ -50,7 +50,25 @@ pub fn run() {
             transfer::cancel_backup,
             commands::rcon::rcon_execute,
             commands::rcon::rcon_execute_multi,
-            commands::players::get_players_list
+            commands::players::get_players_list,
+            commands::users::get_panel_users,
+            commands::users::save_panel_user,
+            commands::users::delete_panel_user,
+            commands::users::verify_panel_user,
+            commands::docker::docker_list_containers,
+            commands::docker::docker_container_action,
+            commands::docker::docker_system_prune,
+            commands::docker::docker_container_logs,
+            commands::docker::docker_list_images,
+            commands::docker::docker_pull_image,
+            commands::docker::docker_remove_image,
+            commands::docker::docker_run_container,
+            commands::docker::docker_inspect_container,
+            commands::docker::docker_update_container,
+            commands::docker::docker_recreate_container,
+            commands::terminal::terminal_start,
+            commands::terminal::terminal_write,
+            commands::terminal::terminal_resize
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

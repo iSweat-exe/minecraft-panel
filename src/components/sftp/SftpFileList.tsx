@@ -9,6 +9,7 @@ import { tauriBridge } from '../../lib/tauriBridge';
 import { SwitchVersionModal } from '../dialogs/SwitchVersionModal';
 import { ModrinthProject, ModrinthVersion } from '../../api/modrinth';
 import { logAction } from '../../lib/actionLogger';
+import { EmptyState } from '../ui/EmptyState';
 
 interface SftpFileListProps {
     entries: FileEntry[];
@@ -263,8 +264,14 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                 <TableBody>
                     {entries.length === 0 && !loading && (
                         <TableRow>
-                            <TableCell colSpan={isModsFolder ? 6 : 5} className="text-center text-muted-foreground py-8">
-                                This directory is empty.
+                            <TableCell colSpan={isModsFolder ? 6 : 5} className="py-6">
+                                <EmptyState
+                                    icon={Folder}
+                                    title="Ce dossier est vide"
+                                    description="Aucun fichier ni sous-dossier n'est présent dans ce répertoire."
+                                    compact
+                                    className="border-none bg-transparent"
+                                />
                             </TableCell>
                         </TableRow>
                     )}

@@ -29,63 +29,68 @@ pub async fn metrics_subscribe(
 
     let mut channel = session.channel_open_session().await?;
 
-    // A single long-running script that outputs one line of metrics per iteration.
-    // CPU is measured over a 0.5s delta, network over the same window.
-    // Format: cpu_pct ram_used_mb ram_total_mb disk_used_gb disk_total_gb rx_bps tx_bps
     let script = r#"bash -c '
 export LC_ALL=C
 
-# Pre-read disk once (slow, rarely changes)
-read disk_used disk_total <<< $(df -BG / 2>/dev/null | tail -1 | awk "{gsub(\"G\",\"\"); print \$3, \$2}")
-disk_used=${disk_used:-0}
-disk_total=${disk_total:-0}
-disk_counter=0
-
-# Initial CPU + network snapshot
-read cpu_user cpu_nice cpu_sys cpu_idle cpu_rest <<< $(head -1 /proc/stat | awk "{print \$2, \$3, \$4, \$5, \$6+\$7+\$8+\$9+\$10}")
-read rx tx <<< $(awk "NR>2{rx+=\$2; tx+=\$10} END{print rx, tx}" /proc/net/dev)
+prev_rx=""
+prev_tx=""
 
 while true; do
     sleep 0.5
 
-    read cpu2_user cpu2_nice cpu2_sys cpu2_idle cpu2_rest <<< $(head -1 /proc/stat | awk "{print \$2, \$3, \$4, \$5, \$6+\$7+\$8+\$9+\$10}")
-    read rx2 tx2 <<< $(awk "NR>2{rx+=\$2; tx+=\$10} END{print rx, tx}" /proc/net/dev)
+    dstats=$(docker stats minecraft-panel-server --no-stream --format "{{.CPUPerc}} {{.MemUsage}}" 2>/dev/null)
+    
+    cpu_pct="0.0"
+    ram_used=0
+    ram_total=4096
 
-    idle1=$((cpu_idle))
-    idle2=$((cpu2_idle))
-    total1=$((cpu_user + cpu_nice + cpu_sys + cpu_idle + cpu_rest))
-    total2=$((cpu2_user + cpu2_nice + cpu2_sys + cpu2_idle + cpu2_rest))
-    diff_idle=$((idle2 - idle1))
-    diff_total=$((total2 - total1))
-    if [ $diff_total -gt 0 ]; then
-        cpu_pct=$(awk "BEGIN{printf \"%.1f\", 100.0 * (1.0 - $diff_idle / $diff_total)}")
+    if [ -n "$dstats" ]; then
+        cpu_raw=$(echo "$dstats" | awk "{print \$1}" | tr -d "%")
+        mem_used_raw=$(echo "$dstats" | awk "{print \$2}")
+        mem_tot_raw=$(echo "$dstats" | awk "{print \$4}")
+
+        if [ -n "$cpu_raw" ]; then cpu_pct=$cpu_raw; fi
+
+        val=$(echo "$mem_used_raw" | sed -E "s/([0-9.]+).*/\1/")
+        if [[ "$mem_used_raw" == *"GiB"* ]]; then
+            ram_used=$(awk "BEGIN{print int($val * 1024)}" 2>/dev/null || echo "0")
+        else
+            ram_used=$(awk "BEGIN{print int($val)}" 2>/dev/null || echo "0")
+        fi
+
+        val_t=$(echo "$mem_tot_raw" | sed -E "s/([0-9.]+).*/\1/")
+        if [[ "$mem_tot_raw" == *"GiB"* ]]; then
+            ram_total=$(awk "BEGIN{print int($val_t * 1024)}" 2>/dev/null || echo "4096")
+        else
+            ram_total=$(awk "BEGIN{print int($val_t)}" 2>/dev/null || echo "4096")
+        fi
     else
-        cpu_pct="0.0"
+        if [ -f /proc/meminfo ]; then
+            m_tot=$(grep MemTotal /proc/meminfo | tr -dc "0-9")
+            m_avail=$(grep MemAvailable /proc/meminfo | tr -dc "0-9")
+            if [ -n "$m_tot" ] && [ -n "$m_avail" ]; then
+                ram_total=$(( m_tot / 1024 ))
+                ram_used=$(( (m_tot - m_avail) / 1024 ))
+            fi
+        fi
+        cpu_pct=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk "{print 100 - \$1}" 2>/dev/null || echo "0.0")
     fi
 
-    rx_bps=$(( (rx2 - rx) * 2 ))
-    tx_bps=$(( (tx2 - tx) * 2 ))
+    disk_line=$( (df -BG /minecraft 2>/dev/null || df -BG / 2>/dev/null) | tail -1)
+    disk_used=$(echo "$disk_line" | awk "{print \$3}" | tr -dc "0-9")
+    disk_total=$(echo "$disk_line" | awk "{print \$2}" | tr -dc "0-9")
 
-    read mem_total mem_avail <<< $(awk "/MemTotal/{t=\$2} /MemAvailable/{a=\$2} /MemFree/{f=\$2} /Buffers/{b=\$2} /^Cached/{c=\$2} END{if(a!=\"\") print t, a; else print t, f+b+c}" /proc/meminfo)
-    mem_total=${mem_total:-1}
-    mem_avail=${mem_avail:-0}
-    ram_used_mb=$(( (mem_total - mem_avail) / 1024 ))
-    ram_total_mb=$(( mem_total / 1024 ))
-
-    # Re-read disk every 60 iterations (~30s)
-    disk_counter=$((disk_counter + 1))
-    if [ $disk_counter -ge 60 ]; then
-        read disk_used disk_total <<< $(df -BG / 2>/dev/null | tail -1 | awk "{gsub(\"G\",\"\"); print \$3, \$2}")
-        disk_used=${disk_used:-0}
-        disk_total=${disk_total:-0}
-        disk_counter=0
+    read rx tx <<< $(awk "NR>2{r+=\$2; t+=\$10} END{print r, t}" /proc/net/dev 2>/dev/null)
+    rx_bps=0
+    tx_bps=0
+    if [ -n "$prev_rx" ]; then
+        rx_bps=$(( (rx - prev_rx) * 2 ))
+        tx_bps=$(( (tx - prev_tx) * 2 ))
     fi
+    prev_rx=$rx
+    prev_tx=$tx
 
-    echo "${cpu_pct} ${ram_used_mb} ${ram_total_mb} ${disk_used} ${disk_total} ${rx_bps} ${tx_bps}"
-
-    # Shift for next iteration
-    cpu_user=$cpu2_user; cpu_nice=$cpu2_nice; cpu_sys=$cpu2_sys; cpu_idle=$cpu2_idle; cpu_rest=$cpu2_rest
-    rx=$rx2; tx=$tx2
+    echo "${cpu_pct:-0.0} ${ram_used:-0} ${ram_total:-4096} ${disk_used:-0} ${disk_total:-0} ${rx_bps:-0} ${tx_bps:-0}"
 done
 '"#;
 

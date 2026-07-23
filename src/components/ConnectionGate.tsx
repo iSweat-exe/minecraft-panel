@@ -5,7 +5,6 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { Label } from './ui/Label';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/Card';
-import { User } from 'lucide-react';
 
 export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const {
@@ -16,6 +15,8 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         setPort,
         username,
         setUsername,
+        subUsername,
+        setSubUsername,
         keyPath,
         setKeyPath,
         verifyingKey,
@@ -23,47 +24,11 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         pickKeyFile,
         dismissKeyVerification,
         acceptFingerprint,
-        displayName,
-        setDisplayName,
-        avatarBase64,
-        setAvatarBase64
+        loginMode,
+        setLoginMode,
+        password,
+        setPassword,
     } = useConnectionGate();
-
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const MAX_SIZE = 128;
-                let width = img.width;
-                let height = img.height;
-                
-                if (width > height) {
-                    if (width > MAX_SIZE) {
-                        height *= MAX_SIZE / width;
-                        width = MAX_SIZE;
-                    }
-                } else {
-                    if (height > MAX_SIZE) {
-                        width *= MAX_SIZE / height;
-                        height = MAX_SIZE;
-                    }
-                }
-                
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx?.drawImage(img, 0, 0, width, height);
-                
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                setAvatarBase64(dataUrl);
-            };
-            img.src = URL.createObjectURL(file);
-        }
-    };
 
     if (verifyingKey) {
         return (
@@ -100,93 +65,106 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
 
     return (
         <div className="flex items-center justify-center h-full bg-background text-foreground">
-            <Card className="w-80 mx-4">
-                <CardHeader>
-                    <CardTitle className="text-sm text-muted-foreground tracking-wider">SSH Connection</CardTitle>
+            <Card className="w-96 mx-4">
+                <CardHeader className="pb-3">
+                    <div className="flex bg-surface border border-border rounded-lg p-0.5 text-xs font-mono mb-2">
+                        <button
+                            onClick={() => setLoginMode('admin')}
+                            className={`flex-1 py-1.5 rounded-md transition-all font-semibold ${
+                                loginMode === 'admin' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Admin (Clé SSH)
+                        </button>
+                        <button
+                            onClick={() => setLoginMode('subuser')}
+                            className={`flex-1 py-1.5 rounded-md transition-all font-semibold ${
+                                loginMode === 'subuser' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            Sous-utilisateur
+                        </button>
+                    </div>
+                    <CardTitle className="text-xs text-muted-foreground tracking-wider uppercase">
+                        {loginMode === 'admin' ? 'Connexion Administrateur Root' : 'Connexion Membre du Panel'}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex gap-3">
                         <div className="flex-1">
-                            <Label className="mb-1 block text-muted-foreground">Host</Label>
+                            <Label className="mb-1 block text-muted-foreground">Hôte / IP VPS</Label>
                             <Input 
                                 value={host} 
                                 onChange={e => setHost(e.target.value)} 
-                                placeholder="localhost"
+                                placeholder="localhost ou IP"
                             />
                         </div>
-                        <div className="w-20">
+                        <div className="w-24">
                             <Label className="mb-1 block text-muted-foreground">Port</Label>
                             <Input 
                                 type="number"
                                 value={port} 
-                                onChange={e => setPort(parseInt(e.target.value))} 
+                                onChange={e => setPort(parseInt(e.target.value) || 22)} 
                             />
                         </div>
                     </div>
-                    
-                    <div className="flex gap-4 items-center">
-                        <div 
-                            className="w-16 h-16 rounded-full bg-surface-hover/50 flex flex-col items-center justify-center cursor-pointer border border-border border-dashed overflow-hidden shrink-0 relative group"
-                            onClick={() => fileInputRef.current?.click()}
-                        >
-                            {avatarBase64 ? (
-                                <img src={avatarBase64} alt="Avatar" className="w-full h-full object-cover" />
-                            ) : (
-                                <User size={24} className="text-muted-foreground" />
-                            )}
-                            <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                <span className="text-[10px] font-medium">Edit</span>
+
+                    {loginMode === 'admin' ? (
+                        <>
+                            <div>
+                                <Label className="mb-1 block text-muted-foreground">Utilisateur (SSH)</Label>
+                                <Input 
+                                    value={username} 
+                                    onChange={e => setUsername(e.target.value)} 
+                                    placeholder="root"
+                                />
                             </div>
-                        </div>
-                        <input 
-                            type="file" 
-                            ref={fileInputRef} 
-                            onChange={handleAvatarChange} 
-                            accept="image/*" 
-                            className="hidden" 
-                        />
-                        <div className="flex-1">
-                            <Label className="mb-1 block text-muted-foreground">Display Name</Label>
-                            <Input 
-                                value={displayName} 
-                                onChange={e => setDisplayName(e.target.value)} 
-                                placeholder="Display Name"
-                            />
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <Label className="mb-1 block text-muted-foreground">Username (SSH)</Label>
-                        <Input 
-                            value={username} 
-                            onChange={e => setUsername(e.target.value)} 
-                        />
-                    </div>
-                    
-                    <div>
-                        <Label className="mb-1 block text-muted-foreground">Private Key</Label>
-                        <div className="flex gap-2">
-                            <Input 
-                                className="flex-1" 
-                                value={keyPath} 
-                                onChange={e => setKeyPath(e.target.value)} 
-                                placeholder="~/.ssh/id_ed25519"
-                            />
-                            <Button variant="secondary" onClick={pickKeyFile}>
-                                <FileUp size={18} />
-                            </Button>
-                        </div>
-                    </div>
+                            <div>
+                                <Label className="mb-1 block text-muted-foreground">Clé Privée SSH</Label>
+                                <div className="flex gap-2">
+                                    <Input 
+                                        className="flex-1" 
+                                        value={keyPath} 
+                                        onChange={e => setKeyPath(e.target.value)} 
+                                        placeholder="~/.ssh/id_ed25519"
+                                    />
+                                    <Button variant="secondary" onClick={pickKeyFile}>
+                                        <FileUp size={18} />
+                                    </Button>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div>
+                                <Label className="mb-1 block text-muted-foreground">Pseudo Panel</Label>
+                                <Input 
+                                    value={subUsername} 
+                                    onChange={e => setSubUsername(e.target.value)} 
+                                    placeholder="ex: Adrien"
+                                />
+                            </div>
+                            <div>
+                                <Label className="mb-1 block text-muted-foreground">Mot de passe</Label>
+                                <Input 
+                                    type="password"
+                                    value={password} 
+                                    onChange={e => setPassword(e.target.value)} 
+                                    placeholder="Mot de passe"
+                                />
+                            </div>
+                        </>
+                    )}
                 </CardContent>
 
                 <CardFooter className="flex flex-col gap-4">
                     <Button 
                         variant="primary" 
-                        className="w-full"
+                        className="w-full font-semibold"
                         onClick={() => connect()}
                         disabled={sshStatus === 'reconnecting'}
                     >
-                        {sshStatus === 'reconnecting' ? 'Connecting...' : 'Connect'}
+                        {sshStatus === 'reconnecting' ? 'Connexion en cours...' : 'Se connecter au Panel'}
                     </Button>
                 </CardFooter>
             </Card>

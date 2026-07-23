@@ -23,6 +23,7 @@ export function useServerOptions() {
     const [serverIcon, setServerIcon] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [savedSuccess, setSavedSuccess] = useState(false);
 
     const fetchProperties = async () => {
         setLoading(true);
@@ -82,6 +83,8 @@ export function useServerOptions() {
 
             await tauriBridge.sftpWriteFile('/minecraft/server.properties', updatedLines.join('\n'));
             setOriginalContent(updatedLines.join('\n'));
+            setSavedSuccess(true);
+            setTimeout(() => setSavedSuccess(false), 2500);
             
             logAction('Modification des propriétés du serveur', { file: 'server.properties' });
             
@@ -115,6 +118,7 @@ export function useServerOptions() {
         serverIcon,
         loading,
         saving,
+        savedSuccess,
         updateProp,
         handleSave,
         fetchProperties
