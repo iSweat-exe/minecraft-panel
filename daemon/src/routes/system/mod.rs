@@ -27,6 +27,7 @@ pub fn router() -> Router<AppState> {
         )
         .route("/api/v1/system/memory", get(memory::get_memory))
         .route("/api/v1/system/host", get(host::get_host))
+        .route("/api/v1/system/host/exec", post(host::execute_command))
         .route("/api/v1/system/health", get(health::get_health))
         .route("/api/v1/system/logs", get(logs::get_logs))
         .route(

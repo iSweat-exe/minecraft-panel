@@ -80,9 +80,26 @@ export const ConsolePanel: React.FC = () => {
         setHostLines(prev => [...prev, { type: 'input', text: `$ ${cmd}` }]);
 
         try {
-            const output = await tauriBridge.sshExecute(cmd);
-            if (output) {
-                setHostLines(prev => [...prev, { type: 'output', text: output }]);
+            if (!host || !port || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+            
+            const res = await fetch(`${nodeUrl}/api/v1/system/host/exec`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ command: cmd })
+            });
+            
+            const data = await res.json();
+            if (data.success && data.data) {
+                const output = (data.data.stdout + '\n' + data.data.stderr).trim();
+                if (output) {
+                    setHostLines(prev => [...prev, { type: 'output', text: output }]);
+                }
+            } else {
+                throw new Error(data.error || 'Failed to execute command');
             }
         } catch (error: any) {
             setHostLines(prev => [...prev, { type: 'error', text: String(error) }]);

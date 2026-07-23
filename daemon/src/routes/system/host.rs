@@ -2,6 +2,7 @@ use axum::Json;
 use protocol::{ApiResponse, SystemHostResponse};
 
 use crate::auth::NodeAuth;
+use tokio::process::Command;
 
 pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> {
     let mut sys = sysinfo::System::new();
@@ -43,4 +44,32 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
         disk_total_mb,
         disk_free_mb,
     }))
+}
+
+pub async fn execute_command(
+    _auth: NodeAuth,
+    Json(payload): Json<protocol::HostExecRequest>,
+) -> Json<ApiResponse<protocol::HostExecResponse>> {
+    #[cfg(target_os = "windows")]
+    let mut cmd = Command::new("cmd");
+    #[cfg(target_os = "windows")]
+    cmd.args(["/C", &payload.command]);
+
+    #[cfg(not(target_os = "windows"))]
+    let mut cmd = Command::new("sh");
+    #[cfg(not(target_os = "windows"))]
+    cmd.args(["-c", &payload.command]);
+
+    match cmd.output().await {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+            Json(ApiResponse::ok(protocol::HostExecResponse {
+                stdout,
+                stderr,
+                exit_code: output.status.code(),
+            }))
+        }
+        Err(e) => Json(ApiResponse::err(format!("Failed to execute command: {}", e))),
+    }
 }

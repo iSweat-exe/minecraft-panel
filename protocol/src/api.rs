@@ -107,6 +107,18 @@ pub enum FileAction {
     Archive { archive_name: String },
     Extract,
 }
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HostExecRequest {
+    pub command: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HostExecResponse {
+    pub stdout: String,
+    pub stderr: String,
+    pub exit_code: Option<i32>,
+}
+
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileActionRequest {
