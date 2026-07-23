@@ -49,8 +49,12 @@ export function useServerOptions() {
                 }
             }
             setProperties(props);
-        } catch (error) {
-            console.error("Failed to load server.properties:", error);
+        } catch (error: any) {
+            if (error && typeof error === 'string' && error.includes('HTTP 500')) {
+                // Ignore silently, file probably doesn't exist yet
+            } else {
+                console.error("Failed to load server.properties:", error);
+            }
         }
 
         try {

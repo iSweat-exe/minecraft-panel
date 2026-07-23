@@ -73,8 +73,10 @@ export const AutomationsPanel: React.FC = () => {
                 }
             }
             setJobs(parsedJobs);
-        } catch (err) {
-            console.error(err);
+        } catch (err: any) {
+            if (err !== 'Not connected') {
+                console.error("Failed to load crontab:", err);
+            }
         } finally {
             setLoading(false);
         }

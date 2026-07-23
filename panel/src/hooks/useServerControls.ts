@@ -162,10 +162,10 @@ export function useServerControls() {
             clearConsole();
             
             // Execute the action using Node Power Action
-            const powerActionMap: Record<string, "Start" | "Stop" | "Restart" | "Kill"> = {
-                start: "Start",
-                stop: forced ? "Kill" : "Stop",
-                restart: "Restart"
+            const powerActionMap: Record<string, "start" | "stop" | "restart" | "kill"> = {
+                start: "start",
+                stop: forced ? "kill" : "stop",
+                restart: "restart"
             };
             
             await tauriBridge.nodePowerAction(nodeUrl, token, DEFAULT_SERVER_ID, powerActionMap[action] as any);

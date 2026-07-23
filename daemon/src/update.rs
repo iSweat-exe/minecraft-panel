@@ -127,7 +127,7 @@ impl AutoUpdater {
             .build()?;
 
         println!("Fetching latest release info from GitHub...");
-        let release_url = "https://api.github.com/repos/iSweat/minecraft-panel/releases/latest";
+        let release_url = "https://api.github.com/repos/isweat-exe/minecraft-panel/releases/latest";
         let response = client.get(release_url).send().await.context("Failed to connect to GitHub API")?;
         
         if !response.status().is_success() {

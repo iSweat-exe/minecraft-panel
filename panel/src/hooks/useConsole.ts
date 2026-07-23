@@ -58,7 +58,11 @@ export function useConsole() {
                         if (payload.event === 'console_output') {
                             pushLine(payload.data.line);
                         } else if (payload.event === 'error') {
-                            console.error("Console WS error:", payload.data.message);
+                            if (payload.data.message && typeof payload.data.message === 'string' && payload.data.message.includes('No such container')) {
+                                // Ignore missing container errors silently
+                            } else {
+                                console.error("Console WS error:", payload.data.message);
+                            }
                         }
                     } catch (e) {
                         console.error("Failed to parse console WS message", e);

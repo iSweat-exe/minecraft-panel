@@ -75,7 +75,7 @@ export const ModsPanel: React.FC = () => {
             const files = await tauriBridge.nodeListDir(nodeUrl, token, resolvedPath);
             setInstalledFiles(files.map(f => f.name.toLowerCase()));
         } catch (e: any) {
-            if (e && typeof e === 'string' && !e.includes("No such file")) {
+            if (e && typeof e === 'string' && !e.includes("No such file") && !e.includes("not a directory") && !e.includes("HTTP 500")) {
                 console.error("Failed to fetch installed mods:", e);
             }
             setInstalledFiles([]);
