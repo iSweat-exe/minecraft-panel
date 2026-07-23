@@ -26,9 +26,13 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
         acceptFingerprint,
         loginMode,
         setLoginMode,
+        adminAuthMode,
+        setAdminAuthMode,
         password,
         setPassword,
     } = useConnectionGate();
+
+
 
     if (verifyingKey) {
         return (
@@ -74,7 +78,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                                 loginMode === 'admin' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
                             }`}
                         >
-                            Admin (Clé SSH)
+                            Admin
                         </button>
                         <button
                             onClick={() => setLoginMode('subuser')}
@@ -119,19 +123,52 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                                     placeholder="root"
                                 />
                             </div>
-                            <div>
-                                <Label className="mb-1 block text-muted-foreground">Clé Privée SSH</Label>
-                                <div className="flex gap-2">
-                                    <Input 
-                                        className="flex-1" 
-                                        value={keyPath} 
-                                        onChange={e => setKeyPath(e.target.value)} 
-                                        placeholder="~/.ssh/id_ed25519"
-                                    />
-                                    <Button variant="secondary" onClick={pickKeyFile}>
-                                        <FileUp size={18} />
-                                    </Button>
+
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <Label className="text-muted-foreground">Méthode d'auth SSH</Label>
+                                    <div className="flex bg-surface border border-border rounded-md p-0.5 text-[11px] font-mono">
+                                        <button
+                                            type="button"
+                                            onClick={() => setAdminAuthMode('key')}
+                                            className={`px-2 py-0.5 rounded transition-all ${
+                                                adminAuthMode === 'key' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                        >
+                                            Clé SSH
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setAdminAuthMode('password')}
+                                            className={`px-2 py-0.5 rounded transition-all ${
+                                                adminAuthMode === 'password' ? 'bg-primary text-primary-foreground font-medium' : 'text-muted-foreground hover:text-foreground'
+                                            }`}
+                                        >
+                                            Mot de passe
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {adminAuthMode === 'key' ? (
+                                    <div className="flex gap-2">
+                                        <Input 
+                                            className="flex-1" 
+                                            value={keyPath} 
+                                            onChange={e => setKeyPath(e.target.value)} 
+                                            placeholder="~/.ssh/id_ed25519"
+                                        />
+                                        <Button variant="secondary" onClick={pickKeyFile}>
+                                            <FileUp size={18} />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Input 
+                                        type="password"
+                                        value={password} 
+                                        onChange={e => setPassword(e.target.value)} 
+                                        placeholder="Mot de passe SSH root"
+                                    />
+                                )}
                             </div>
                         </>
                     ) : (
@@ -156,6 +193,7 @@ export const ConnectionGate: React.FC<{ children: React.ReactNode }> = ({ childr
                         </>
                     )}
                 </CardContent>
+
 
                 <CardFooter className="flex flex-col gap-4">
                     <Button 

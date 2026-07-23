@@ -9,3 +9,5 @@ pub mod players;
 pub mod users;
 pub mod docker;
 pub mod terminal;
+pub mod node;
+

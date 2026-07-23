@@ -11,9 +11,12 @@ pub enum AppError {
     Sftp(#[from] russh_sftp::client::error::Error),
     #[error("Anyhow Error: {0}")]
     Anyhow(#[from] anyhow::Error),
+    #[error("Reqwest Error: {0}")]
+    Reqwest(#[from] reqwest::Error),
     #[error("{0}")]
     Message(String),
 }
+
 
 impl From<String> for AppError {
     fn from(s: String) -> Self {

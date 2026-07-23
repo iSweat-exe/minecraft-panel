@@ -117,8 +117,13 @@ impl DockerManager {
                 name: Some(bollard::models::RestartPolicyNameEnum::UNLESS_STOPPED),
                 maximum_retry_count: None,
             }),
+            security_opt: Some(vec![
+                "seccomp=unconfined".to_string(),
+                "apparmor=unconfined".to_string(),
+            ]),
             ..Default::default()
         };
+
 
         let container_name = format!("mc-server-{}", spec.server_id);
         let config = Config {

@@ -5,6 +5,7 @@ pub mod state;
 pub mod models;
 pub mod transfer;
 pub mod protocol;
+pub mod node_client;
 
 use state::SshState;
 
@@ -68,8 +69,15 @@ pub fn run() {
             commands::docker::docker_recreate_container,
             commands::terminal::terminal_start,
             commands::terminal::terminal_write,
-            commands::terminal::terminal_resize
+            commands::terminal::terminal_resize,
+            commands::node::node_get_info,
+            commands::node::node_list_servers,
+            commands::node::node_create_server,
+            commands::node::node_power_action,
+            commands::node::node_delete_server,
+            commands::node::node_generate_console_token
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+

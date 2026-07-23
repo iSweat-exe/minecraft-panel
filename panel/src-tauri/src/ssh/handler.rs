@@ -18,13 +18,16 @@ impl russh::client::Handler for SshHandler {
         let app_handle = self.app_handle.clone();
 
         async move {
-            match expected_fingerprint {
-                Some(expected) => Ok(expected == fingerprint),
-                None => {
+            if let Some(expected) = expected_fingerprint {
+                if !expected.is_empty() && expected != fingerprint {
                     let _ = app_handle.emit("host-key-verification-needed", fingerprint);
-                    Ok(false)
                 }
+            } else {
+                let _ = app_handle.emit("host-key-verification-needed", fingerprint);
             }
+            Ok(true)
         }
+
+
     }
 }

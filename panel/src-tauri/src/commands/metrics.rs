@@ -32,60 +32,43 @@ pub async fn metrics_subscribe(
     let script = r#"bash -c '
 export LC_ALL=C
 
-prev_rx=""
-prev_tx=""
+prev_idle=0
+prev_total=0
+prev_rx=0
+prev_tx=0
 
 while true; do
-    sleep 0.5
+    sleep 1
 
-    dstats=$(docker stats minecraft-panel-server --no-stream --format "{{.CPUPerc}} {{.MemUsage}}" 2>/dev/null)
+    read -r _ u n s i io irq soft steal _ < /proc/stat
+    idle=$(( i + io ))
+    total=$(( u + n + s + i + io + irq + soft + steal ))
+    
+    diff_idle=$(( idle - prev_idle ))
+    diff_total=$(( total - prev_total ))
     
     cpu_pct="0.0"
-    ram_used=0
-    ram_total=4096
-
-    if [ -n "$dstats" ]; then
-        cpu_raw=$(echo "$dstats" | awk "{print \$1}" | tr -d "%")
-        mem_used_raw=$(echo "$dstats" | awk "{print \$2}")
-        mem_tot_raw=$(echo "$dstats" | awk "{print \$4}")
-
-        if [ -n "$cpu_raw" ]; then cpu_pct=$cpu_raw; fi
-
-        val=$(echo "$mem_used_raw" | sed -E "s/([0-9.]+).*/\1/")
-        if [[ "$mem_used_raw" == *"GiB"* ]]; then
-            ram_used=$(awk "BEGIN{print int($val * 1024)}" 2>/dev/null || echo "0")
-        else
-            ram_used=$(awk "BEGIN{print int($val)}" 2>/dev/null || echo "0")
-        fi
-
-        val_t=$(echo "$mem_tot_raw" | sed -E "s/([0-9.]+).*/\1/")
-        if [[ "$mem_tot_raw" == *"GiB"* ]]; then
-            ram_total=$(awk "BEGIN{print int($val_t * 1024)}" 2>/dev/null || echo "4096")
-        else
-            ram_total=$(awk "BEGIN{print int($val_t)}" 2>/dev/null || echo "4096")
-        fi
-    else
-        if [ -f /proc/meminfo ]; then
-            m_tot=$(grep MemTotal /proc/meminfo | tr -dc "0-9")
-            m_avail=$(grep MemAvailable /proc/meminfo | tr -dc "0-9")
-            if [ -n "$m_tot" ] && [ -n "$m_avail" ]; then
-                ram_total=$(( m_tot / 1024 ))
-                ram_used=$(( (m_tot - m_avail) / 1024 ))
-            fi
-        fi
-        cpu_pct=$(top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk "{print 100 - \$1}" 2>/dev/null || echo "0.0")
+    if [ "$diff_total" -gt 0 ] && [ "$prev_total" -gt 0 ]; then
+        cpu_pct=$(awk "BEGIN {printf \"%.1f\", (1 - $diff_idle / $diff_total) * 100}")
     fi
+    prev_idle=$idle
+    prev_total=$total
 
-    disk_line=$( (df -BG /minecraft 2>/dev/null || df -BG / 2>/dev/null) | tail -1)
-    disk_used=$(echo "$disk_line" | awk "{print \$3}" | tr -dc "0-9")
+    m_tot=$(grep MemTotal /proc/meminfo | awk "{print \$2}")
+    m_avail=$(grep MemAvailable /proc/meminfo | awk "{print \$2}")
+    ram_total=$(( m_tot / 1024 ))
+    ram_used=$(( (m_tot - m_avail) / 1024 ))
+
+    disk_line=$(df -BG / | tail -1)
     disk_total=$(echo "$disk_line" | awk "{print \$2}" | tr -dc "0-9")
+    disk_used=$(echo "$disk_line" | awk "{print \$3}" | tr -dc "0-9")
 
-    read rx tx <<< $(awk "NR>2{r+=\$2; t+=\$10} END{print r, t}" /proc/net/dev 2>/dev/null)
+    read -r rx tx <<< $(awk "NR>2{r+=\$2; t+=\$10} END{print r, t}" /proc/net/dev 2>/dev/null)
     rx_bps=0
     tx_bps=0
-    if [ -n "$prev_rx" ]; then
-        rx_bps=$(( (rx - prev_rx) * 2 ))
-        tx_bps=$(( (tx - prev_tx) * 2 ))
+    if [ "$prev_rx" -gt 0 ]; then
+        rx_bps=$(( rx - prev_rx ))
+        tx_bps=$(( tx - prev_tx ))
     fi
     prev_rx=$rx
     prev_tx=$tx
@@ -93,6 +76,7 @@ while true; do
     echo "${cpu_pct:-0.0} ${ram_used:-0} ${ram_total:-4096} ${disk_used:-0} ${disk_total:-0} ${rx_bps:-0} ${tx_bps:-0}"
 done
 '"#;
+
 
     channel.exec(true, script).await?;
     drop(session_guard);

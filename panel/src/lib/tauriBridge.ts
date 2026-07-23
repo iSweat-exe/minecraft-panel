@@ -52,8 +52,9 @@ export interface DockerImageInfo {
 }
 
 export const tauriBridge = {
-    sshConnect: (host: string, port: number, username: string, keyPath: string, expectedFingerprint?: string) =>
-        invoke<void>('ssh_connect', { host, port, username, keyPath, expectedFingerprint }),
+    sshConnect: (host: string, port: number, username: string, keyPath?: string, password?: string, expectedFingerprint?: string) =>
+        invoke<void>('ssh_connect', { host, port, username, keyPath, password, expectedFingerprint }),
+
     sshStatus: () => invoke<ConnectionState>('ssh_status'),
     sshDisconnect: () => invoke<void>('ssh_disconnect'),
     sshExecute: (command: string) => invoke<string>('ssh_execute', { command }),

@@ -55,14 +55,18 @@ pub async fn docker_container_action(
     }
 
     let cmd = match action.as_str() {
-        "start" => format!("docker start {}", clean_id),
-        "stop" => format!("docker stop -t 10 {}", clean_id),
-        "restart" => format!("docker restart -t 10 {}", clean_id),
-        "remove" => format!("docker rm -f {}", clean_id),
+        "start" => format!("docker start {} 2>&1", clean_id),
+        "stop" => format!("docker stop -t 10 {} 2>&1", clean_id),
+        "restart" => format!("docker restart -t 10 {} 2>&1", clean_id),
+        "remove" => format!("docker rm -f {} 2>&1", clean_id),
         _ => return Err(AppError::Message("Action non reconnue".into())),
     };
 
-    run_exec(&state, &cmd).await?;
+    let output = run_exec(&state, &cmd).await?;
+    let lower = output.to_lowercase();
+    if lower.contains("error:") || lower.contains("failed") || lower.contains("cannot") || lower.contains("permission denied") {
+        return Err(AppError::Message(output.trim().to_string()));
+    }
     Ok(())
 }
 
@@ -140,7 +144,7 @@ pub async fn docker_run_container(
         return Err(AppError::Message("Nom d'image requis".into()));
     }
 
-    let mut cmd = String::from("docker run -d");
+    let mut cmd = String::from("docker run -d --security-opt seccomp=unconfined --security-opt apparmor=unconfined");
     if let Some(n) = name {
         let clean_n = n.trim();
         if !clean_n.is_empty() {
@@ -241,7 +245,7 @@ pub async fn docker_recreate_container(
     let _ = run_exec(&state, &stop_rm_cmd).await;
 
     // 2. Run new container with updated config
-    let mut cmd = String::from("docker run -d");
+    let mut cmd = String::from("docker run -d --security-opt seccomp=unconfined --security-opt apparmor=unconfined");
     let clean_name = name.trim();
     if !clean_name.is_empty() {
         cmd.push_str(&format!(" --name {}", clean_name));

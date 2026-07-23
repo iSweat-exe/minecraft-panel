@@ -24,6 +24,7 @@ export function useConnectionGate() {
     const [sshUsername, setSshUsername] = useState(() => localStorage.getItem('ssh_username') || 'root');
     const [subUsername, setSubUsername] = useState(() => localStorage.getItem('sub_username') || '');
     const [loginMode, setLoginMode] = useState<'admin' | 'subuser'>(() => (localStorage.getItem('panel_login_mode') as 'admin' | 'subuser') || 'admin');
+    const [adminAuthMode, setAdminAuthMode] = useState<'key' | 'password'>(() => (localStorage.getItem('admin_auth_mode') as 'key' | 'password') || 'key');
     const [password, setPassword] = useState('');
     
     const [verifyingKey, setVerifyingKey] = useState<string | null>(null);
@@ -53,7 +54,11 @@ export function useConnectionGate() {
             const targetFingerprint = overrideFingerprint || expectedFingerprint;
             
             const targetSshUser = loginMode === 'admin' ? username : (sshUsername || 'root');
-            await tauriBridge.sshConnect(host, port, targetSshUser, keyPath, targetFingerprint);
+            const targetKeyPath = loginMode === 'admin' && adminAuthMode === 'key' ? keyPath : undefined;
+            const targetPassword = loginMode === 'admin' && adminAuthMode === 'password' ? password : undefined;
+
+            await tauriBridge.sshConnect(host, port, targetSshUser, targetKeyPath, targetPassword, targetFingerprint);
+
             
             const activePanelUser = loginMode === 'subuser' ? subUsername : username;
 
@@ -74,6 +79,7 @@ export function useConnectionGate() {
             localStorage.setItem('panel_username', activePanelUser);
             localStorage.setItem('ssh_keyPath', keyPath);
             localStorage.setItem('panel_login_mode', loginMode);
+            localStorage.setItem('admin_auth_mode', adminAuthMode);
             localStorage.setItem('ssh_auto_connect', 'true');
             localStorage.setItem('panel_display_name', displayName);
             localStorage.setItem('panel_avatar_base64', avatarBase64);
@@ -144,7 +150,10 @@ export function useConnectionGate() {
         sessionUuid,
         loginMode,
         setLoginMode,
+        adminAuthMode,
+        setAdminAuthMode,
         password,
         setPassword,
     };
 }
+
