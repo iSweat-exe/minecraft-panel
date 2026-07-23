@@ -44,10 +44,14 @@ jobs:
         env:
           MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
         run: |
-          sudo apt-get install -y minisign
-          echo "$MINISIGN_SECRET_KEY" > minisign.key
-          minisign -S -m target/x86_64-unknown-linux-musl/release/manifest.json -s minisign.key -x target/x86_64-unknown-linux-musl/release/manifest.json.minisig
-          rm minisign.key
+          if [ -n "$MINISIGN_SECRET_KEY" ]; then
+            sudo apt-get update && sudo apt-get install -y minisign
+            echo "$MINISIGN_SECRET_KEY" > minisign.key
+            minisign -S -m target/x86_64-unknown-linux-musl/release/manifest.json -s minisign.key -x target/x86_64-unknown-linux-musl/release/manifest.json.minisig
+            rm -f minisign.key
+          else
+            echo "MINISIGN_SECRET_KEY is not set in secrets, skipping signature generation."
+          fi
 
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
@@ -55,4 +59,6 @@ jobs:
           files: |
             target/x86_64-unknown-linux-musl/release/daemon
             target/x86_64-unknown-linux-musl/release/manifest.json
-            target/x86_64-unknown-linux-musl/release/manifest.json.minisig
+            target/x86_64-unknown-linux-musl/release/*.minisig
+
+
