@@ -1,6 +1,6 @@
 [package]
 name = "daemon"
-version = "0.1.13"
+version = "0.1.14"
 edition = "2021"
 description = "Node daemon for minecraft-panel managing Docker containers, console streams, and node security"
 authors = ["iSweat"]

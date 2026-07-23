@@ -34,23 +34,23 @@ pub fn router() -> Router<AppState> {
             get(docker::list_all_containers).post(docker::run_container),
         )
         .route(
-            "/api/v1/system/docker/containers/:id",
+            "/api/v1/system/docker/containers/{id}",
             axum::routing::put(docker::update_container)
         )
         .route(
-            "/api/v1/system/docker/containers/:id/recreate",
+            "/api/v1/system/docker/containers/{id}/recreate",
             post(docker::recreate_container)
         )
         .route(
-            "/api/v1/system/docker/containers/:id/action",
+            "/api/v1/system/docker/containers/{id}/action",
             post(docker::container_action),
         )
         .route(
-            "/api/v1/system/docker/containers/:id/logs",
+            "/api/v1/system/docker/containers/{id}/logs",
             get(docker::container_logs),
         )
         .route(
-            "/api/v1/system/docker/containers/:id/inspect",
+            "/api/v1/system/docker/containers/{id}/inspect",
             get(docker::container_inspect),
         )
         .route(
@@ -62,7 +62,7 @@ pub fn router() -> Router<AppState> {
             post(docker::pull_image),
         )
         .route(
-            "/api/v1/system/docker/images/:id",
+            "/api/v1/system/docker/images/{id}",
             axum::routing::delete(docker::remove_image),
         )
         .route(
