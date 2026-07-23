@@ -1,8 +1,1 @@
-feat(docker): migrate frontend panel to use new daemon API
-
-- Added general Docker API routes in daemon/src/routes/system/docker.rs
-- Proxied requests in Tauri backend to communicate with daemon
-- Refactored DockerPanel.tsx to use node API instead of old SSH commands
-- Fixed TS compilation errors in AppLayout
-- Added API documentation for Docker endpoints
-- Bumped daemon version to 0.1.12
+build(daemon): bump version to 0.1.13 for release
