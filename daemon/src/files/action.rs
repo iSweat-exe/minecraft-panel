@@ -34,6 +34,10 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
             tokio::fs::create_dir_all(path)
                 .await
                 .context("Failed to create directory")?;
+                
+            if let Some(parent) = path.parent() {
+                crate::files::fix_permissions_for(path, parent).ok();
+            }
         }
         FileAction::Archive { archive_name, targets } => {
             let archive_path = sanitize_path(&archive_name)?;
@@ -73,6 +77,9 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
             if !status.success() {
                 bail!("Failed to extract archive");
             }
+            
+            // Fix permissions so they match the server folder owner
+            crate::files::fix_permissions_for(parent, parent).ok();
         }
     }
     Ok(())

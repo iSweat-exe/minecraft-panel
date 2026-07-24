@@ -24,3 +24,24 @@ pub(crate) fn sanitize_path(path_str: &str) -> Result<PathBuf> {
     }
     Ok(path)
 }
+
+#[cfg(unix)]
+pub(crate) fn fix_permissions_for(target: &std::path::Path, reference: &std::path::Path) -> Result<()> {
+    if let Ok(meta) = std::fs::metadata(reference) {
+        use std::os::unix::fs::MetadataExt;
+        let uid = meta.uid();
+        let gid = meta.gid();
+        let path_str = target.to_string_lossy();
+        std::process::Command::new("chown")
+            .arg("-R")
+            .arg(format!("{}:{}", uid, gid))
+            .arg(path_str.as_ref())
+            .status()?;
+    }
+    Ok(())
+}
+
+#[cfg(not(unix))]
+pub(crate) fn fix_permissions_for(_target: &std::path::Path, _reference: &std::path::Path) -> Result<()> {
+    Ok(())
+}

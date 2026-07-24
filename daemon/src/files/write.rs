@@ -8,8 +8,13 @@ pub async fn write_file(path: &str, content: &[u8]) -> Result<()> {
             .await
             .context("Failed to create parent directories")?;
     }
-    tokio::fs::write(path, content)
+    tokio::fs::write(&path, content)
         .await
         .context("Failed to write to file")?;
+        
+    if let Some(parent) = path.parent() {
+        crate::files::fix_permissions_for(&path, parent).ok();
+    }
+        
     Ok(())
 }
