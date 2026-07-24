@@ -31,12 +31,12 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
             }
         }
         FileAction::Mkdir => {
-            tokio::fs::create_dir_all(path)
+            tokio::fs::create_dir_all(&path)
                 .await
                 .context("Failed to create directory")?;
                 
             if let Some(parent) = path.parent() {
-                crate::files::fix_permissions_for(path, parent).ok();
+                crate::files::fix_permissions_for(&path, parent).ok();
             }
         }
         FileAction::Archive { archive_name, targets } => {
@@ -47,7 +47,7 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
 
             if let Some(targets) = targets {
                 // If targets are provided, `path` is the working directory
-                cmd.current_dir(path);
+                cmd.current_dir(&path);
                 for target in targets {
                     cmd.arg(target);
                 }
@@ -70,7 +70,7 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
         FileAction::Extract => {
             let parent = path.parent().unwrap_or(std::path::Path::new(""));
             let mut cmd = std::process::Command::new("tar");
-            cmd.current_dir(parent).arg("-xzf").arg(path);
+            cmd.current_dir(parent).arg("-xzf").arg(&path);
             
             let status = cmd.status()?;
 
