@@ -104,7 +104,11 @@ pub enum FileAction {
     Copy { destination: String },
     Delete,
     Mkdir,
-    Archive { archive_name: String },
+    Archive { 
+        archive_name: String,
+        #[serde(default)]
+        targets: Option<Vec<String>>
+    },
     Extract,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]

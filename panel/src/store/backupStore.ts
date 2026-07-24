@@ -127,10 +127,26 @@ export const useBackupStore = create<BackupStore>()(
             const match = output.match(/^level-name=(.+)$/m);
             const worldName = match ? match[1].trim() : 'world';
 
+            set({ statusText: 'Recherche des dimensions...' });
+            const targets = [worldName];
+            try {
+                const dirList = await tauriBridge.nodeListDir(nodeUrl, token, serverPath);
+                const folders = dirList.filter((d: any) => d.is_dir).map((d: any) => d.name);
+                if (folders.includes(`${worldName}_nether`)) targets.push(`${worldName}_nether`);
+                if (folders.includes(`${worldName}_the_end`)) targets.push(`${worldName}_the_end`);
+            } catch (e) {
+                console.warn("Failed to list dir for extra dimensions");
+            }
+
             set({ statusText: 'Compression du monde sur le serveur...' });
             const remotePath = `${serverPath}/${worldName}_backup.tar.gz`;
             
-            await tauriBridge.nodeFileAction(nodeUrl, token, `${serverPath}/${worldName}`, { archive: { archive_name: remotePath } });
+            await tauriBridge.nodeFileAction(nodeUrl, token, serverPath, { 
+                archive: { 
+                    archive_name: remotePath,
+                    targets: targets
+                } 
+            });
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Téléchargement de', currentFile: localFileName });

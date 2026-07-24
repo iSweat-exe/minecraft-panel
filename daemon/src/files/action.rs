@@ -35,20 +35,29 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
                 .await
                 .context("Failed to create directory")?;
         }
-        FileAction::Archive { archive_name } => {
+        FileAction::Archive { archive_name, targets } => {
             let archive_path = sanitize_path(&archive_name)?;
-            let filename = path
-                .file_name()
-                .ok_or_else(|| anyhow::anyhow!("Invalid target path"))?;
-            let target_parent = path.parent().unwrap_or(std::path::Path::new(""));
+            
+            let mut cmd = std::process::Command::new("tar");
+            cmd.arg("-czf").arg(&archive_path);
 
-            let status = std::process::Command::new("tar")
-                .current_dir(target_parent)
-                .arg("-czf")
-                .arg(&archive_path)
-                .arg(filename)
-                .status()?;
+            if let Some(targets) = targets {
+                // If targets are provided, `path` is the working directory
+                cmd.current_dir(path);
+                for target in targets {
+                    cmd.arg(target);
+                }
+            } else {
+                // Legacy behavior: `path` is the target to archive
+                let filename = path
+                    .file_name()
+                    .ok_or_else(|| anyhow::anyhow!("Invalid target path"))?;
+                let target_parent = path.parent().unwrap_or(std::path::Path::new(""));
+                cmd.current_dir(target_parent);
+                cmd.arg(filename);
+            }
 
+            let status = cmd.status()?;
             if !status.success() {
                 bail!("Failed to create archive");
             }
