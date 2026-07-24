@@ -51,18 +51,39 @@ pub async fn execute_command(
     Json(payload): Json<protocol::HostExecRequest>,
 ) -> Json<ApiResponse<protocol::HostExecResponse>> {
     #[cfg(target_os = "windows")]
-    let mut cmd = Command::new("cmd");
-    #[cfg(target_os = "windows")]
-    cmd.args(["/C", &payload.command]);
+    let output_result = {
+        let mut cmd = Command::new("cmd");
+        cmd.args(["/C", &payload.command]);
+        cmd.output().await
+    };
 
     #[cfg(not(target_os = "windows"))]
-    let mut cmd = Command::new("sh");
-    #[cfg(not(target_os = "windows"))]
-    cmd.args(["-c", &payload.command]);
+    let output_result = {
+        let mut script_cmd = Command::new("script");
+        script_cmd.args(["-q", "-e", "-c", &payload.command, "/dev/null"])
+            .env("TERM", "xterm-256color")
+            .env("COLORTERM", "truecolor")
+            .env("FORCE_COLOR", "1");
+        
+        match script_cmd.output().await {
+            Ok(output) => Ok(output),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                let mut sh_cmd = Command::new("sh");
+                sh_cmd.args(["-c", &payload.command])
+                    .env("TERM", "xterm-256color")
+                    .env("COLORTERM", "truecolor")
+                    .env("FORCE_COLOR", "1");
+                sh_cmd.output().await
+            }
+            Err(e) => Err(e),
+        }
+    };
 
-    match cmd.output().await {
+    match output_result {
         Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let mut stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            // script command often leaves \r\n, but sometimes we just want to pass the raw output to xterm.
+            // xterm handles \r\n natively.
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
             Json(ApiResponse::ok(protocol::HostExecResponse {
                 stdout,
