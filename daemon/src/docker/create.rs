@@ -54,9 +54,25 @@ impl DockerManager {
         };
 
         let container_name = format!("mc-server-{}", spec.server_id);
+        let mut env = spec.env.clone();
+
+        #[cfg(unix)]
+        {
+            if let Some(vol) = spec.volumes.first() {
+                if let Ok(meta) = std::fs::metadata(&vol.host_path) {
+                    use std::os::unix::fs::MetadataExt;
+                    let uid = meta.uid();
+                    let gid = meta.gid();
+                    // Inject UID and GID so the container matches host permissions
+                    env.push(format!("UID={}", uid));
+                    env.push(format!("GID={}", gid));
+                }
+            }
+        }
+
         let config = Config {
             image: Some(spec.image.clone()),
-            env: Some(spec.env.clone()),
+            env: Some(env),
             labels: Some(labels),
             host_config: Some(host_config),
             attach_stdin: Some(true),
