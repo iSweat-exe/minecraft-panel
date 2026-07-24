@@ -59,19 +59,33 @@ pub async fn execute_command(
 
     #[cfg(not(target_os = "windows"))]
     let output_result = {
+        let bash_wrapper = "shopt -s expand_aliases; \
+            alias ls='ls --color=auto'; \
+            alias grep='grep --color=auto'; \
+            alias egrep='egrep --color=auto'; \
+            alias fgrep='fgrep --color=auto'; \
+            alias ip='ip -color=auto'; \
+            alias tree='tree -C'; \
+            eval \"$HOST_EXEC_CMD\"";
+
         let mut script_cmd = Command::new("script");
-        script_cmd.args(["-q", "-e", "-c", &payload.command, "/dev/null"])
+        script_cmd.args(["-q", "-e", "-c", bash_wrapper, "/dev/null"])
+            .env("SHELL", "/bin/bash")
+            .env("HOST_EXEC_CMD", &payload.command)
             .env("TERM", "xterm-256color")
             .env("COLORTERM", "truecolor")
+            .env("CLICOLOR_FORCE", "1")
             .env("FORCE_COLOR", "1");
         
         match script_cmd.output().await {
             Ok(output) => Ok(output),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-                let mut sh_cmd = Command::new("sh");
-                sh_cmd.args(["-c", &payload.command])
+                let mut sh_cmd = Command::new("bash");
+                sh_cmd.args(["-c", bash_wrapper])
+                    .env("HOST_EXEC_CMD", &payload.command)
                     .env("TERM", "xterm-256color")
                     .env("COLORTERM", "truecolor")
+                    .env("CLICOLOR_FORCE", "1")
                     .env("FORCE_COLOR", "1");
                 sh_cmd.output().await
             }
