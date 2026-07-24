@@ -116,6 +116,16 @@ async fn save_user(
 
     let existing = existing.unwrap();
 
+    // Prevent creating a new user with the reserved root username
+    if payload.username == "iSweat" && existing.is_none() {
+        return Json(ApiResponse::<()> {
+            success: false,
+            data: None,
+            error: Some("Le pseudo 'iSweat' est réservé au compte root".into()),
+        })
+        .into_response();
+    }
+
     let query_result = if let Some(row) = existing {
         sqlx::query(
             "UPDATE users SET role = ?, permissions = ?, password_hash = COALESCE(?, password_hash), avatar_base64 = ?, display_name = ? WHERE uuid = ?"
