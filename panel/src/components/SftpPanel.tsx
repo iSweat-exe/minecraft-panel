@@ -175,7 +175,7 @@ export const SftpPanel: React.FC = () => {
                                     if (entry) {
                                         const fullPath = sftp.currentPath === '/' ? `/${name}` : `${sftp.currentPath}/${name}`;
                                         try {
-                                            await tauriBridge.nodeFileAction(nodeUrl, token, fullPath, { Delete: null });
+                                            await tauriBridge.nodeFileAction(nodeUrl, token, fullPath, "delete");
                                             logAction('Suppression de fichier', { file: fullPath });
                                         } catch(e) {
                                             console.error(e);
@@ -235,7 +235,7 @@ export const SftpPanel: React.FC = () => {
                     const newPath = sftp.currentPath === '/' ? `/${newName}` : `${sftp.currentPath}/${newName}`;
                     try {
                         const { nodeUrl, token } = getCredentials();
-                        await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { Rename: { new_name: newPath } });
+                        await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { rename: { new_name: newPath } });
                         logAction('Renommage de fichier', { old: oldPath, new: newPath });
                         sftp.fetchDir(sftp.currentPath);
                     } catch (e) {

@@ -200,7 +200,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             const nodeUrl = `http://${host}:${port}`;
 
             // 1. Delete old file
-            await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { action: "Delete" });
+            await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, "delete");
             
             // 2. Download new file using nodeDownloadRemote
             await tauriBridge.nodeDownloadRemote(nodeUrl, token, primaryFile.url, newPath);

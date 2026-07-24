@@ -1,3 +1,5 @@
-fix(api): fix 413 Payload Too Large when uploading files
+fix(panel): correct FileAction enum serialization format
 
-- daemon: disable Axum's `DefaultBodyLimit` to allow uploading large files (e.g. mods from Modrinth) via the new `/api/v1/files/upload` route.
+- Fixed invalid enum variant errors (`unknown variant 'Delete'`) when calling `nodeFileAction`.
+- The `FileAction` Rust enum is annotated with `#[serde(rename_all = "snake_case")]`, so unit variants must be passed as `"delete"` or `"mkdir"`, and structured variants as `{ rename: { new_name: ... } }`.
+- Fixed `SftpPanel.tsx`, `SftpFileList.tsx`, and `ModsPanel.tsx` to pass the correctly formatted actions.

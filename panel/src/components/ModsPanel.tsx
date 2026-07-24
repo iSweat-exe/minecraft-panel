@@ -80,7 +80,7 @@ export const ModsPanel: React.FC = () => {
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, { action: { mkdir: {} } }).catch(() => {});
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, "mkdir").catch(() => {});
             const files = await tauriBridge.nodeListDir(nodeUrl, token, resolvedPath);
             setInstalledFiles(files.map(f => f.name.toLowerCase()));
         } catch (e: any) {
@@ -139,7 +139,7 @@ export const ModsPanel: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedDir, { action: { mkdir: {} } }).catch(() => {});
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedDir, "mkdir").catch(() => {});
             const finalPath = resolvedDir.endsWith('/') ? `${resolvedDir}${file.filename}` : `${resolvedDir}/${file.filename}`;
             
             await tauriBridge.nodeDownloadRemote(nodeUrl, token, file.url, finalPath);
@@ -174,7 +174,7 @@ export const ModsPanel: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, { action: { mkdir: {} } }).catch(() => {});
+            await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, "mkdir").catch(() => {});
             await tauriBridge.nodeDownloadRemote(nodeUrl, token, primaryFile.url, `${resolvedPath}/${primaryFile.filename}`);
             logAction('INSTALL_MOD', `Installed ${selectedModDetails.title} version ${version.version_number}`);
             await fetchInstalledFiles();
