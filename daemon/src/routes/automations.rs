@@ -44,7 +44,7 @@ pub fn router() -> Router<AppState> {
             "/api/automations",
             get(list_automations).post(save_automation),
         )
-        .route("/api/automations/:id", delete(delete_automation))
+        .route("/api/automations/{id}", delete(delete_automation))
 }
 
 async fn list_automations(State(state): State<AppState>) -> impl IntoResponse {

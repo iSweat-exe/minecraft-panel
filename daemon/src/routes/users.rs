@@ -32,7 +32,7 @@ pub struct ApiResponse<T> {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/api/users", get(list_users).post(save_user))
-        .route("/api/users/:username", delete(delete_user))
+        .route("/api/users/{username}", delete(delete_user))
 }
 
 #[derive(sqlx::FromRow)]

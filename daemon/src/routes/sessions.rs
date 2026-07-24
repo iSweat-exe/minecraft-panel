@@ -26,7 +26,7 @@ pub struct ApiResponse<T> {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/api/sessions", get(list_sessions).post(save_session))
-        .route("/api/sessions/:id", delete(delete_session))
+        .route("/api/sessions/{id}", delete(delete_session))
 }
 
 #[derive(sqlx::FromRow)]
