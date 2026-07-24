@@ -33,12 +33,17 @@ pub async fn init_db() -> Result<SqlitePool> {
             display_name TEXT
         );
 
-        CREATE TABLE IF NOT EXISTS sessions (
-            id TEXT PRIMARY KEY,
-            user_uuid TEXT NOT NULL,
-            expires_at INTEGER NOT NULL,
-            created_at INTEGER NOT NULL,
-            FOREIGN KEY(user_uuid) REFERENCES users(uuid) ON DELETE CASCADE
+        DROP TABLE IF EXISTS sessions;
+        CREATE TABLE sessions (
+            uuid TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            avatar TEXT,
+            connected_at INTEGER NOT NULL,
+            last_seen INTEGER NOT NULL,
+            ip TEXT NOT NULL,
+            ipv6 TEXT,
+            location TEXT NOT NULL,
+            os TEXT NOT NULL
         );
 
         CREATE TABLE IF NOT EXISTS history (
@@ -64,6 +69,16 @@ pub async fn init_db() -> Result<SqlitePool> {
     .execute(&pool)
     .await
     .context("Failed to create tables in SQLite database")?;
+
+    // Safe migrations for history table
+    sqlx::query("ALTER TABLE history ADD COLUMN user TEXT")
+        .execute(&pool)
+        .await
+        .ok();
+    sqlx::query("ALTER TABLE history ADD COLUMN user_id TEXT")
+        .execute(&pool)
+        .await
+        .ok();
 
     Ok(pool)
 }

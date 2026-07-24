@@ -1,0 +1,5 @@
+fix(api): align session and history payload schemas
+
+- daemon: update `Session` and `HistoryEntry` structs and sqlite schemas to match the frontend payloads
+- panel: fix 404s by removing `/v1` prefix from `/api/history`, `/api/sessions`, and `/api/users` API calls
+- daemon: bump version to 0.1.29

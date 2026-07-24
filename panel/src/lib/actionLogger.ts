@@ -31,7 +31,7 @@ export async function logAction(action: string, details?: any) {
         if (!host || !token) return;
         const nodeUrl = `http://${host}:${port}`;
 
-        await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/history', logEntry);
+        await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/history', logEntry);
     } catch (e) {
         console.error('Failed to log action:', e);
     }

@@ -12,6 +12,7 @@ import { logAction } from '../lib/actionLogger';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { UserProfileSettingsModal } from './dialogs/UserProfileSettingsModal';
 import { useActiveServerStore } from '../store/activeServerStore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
 import { SiDocker } from 'react-icons/si';
 import { 
     Settings, 
@@ -207,17 +208,23 @@ export const AppLayout: React.FC = () => {
                 {/* Server Selector */}
                 {!collapsed && (
                     <div className="px-4 py-3 border-b border-border bg-surface-hover/20">
-                        <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block tracking-wider">Serveur Actif</label>
-                        <select 
-                            value={activeServerId}
-                            onChange={(e) => setActiveServerId(e.target.value)}
-                            className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer"
-                        >
-                            <option value="default">Par défaut (default)</option>
-                            {servers.filter(s => s.id !== 'default').map(s => (
-                                <option key={s.id} value={s.id}>{s.name || s.id} ({s.id})</option>
-                            ))}
-                        </select>
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1.5 block tracking-wider px-1">Serveur Actif</label>
+                        <Select value={activeServerId} onValueChange={(val) => setActiveServerId(val)}>
+                            <SelectTrigger className="w-full bg-background border-border hover:border-primary transition-colors text-xs font-medium">
+                                <SelectValue placeholder="Sélectionner un serveur" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="default" className="text-xs">
+                                    Par défaut (default)
+                                </SelectItem>
+                                {servers.filter(s => s.id !== 'default').map(s => (
+                                    <SelectItem key={s.id} value={s.id} className="text-xs">
+                                        {s.name || s.id} 
+                                        {/* <span className="text-muted-foreground text-[10px] ml-1">({s.id})</span> */}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 )}
 

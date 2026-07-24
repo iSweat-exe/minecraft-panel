@@ -1,6 +1,7 @@
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore, PendingAction } from '../store/connectionStore';
 import { useConsoleStore } from '../store/consoleStore';
+import { useActiveServerStore } from '../store/activeServerStore';
 import { logAction } from '../lib/actionLogger';
 import { useState, useEffect } from 'react';
 
@@ -9,10 +10,6 @@ export const ACTION_LABELS: Record<NonNullable<PendingAction>, string> = {
     stopping: 'Arrêt…',
     restarting: 'Redémarrage…',
 };
-
-// We need a fixed server ID since the panel currently assumes a single server.
-// In the future, this could be dynamic if we support multiple servers per daemon.
-const DEFAULT_SERVER_ID = "default";
 
 export function useServerControls() {
     const { 
@@ -23,6 +20,7 @@ export function useServerControls() {
         forceActionCallback, setForceActionCallback
     } = useConnectionStore();
     const clearConsole = useConsoleStore((s) => s.clear);
+    const activeServerId = useActiveServerStore(s => s.activeServerId);
 
     // New state to track daemon server status specifically
     const [serverState, setServerState] = useState<string>('unknown');
@@ -40,10 +38,10 @@ export function useServerControls() {
             try {
                 const [servers, ping] = await Promise.all([
                     tauriBridge.nodeListServers(nodeUrl, token).catch(() => []),
-                    tauriBridge.nodeGetServerPing(nodeUrl, token, DEFAULT_SERVER_ID).catch(() => null),
+                    tauriBridge.nodeGetServerPing(nodeUrl, token, activeServerId).catch(() => null),
                 ]);
                 
-                const srv = servers.find(s => s.server_id === DEFAULT_SERVER_ID);
+                const srv = servers.find(s => s.server_id === activeServerId);
                 const srvState = srv ? srv.state : 'stopped';
                 
                 setServerState(srvState);
@@ -83,9 +81,9 @@ export function useServerControls() {
             try {
                 const [servers, ping] = await Promise.all([
                     tauriBridge.nodeListServers(nodeUrl, token).catch(() => []),
-                    tauriBridge.nodeGetServerPing(nodeUrl, token, DEFAULT_SERVER_ID).catch(() => null),
+                    tauriBridge.nodeGetServerPing(nodeUrl, token, activeServerId).catch(() => null),
                 ]);
-                const srv = servers.find(s => s.server_id === DEFAULT_SERVER_ID);
+                const srv = servers.find(s => s.server_id === activeServerId);
                 if (isMounted) {
                     if (srv) {
                         setServerState(srv.state);
@@ -113,7 +111,7 @@ export function useServerControls() {
             isMounted = false;
             clearInterval(interval);
         };
-    }, []);
+    }, [activeServerId]);
 
     const doAction = async (action: 'start' | 'stop' | 'restart') => {
         const pendingMap: Record<string, PendingAction> = {
@@ -168,7 +166,7 @@ export function useServerControls() {
                 restart: "restart"
             };
             
-            await tauriBridge.nodePowerAction(nodeUrl, token, DEFAULT_SERVER_ID, powerActionMap[action] as any);
+            await tauriBridge.nodePowerAction(nodeUrl, token, activeServerId, powerActionMap[action] as any);
             
             logAction(
                 action === 'start' ? 'Démarrage du serveur' : action === 'stop' ? 'Arrêt du serveur' : 'Redémarrage du serveur',

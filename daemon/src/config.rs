@@ -15,8 +15,8 @@ impl Default for DaemonConfig {
             bind_addr: "[::]:8080".to_string(),
 
             node_id: "node-local-1".to_string(),
-            node_token: "secret-node-token-change-me".to_string(),
-            jwt_secret: "secret-jwt-key-change-me".to_string(),
+            node_token: "secret-node-token-change-me".to_string(),  //TODO: Github Secret
+            jwt_secret: "secret-jwt-key-change-me".to_string(),     //TODO: Github Secret
             docker_host: None,
         }
     }

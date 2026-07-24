@@ -7,7 +7,8 @@ use crate::routes::AppState;
 #[derive(Serialize, Deserialize)]
 pub struct HistoryEntry {
     pub id: Option<String>,
-    pub user_uuid: Option<String>,
+    pub user: Option<String>,
+    pub user_id: Option<String>,
     pub action: String,
     pub details: String,
     pub timestamp: Option<i64>,
@@ -16,7 +17,8 @@ pub struct HistoryEntry {
 #[derive(sqlx::FromRow)]
 struct DbHistory {
     id: String,
-    user_uuid: Option<String>,
+    user: Option<String>,
+    user_id: Option<String>,
     action: String,
     details: String,
     timestamp: i64,
@@ -45,7 +47,8 @@ async fn list_history(State(state): State<AppState>) -> impl IntoResponse {
             for row in rows {
                 history.push(HistoryEntry {
                     id: Some(row.id),
-                    user_uuid: row.user_uuid,
+                    user: row.user,
+                    user_id: row.user_id,
                     action: row.action,
                     details: row.details,
                     timestamp: Some(row.timestamp),
@@ -78,10 +81,11 @@ async fn save_history(
         .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     let query_result = sqlx::query(
-        "INSERT INTO history (id, user_uuid, action, details, timestamp) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO history (id, user, user_id, action, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
-    .bind(&payload.user_uuid)
+    .bind(&payload.user)
+    .bind(&payload.user_id)
     .bind(&payload.action)
     .bind(&payload.details)
     .bind(now)

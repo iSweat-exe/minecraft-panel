@@ -10,10 +10,15 @@ use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
-    pub id: String,
-    pub user_uuid: String,
-    pub expires_at: i64,
-    pub created_at: i64,
+    pub uuid: String,
+    pub name: String,
+    pub avatar: Option<String>,
+    pub connected_at: i64,
+    pub last_seen: i64,
+    pub ip: String,
+    pub ipv6: Option<String>,
+    pub location: String,
+    pub os: String,
 }
 
 #[derive(Serialize)]
@@ -31,10 +36,15 @@ pub fn router() -> Router<AppState> {
 
 #[derive(sqlx::FromRow)]
 struct DbSession {
-    id: String,
-    user_uuid: String,
-    expires_at: i64,
-    created_at: i64,
+    uuid: String,
+    name: String,
+    avatar: Option<String>,
+    connected_at: i64,
+    last_seen: i64,
+    ip: String,
+    ipv6: Option<String>,
+    location: String,
+    os: String,
 }
 
 async fn list_sessions(State(state): State<AppState>) -> impl IntoResponse {
@@ -47,10 +57,15 @@ async fn list_sessions(State(state): State<AppState>) -> impl IntoResponse {
             let mut sessions = Vec::new();
             for row in rows {
                 sessions.push(Session {
-                    id: row.id,
-                    user_uuid: row.user_uuid,
-                    expires_at: row.expires_at,
-                    created_at: row.created_at,
+                    uuid: row.uuid,
+                    name: row.name,
+                    avatar: row.avatar,
+                    connected_at: row.connected_at,
+                    last_seen: row.last_seen,
+                    ip: row.ip,
+                    ipv6: row.ipv6,
+                    location: row.location,
+                    os: row.os,
                 });
             }
             Json(ApiResponse {
@@ -74,12 +89,19 @@ async fn save_session(
     Json(payload): Json<Session>,
 ) -> impl IntoResponse {
     let query_result = sqlx::query(
-        "INSERT INTO sessions (id, user_uuid, expires_at, created_at) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET expires_at = excluded.expires_at"
+        "INSERT INTO sessions (uuid, name, avatar, connected_at, last_seen, ip, ipv6, location, os) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
+         ON CONFLICT(uuid) DO UPDATE SET last_seen = excluded.last_seen, name = excluded.name, avatar = excluded.avatar, ip = excluded.ip, ipv6 = excluded.ipv6, location = excluded.location, os = excluded.os"
     )
-    .bind(&payload.id)
-    .bind(&payload.user_uuid)
-    .bind(payload.expires_at)
-    .bind(payload.created_at)
+    .bind(&payload.uuid)
+    .bind(&payload.name)
+    .bind(&payload.avatar)
+    .bind(payload.connected_at)
+    .bind(payload.last_seen)
+    .bind(&payload.ip)
+    .bind(&payload.ipv6)
+    .bind(&payload.location)
+    .bind(&payload.os)
     .execute(&state.db)
     .await;
 
@@ -101,10 +123,10 @@ async fn save_session(
 
 async fn delete_session(
     State(state): State<AppState>,
-    Path(id): Path<String>,
+    Path(uuid): Path<String>,
 ) -> impl IntoResponse {
-    let query_result = sqlx::query("DELETE FROM sessions WHERE id = ?")
-        .bind(&id)
+    let query_result = sqlx::query("DELETE FROM sessions WHERE uuid = ?")
+        .bind(&uuid)
         .execute(&state.db)
         .await;
 

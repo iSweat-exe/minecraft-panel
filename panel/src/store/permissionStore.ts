@@ -27,7 +27,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/users');
             const users = (res?.success && Array.isArray(res.data)) ? res.data : [];
             
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
@@ -64,11 +64,11 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/users', user);
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/users', user);
             await logAction(`Sauvegarde de l'utilisateur ${user.username}`, { role: user.role, permissions: user.permissions });
             
             // Refetch all to get updated list
-            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/users');
             const updated = (res?.success && Array.isArray(res.data)) ? res.data : [];
 
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
@@ -92,10 +92,10 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/users/${username}`);
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/users/${username}`);
             await logAction(`Suppression de l'utilisateur ${username}`, { username });
             
-            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/users');
             const updated = (res?.success && Array.isArray(res.data)) ? res.data : [];
 
             const storedUsername = localStorage.getItem('panel_username') || 'admin';

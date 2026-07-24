@@ -88,7 +88,7 @@ export const HistoryPanel: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const response = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/history').catch(() => null);
+            const response = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/history').catch(() => null);
             if (!response || !response.success || !Array.isArray(response.data)) {
                 setLogs([]);
                 return;

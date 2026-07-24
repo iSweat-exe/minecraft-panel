@@ -11,13 +11,14 @@ export function formatBps(bps: number) {
     return bps + ' B/s';
 }
 
-export function MetricChart({ data, dataKey, color, label, current, unit }: {
+export function MetricChart({ data, dataKey, color, label, current, unit, maxValue }: {
     data: DataPoint[];
     dataKey: 'cpu' | 'ram';
     color: string;
     label: string;
     current: string;
     unit: string;
+    maxValue?: number;
 }) {
     return (
         <Card>
@@ -42,7 +43,7 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                             </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="var(--color-border)" />
-                        <YAxis domain={dataKey === 'cpu' ? [0, 100] : ['auto', 'auto']} hide />
+                        <YAxis domain={maxValue ? [0, maxValue] : (dataKey === 'cpu' ? [0, 100] : ['auto', 'auto'])} hide />
                         <Tooltip 
                             contentStyle={{ 
                                 backgroundColor: 'var(--color-surface)', 
@@ -54,7 +55,12 @@ export function MetricChart({ data, dataKey, color, label, current, unit }: {
                             }}
                             itemStyle={{ color: color, fontWeight: 500 }}
                             labelStyle={{ color: 'var(--color-muted-foreground)', marginBottom: '4px' }}
-                            formatter={(value: any) => [`${Number(value).toFixed(1)}%`, label]}
+                            formatter={(value: any) => [
+                                dataKey === 'ram' 
+                                    ? (Number(value) >= 1024 ? (Number(value) / 1024).toFixed(1) + ' GB' : Number(value).toFixed(0) + ' MB')
+                                    : `${Number(value).toFixed(1)}%`, 
+                                label
+                            ]}
                             labelFormatter={(_, payload) => payload?.[0]?.payload?.time || ''}
                             isAnimationActive={false}
                         />

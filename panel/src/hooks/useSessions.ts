@@ -101,10 +101,10 @@ export function useSessionPing() {
                 };
 
                 // Upsert session
-                await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/sessions', payload);
+                await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/sessions', payload);
 
                 // Fetch active sessions
-                const listRes = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/sessions').catch(() => null);
+                const listRes = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/sessions').catch(() => null);
                 if (listRes && listRes.success && Array.isArray(listRes.data)) {
                     const activeSessions = listRes.data.map((s: any) => ({
                         uuid: s.uuid,

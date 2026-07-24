@@ -19,6 +19,7 @@ export const OverviewPanel: React.FC = () => {
     const { rawPoints, historicalPoints } = useServerStatsStore();
     
     const [timeRange, setTimeRange] = useState<TimeRange>('5m');
+    const [chartScale, setChartScale] = useState<'local' | 'global'>('local');
 
     const history = useMemo(() => {
         switch (timeRange) {
@@ -86,21 +87,41 @@ export const OverviewPanel: React.FC = () => {
                 </div>
             </Card>
 
-            {/* Time Range Selector */}
-            <div className="flex items-center gap-2 mb-2">
-                <Clock size={16} className="text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground mr-2">Période:</span>
-                {(['1m', '5m', '15m', '1h', '1d'] as TimeRange[]).map((range) => (
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+                <div className="flex items-center gap-2">
+                    <Clock size={16} className="text-muted-foreground" />
+                    <span className="text-sm font-medium text-muted-foreground mr-2">Période:</span>
+                    {(['1m', '5m', '15m', '1h', '1d'] as TimeRange[]).map((range) => (
+                        <Button
+                            key={range}
+                            variant={timeRange === range ? 'primary' : 'ghost'}
+                            size="sm"
+                            onClick={() => setTimeRange(range)}
+                            className={timeRange === range ? "" : "text-muted-foreground"}
+                        >
+                            {range}
+                        </Button>
+                    ))}
+                </div>
+                <div className="flex items-center gap-2">
                     <Button
-                        key={range}
-                        variant={timeRange === range ? 'primary' : 'ghost'}
+                        variant={chartScale === 'local' ? 'primary' : 'ghost'}
                         size="sm"
-                        onClick={() => setTimeRange(range)}
-                        className={timeRange === range ? "" : "text-muted-foreground"}
+                        onClick={() => setChartScale('local')}
+                        className={chartScale === 'local' ? "" : "text-muted-foreground"}
                     >
-                        {range}
+                        Local
                     </Button>
-                ))}
+                    <Button
+                        variant={chartScale === 'global' ? 'primary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setChartScale('global')}
+                        className={chartScale === 'global' ? "" : "text-muted-foreground"}
+                    >
+                        Global
+                    </Button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
@@ -117,8 +138,9 @@ export const OverviewPanel: React.FC = () => {
                     dataKey="ram" 
                     color="var(--color-primary)" 
                     label="Memory Usage" 
-                    current={metrics ? metrics.ram_used_mb.toString() : "0"} 
-                    unit="MB" 
+                    current={metrics ? (metrics.ram_used_mb >= 1024 ? (metrics.ram_used_mb / 1024).toFixed(1) : metrics.ram_used_mb.toString()) : "0"} 
+                    unit={metrics && metrics.ram_used_mb >= 1024 ? "GB" : "MB"} 
+                    maxValue={chartScale === 'global' && metrics ? metrics.ram_total_mb : undefined}
                 />
                 <ServerControls />
             </div>
