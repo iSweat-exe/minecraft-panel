@@ -37,9 +37,17 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
         }
         FileAction::Archive { archive_name, targets } => {
             let archive_path = sanitize_path(&archive_name)?;
+            let is_zip = archive_path.to_string_lossy().ends_with(".zip");
             
-            let mut cmd = std::process::Command::new("tar");
-            cmd.arg("-czf").arg(&archive_path);
+            let mut cmd = if is_zip {
+                let mut c = std::process::Command::new("zip");
+                c.arg("-r").arg(&archive_path);
+                c
+            } else {
+                let mut c = std::process::Command::new("tar");
+                c.arg("-czf").arg(&archive_path);
+                c
+            };
 
             if let Some(targets) = targets {
                 // If targets are provided, `path` is the working directory
@@ -65,11 +73,19 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
         }
         FileAction::Extract => {
             let parent = path.parent().unwrap_or(std::path::Path::new(""));
-            let status = std::process::Command::new("tar")
-                .current_dir(parent)
-                .arg("-xzf")
-                .arg(&path)
-                .status()?;
+            let is_zip = path.to_string_lossy().ends_with(".zip");
+            
+            let mut cmd = if is_zip {
+                let mut c = std::process::Command::new("unzip");
+                c.current_dir(parent).arg("-o").arg(path);
+                c
+            } else {
+                let mut c = std::process::Command::new("tar");
+                c.current_dir(parent).arg("-xzf").arg(path);
+                c
+            };
+            
+            let status = cmd.status()?;
 
             if !status.success() {
                 bail!("Failed to extract archive");

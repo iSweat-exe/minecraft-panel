@@ -109,10 +109,10 @@ export const useBackupStore = create<BackupStore>()(
             const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
             const time = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-mm-ss
 
-            const defaultName = `minecraft_backup_${date}_${time}.tar.gz`;
+            const defaultName = `minecraft_backup_${date}_${time}.zip`;
             
             const localPath = await save({
-                filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],
+                filters: [{ name: 'Archive ZIP', extensions: ['zip'] }],
                 defaultPath: defaultName,
                 title: 'Sauvegarder le monde Minecraft'
             });
@@ -127,17 +127,17 @@ export const useBackupStore = create<BackupStore>()(
             const match = output.match(/^level-name=(.+)$/m);
             const worldName = match ? match[1].trim() : 'world';
 
-            set({ statusText: 'Recherche des dimensions...' });
+            set({ statusText: 'Recherche du monde...' });
             const targets: string[] = [];
             try {
                 const dirList = await tauriBridge.nodeListDir(nodeUrl, token, serverPath);
                 const folders = dirList.filter((d: any) => d.is_dir).map((d: any) => d.name);
                 
-                if (folders.includes(worldName)) targets.push(worldName);
-                if (folders.includes(`${worldName}_nether`)) targets.push(`${worldName}_nether`);
-                if (folders.includes(`${worldName}_the_end`)) targets.push(`${worldName}_the_end`);
+                if (folders.includes(worldName)) {
+                    targets.push(worldName);
+                }
             } catch (e) {
-                console.warn("Failed to list dir for extra dimensions");
+                console.warn("Failed to list dir");
                 targets.push(worldName); // fallback
             }
 
@@ -146,7 +146,7 @@ export const useBackupStore = create<BackupStore>()(
             }
 
             set({ statusText: 'Compression du monde sur le serveur...' });
-            const remotePath = `${serverPath}/${worldName}_backup.tar.gz`;
+            const remotePath = `${serverPath}/${worldName}_backup.zip`;
             
             await tauriBridge.nodeFileAction(nodeUrl, token, serverPath, { 
                 archive: { 
@@ -188,7 +188,7 @@ export const useBackupStore = create<BackupStore>()(
             const nodeUrl = `http://${host}:${port}`;
             
             const selected = await open({
-                filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],
+                filters: [{ name: 'Archive ZIP', extensions: ['zip'] }],
                 multiple: false,
                 title: 'Restaurer une sauvegarde'
             });
@@ -202,11 +202,11 @@ export const useBackupStore = create<BackupStore>()(
             const serverId = useActiveServerStore.getState().activeServerId || 'default';
             const serverPath = useActiveServerStore.getState().getActiveServerPath();
 
-            await tauriBridge.nodePowerAction(nodeUrl, token, serverId, 'Stop');
+            await tauriBridge.nodePowerAction(nodeUrl, token, serverId, 'stop');
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Envoi de', currentFile: localFileName });
-            const remotePath = `${serverPath}/restore_backup.tar.gz`;
+            const remotePath = `${serverPath}/restore_backup.zip`;
             await tauriBridge.nodeUploadFile(nodeUrl, token, localPath, remotePath);
 
             set({ statusText: 'Restauration...', currentFile: null });
