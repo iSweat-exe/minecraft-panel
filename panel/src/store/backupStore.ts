@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from './activeServerStore';
 
 export interface BackupProgress {
     filename: string;
@@ -121,14 +122,15 @@ export const useBackupStore = create<BackupStore>()(
             set({ loading: true, success: false, statusText: 'Préparation de la sauvegarde...', currentFile: null });
             get().clearProgress();
 
-            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties').catch(() => "");
+            const serverPath = useActiveServerStore.getState().getActiveServerPath();
+            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, `${serverPath}/server.properties`).catch(() => "");
             const match = output.match(/^level-name=(.+)$/m);
             const worldName = match ? match[1].trim() : 'world';
 
             set({ statusText: 'Compression du monde sur le serveur...' });
-            const remotePath = `/minecraft/${worldName}_backup.tar.gz`;
+            const remotePath = `${serverPath}/${worldName}_backup.tar.gz`;
             
-            await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/${worldName}`, { archive: { archive_name: remotePath } });
+            await tauriBridge.nodeFileAction(nodeUrl, token, `${serverPath}/${worldName}`, { archive: { archive_name: remotePath } });
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Téléchargement de', currentFile: localFileName });
@@ -137,7 +139,8 @@ export const useBackupStore = create<BackupStore>()(
             set({ statusText: 'Nettoyage...', currentFile: null });
             await tauriBridge.nodeFileAction(nodeUrl, token, remotePath, "delete");
 
-            await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', 'say Le monde a été sauvegardé avec succès !').catch(() => {});
+            const serverId = useActiveServerStore.getState().activeServerId || 'default';
+            await tauriBridge.nodeSendCommand(nodeUrl, token, serverId, 'say Le monde a été sauvegardé avec succès !').catch(() => {});
 
             set({ statusText: 'Sauvegarde terminée avec succès !', success: true, currentFile: null, lastBackupTime: Date.now() });
             
@@ -173,11 +176,14 @@ export const useBackupStore = create<BackupStore>()(
             set({ loading: true, success: false, statusText: 'Préparation de la restauration...', currentFile: null });
             get().clearProgress();
 
-            await tauriBridge.nodePowerAction(nodeUrl, token, "default", 'Stop');
+            const serverId = useActiveServerStore.getState().activeServerId || 'default';
+            const serverPath = useActiveServerStore.getState().getActiveServerPath();
+
+            await tauriBridge.nodePowerAction(nodeUrl, token, serverId, 'Stop');
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Envoi de', currentFile: localFileName });
-            const remotePath = '/minecraft/restore_backup.tar.gz';
+            const remotePath = `${serverPath}/restore_backup.tar.gz`;
             await tauriBridge.nodeUploadFile(nodeUrl, token, localPath, remotePath);
 
             set({ statusText: 'Restauration...', currentFile: null });

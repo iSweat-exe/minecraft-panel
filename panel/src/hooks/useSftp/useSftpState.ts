@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { tauriBridge, FileEntry } from '../../lib/tauriBridge';
 import { SftpStateContext } from './types';
 
-export function useSftpState(initialPath: string = '/minecraft') {
+export function useSftpState(initialPath: string = '/') {
     const [currentPath, setCurrentPath] = useState<string>(initialPath);
     const [rawEntries, setRawEntries] = useState<FileEntry[]>([]);
     const [searchQuery, setSearchQuery] = useState('');

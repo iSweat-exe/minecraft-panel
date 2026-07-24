@@ -3,6 +3,7 @@ import { colorizeLogLine } from '../lib/ansiParser';
 import { useConsole } from '../hooks/useConsole';
 import { usePermissionStore } from '../store/permissionStore';
 import { useConnectionStore } from '../store/connectionStore';
+import { useActiveServerStore } from '../store/activeServerStore';
 import { tauriBridge } from '../lib/tauriBridge';
 import { ChevronRight, CornerDownLeft, ArrowDownToLine, Terminal, Bug, FileText, Server } from 'lucide-react';
 import { Terminal as XTerm } from 'xterm';
@@ -141,6 +142,7 @@ export const ConsolePanel: React.FC = () => {
     const { host } = useConnectionStore();
     const port = localStorage.getItem('node_port') || '8080';
     const token = localStorage.getItem('node_token');
+    const { activeServerId, getActiveServerPath } = useActiveServerStore();
     
     const canSend = can('console.send');
     const [viewMode, setViewMode] = React.useState<'console' | 'crashes' | 'host'>('console');
@@ -155,12 +157,12 @@ export const ConsolePanel: React.FC = () => {
         if (!host || !port || !token) return;
         const nodeUrl = `http://${host}:${port}`;
         try {
-            const res = await tauriBridge.nodeGetServerCrashes(nodeUrl, token, 'default');
+            const res = await tauriBridge.nodeGetServerCrashes(nodeUrl, token, activeServerId);
             setCrashes(res.crash_reports || []);
         } catch (e) {
             console.error("Failed to load crashes", e);
         }
-    }, [host, port, token]);
+    }, [host, port, token, activeServerId]);
 
     React.useEffect(() => {
         if (viewMode === 'crashes') {
@@ -174,8 +176,8 @@ export const ConsolePanel: React.FC = () => {
         setIsLoadingCrash(true);
         setSelectedCrashContent(null);
         try {
-            // Assuming Crash Reports are in /minecraft/crash-reports/{filename}
-            const path = `/minecraft/crash-reports/${filename}`;
+            const serverPath = getActiveServerPath();
+            const path = `${serverPath}/crash-reports/${filename}`;
             const content = await tauriBridge.nodeReadFileText(nodeUrl, token, path);
             setSelectedCrashContent(content);
         } catch (e) {

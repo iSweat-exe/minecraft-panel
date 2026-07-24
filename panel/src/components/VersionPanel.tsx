@@ -4,6 +4,7 @@ import { FaJava } from 'react-icons/fa6';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
 import { Button } from './ui/Button';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 export const VersionPanel: React.FC = () => {
     const [serverType, setServerType] = useState<string>('CUSTOM');
@@ -12,10 +13,11 @@ export const VersionPanel: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [updating, setUpdating] = useState<boolean>(false);
     const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const { activeServerId, setActiveServerId } = useActiveServerStore();
 
     useEffect(() => {
         fetchDockerConfig();
-    }, []);
+    }, [activeServerId]);
 
     const fetchDockerConfig = async () => {
         setLoading(true);
@@ -26,7 +28,7 @@ export const VersionPanel: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const info = await tauriBridge.nodeInspectContainer(nodeUrl, token, 'default');
+            const info = await tauriBridge.nodeInspectContainer(nodeUrl, token, activeServerId);
             const envVars: string[] = info?.Config?.Env || [];
             
             const envType = envVars.find(e => e.startsWith('TYPE='))?.split('=')[1] || 'CUSTOM';
@@ -59,9 +61,7 @@ export const VersionPanel: React.FC = () => {
             const nodeUrl = `http://${host}:${port}`;
 
             const image = `itzg/minecraft-server:${javaVersion}`;
-            
-            // Delete old server
-            await tauriBridge.nodeDeleteServer(nodeUrl, token, 'default').catch(() => {});
+            const newServerId = `minecraft-${serverType}-${mcVersion === 'LATEST' ? 'latest' : mcVersion}-${javaVersion}`.replace(/[^a-zA-Z0-9_.-]/g, '-');
             
             // Re-create container with new version/type settings
             const env = [
@@ -83,8 +83,8 @@ export const VersionPanel: React.FC = () => {
             setStatusMessage({ type: 'success', text: 'Création du conteneur...' });
 
             await tauriBridge.nodeCreateServer(nodeUrl, token, {
-                server_id: 'default',
-                name: 'minecraft-server',
+                server_id: newServerId,
+                name: newServerId,
                 image,
                 env,
                 ports: [
@@ -92,7 +92,7 @@ export const VersionPanel: React.FC = () => {
                     { host_port: 25575, container_port: 25575, protocol: 'tcp' }
                 ],
                 volumes: [
-                    { host_path: '/minecraft', container_path: '/data', read_only: false }
+                    { host_path: `/minecraft-${newServerId}`, container_path: '/data', read_only: false }
                 ],
                 resources: {
                     memory_limit_bytes: null,
@@ -102,7 +102,8 @@ export const VersionPanel: React.FC = () => {
                 owner: undefined
             });
 
-            await logAction(`Changement de version Minecraft / Environnement (${serverType} - ${mcVersion}, Java ${javaVersion})`, { serverType, mcVersion, javaVersion });
+            setActiveServerId(newServerId);
+            await logAction(`Création serveur Minecraft / Environnement (${serverType} - ${mcVersion}, Java ${javaVersion})`, { serverType, mcVersion, javaVersion });
             setStatusMessage({ type: 'success', text: 'Conteneur mis à jour avec succès avec la nouvelle version/image Java !' });
         } catch (err: any) {
             const errorMsg = typeof err === 'string' ? err : (err?.message || 'Erreur inconnue');
@@ -147,7 +148,7 @@ export const VersionPanel: React.FC = () => {
                     </div>
                     <div className="text-xs text-muted-foreground leading-relaxed">
                         <span className="font-semibold text-foreground">Isolation Docker active</span> (<code className="text-primary font-mono px-1">itzg/minecraft-server</code>)<br />
-                        Le mode <code className="bg-background border border-border px-1.5 py-0.5 rounded text-primary font-mono">TYPE=CUSTOM</code> exécute directement votre fichier <code className="bg-background border border-border px-1.5 py-0.5 rounded text-foreground font-mono">server.jar</code> dans <code className="bg-background border border-border px-1.5 py-0.5 rounded text-foreground font-mono">/minecraft/</code> sans modifier vos données.
+                        Le mode <code className="bg-background border border-border px-1.5 py-0.5 rounded text-primary font-mono">TYPE=CUSTOM</code> exécute directement votre fichier <code className="bg-background border border-border px-1.5 py-0.5 rounded text-foreground font-mono">server.jar</code> dans le répertoire du serveur sans modifier vos données.
                     </div>
                 </div>
 
@@ -159,7 +160,7 @@ export const VersionPanel: React.FC = () => {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {[
-                            { id: 'CUSTOM', label: 'Custom (Jar existant)', desc: 'Utilise /minecraft/server.jar' },
+                            { id: 'CUSTOM', label: 'Custom (Jar existant)', desc: 'Utilise le server.jar à la racine' },
                             { id: 'PAPER', label: 'Paper', desc: 'Performances & Plugins Spigot' },
                             { id: 'FABRIC', label: 'Fabric', desc: 'Léger & Mods moderne' },
                             { id: 'FORGE', label: 'Forge', desc: 'Mods classiques' },

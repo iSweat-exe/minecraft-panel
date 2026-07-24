@@ -129,7 +129,7 @@ export interface ServerCrashesResponse {
 }
 
 export const tauriBridge = {
-    getPlayersList: (nodeUrl: string, nodeToken: string) => invoke<unknown[]>('get_players_list', { nodeUrl, nodeToken }),
+    getPlayersList: (nodeUrl: string, nodeToken: string, serverPath: string) => invoke<unknown[]>('get_players_list', { nodeUrl, nodeToken, serverPath }),
     
     // Sub-users & Permissions
     getPanelUsers: (nodeUrl: string, nodeToken: string) => invoke<import('../types/permissions').PanelUser[]>('get_panel_users', { nodeUrl, nodeToken }),

@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import { tauriBridge } from '../../lib/tauriBridge';
 import { mc } from '../../lib/minecraftCommands';
 import { logAction } from '../../lib/actionLogger';
+import { useActiveServerStore } from '../../store/activeServerStore';
 
 interface PlayerStatsProps {
     playerName: string;
@@ -23,6 +24,8 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
     setFoodOffset,
     setXpOffset
 }) => {
+    const { activeServerId } = useActiveServerStore();
+
     const getCredentials = () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
@@ -48,7 +51,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         const { nodeUrl, token } = getCredentials();
-                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.heal(playerName));
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, activeServerId, mc.player.heal(playerName));
                         logAction("Soin d'un joueur (Heal)", { joueur: playerName });
                         setHealthOffset(prev => prev + 4);
                     }}
@@ -74,7 +77,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         const { nodeUrl, token } = getCredentials();
-                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.feed(playerName));
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, activeServerId, mc.player.feed(playerName));
                         logAction("Nourriture d'un joueur (Feed)", { joueur: playerName });
                         setFoodOffset(prev => prev + 1);
                     }}
@@ -99,7 +102,7 @@ export const PlayerStats: React.FC<PlayerStatsProps> = ({
                 <button
                     onClick={async () => {
                         const { nodeUrl, token } = getCredentials();
-                        await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', mc.player.addXpLevels(playerName, 1));
+                        await tauriBridge.nodeSendCommand(nodeUrl, token, activeServerId, mc.player.addXpLevels(playerName, 1));
                         logAction("Ajout d'XP à un joueur", { joueur: playerName, niveaux: 1 });
                         setXpOffset(prev => prev + 1);
                     }}

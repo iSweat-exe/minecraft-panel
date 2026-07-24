@@ -15,7 +15,7 @@ import { logAction } from '../lib/actionLogger';
 
 export const SftpPanel: React.FC = () => {
     const location = useLocation();
-    const initialPath = location.state?.initialPath || '/minecraft';
+    const initialPath = location.state?.initialPath || '/';
     const sftp = useSftp(initialPath);
     const { modPath } = useModsStore();
     
@@ -94,7 +94,7 @@ export const SftpPanel: React.FC = () => {
                 searchQuery={sftp.searchQuery}
                 setSearchQuery={sftp.setSearchQuery}
                 onNavigateUp={sftp.handleNavigateUp}
-                onNavigateHome={() => sftp.fetchDir('/minecraft')}
+                onNavigateHome={() => sftp.fetchDir('/')}
                 onNavigate={(path) => sftp.fetchDir(path)}
                 onMkfile={sftp.handleMkfile}
                 onMkdir={sftp.handleMkdir}

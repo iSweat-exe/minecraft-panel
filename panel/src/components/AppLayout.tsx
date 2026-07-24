@@ -11,6 +11,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { UserProfileSettingsModal } from './dialogs/UserProfileSettingsModal';
+import { useActiveServerStore } from '../store/activeServerStore';
 import { SiDocker } from 'react-icons/si';
 import { 
     Settings, 
@@ -76,6 +77,30 @@ export const AppLayout: React.FC = () => {
 
     // Call useServerControls at the AppLayout level to keep the background polling alive globally
     const { serverState, pendingAction } = useServerControls();
+
+    const { activeServerId, setActiveServerId } = useActiveServerStore();
+    const [servers, setServers] = useState<{ id: string; name: string }[]>([]);
+
+    const fetchServers = async () => {
+        try {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) return;
+            const nodeUrl = `http://${host}:${port}`;
+            const list = await tauriBridge.nodeListServers(nodeUrl, token);
+            setServers(list.map(s => ({ id: s.server_id, name: s.name })));
+        } catch (e) {
+            console.error("Failed to list servers:", e);
+        }
+    };
+
+    useEffect(() => {
+        fetchServers();
+        // Refresh server list every 30s
+        const interval = setInterval(fetchServers, 30000);
+        return () => clearInterval(interval);
+    }, []);
 
     const username = currentUser?.username || localStorage.getItem('panel_username') || localStorage.getItem('ssh_username') || 'admin';
     const displayName = currentUser?.display_name || localStorage.getItem('panel_display_name') || '';
@@ -178,6 +203,23 @@ export const AppLayout: React.FC = () => {
                     {!collapsed && <span className="text-[15px] font-bold text-foreground tracking-wide">Uwu Server</span>}
                     {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
                 </button>
+
+                {/* Server Selector */}
+                {!collapsed && (
+                    <div className="px-4 py-3 border-b border-border bg-surface-hover/20">
+                        <label className="text-[10px] uppercase font-bold text-muted-foreground mb-1 block tracking-wider">Serveur Actif</label>
+                        <select 
+                            value={activeServerId}
+                            onChange={(e) => setActiveServerId(e.target.value)}
+                            className="w-full bg-background border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary cursor-pointer"
+                        >
+                            <option value="default">Par défaut (default)</option>
+                            {servers.filter(s => s.id !== 'default').map(s => (
+                                <option key={s.id} value={s.id}>{s.name || s.id} ({s.id})</option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <nav className="flex-1 py-4 overflow-y-auto custom-scrollbar">
                     {NAV_ITEMS.map(({ id, path, label, icon: Icon, extra: Extra, extraColor }) => {

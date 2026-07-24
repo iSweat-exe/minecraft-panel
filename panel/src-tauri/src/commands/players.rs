@@ -27,14 +27,15 @@ struct BasePlayer {
 pub async fn get_players_list(
     node_url: String,
     node_token: String,
+    server_path: String,
 ) -> Result<Vec<PlayerInfo>, AppError> {
     let client = DaemonClient::new(node_url, node_token);
 
     let (usercache_res, ops_res, banned_res, whitelist_res) = tokio::join!(
-        client.read_file("/minecraft/usercache.json"),
-        client.read_file("/minecraft/ops.json"),
-        client.read_file("/minecraft/banned-players.json"),
-        client.read_file("/minecraft/whitelist.json")
+        client.read_file(&format!("{}/usercache.json", server_path)),
+        client.read_file(&format!("{}/ops.json", server_path)),
+        client.read_file(&format!("{}/banned-players.json", server_path)),
+        client.read_file(&format!("{}/whitelist.json", server_path))
     );
 
     let parse = |res: Result<String, _>| -> Vec<BasePlayer> {

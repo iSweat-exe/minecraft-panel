@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 export interface PlayerInfo {
     uuid: string;
@@ -17,7 +18,8 @@ export const fetchPlayersList = async (): Promise<PlayerInfo[]> => {
     if (!host || !token) throw new Error("Daemon credentials missing");
     const nodeUrl = `http://${host}:${port}`;
     
-    const data = await tauriBridge.getPlayersList(nodeUrl, token);
+    const serverPath = useActiveServerStore.getState().getActiveServerPath();
+    const data = await tauriBridge.getPlayersList(nodeUrl, token, serverPath);
     return data as PlayerInfo[];
 };
 
@@ -40,7 +42,8 @@ export const useExecuteCommandMutation = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.nodeSendCommand(nodeUrl, token, 'default', command);
+            const serverId = useActiveServerStore.getState().activeServerId || 'default';
+            await tauriBridge.nodeSendCommand(nodeUrl, token, serverId, command);
             logAction('Action sur un joueur', { commande: command });
         },
         onSuccess: () => {

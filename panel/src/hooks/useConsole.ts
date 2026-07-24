@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConsoleStore } from '../store/consoleStore';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 export function useConsole() {
     const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
@@ -12,6 +13,7 @@ export function useConsole() {
     const [isScrolledUpState, setIsScrolledUpState] = useState(storeIsScrolledUp);
     const isScrolledUp = useRef(storeIsScrolledUp);
     const wsRef = useRef<WebSocket | null>(null);
+    const { activeServerId } = useActiveServerStore();
 
     useEffect(() => {
         let isMounted = true;
@@ -24,7 +26,7 @@ export function useConsole() {
                 const token = localStorage.getItem('node_token');
                 if (!host || !token) return;
 
-                const serverId = 'default';
+                const serverId = activeServerId;
 
                 try {
                     const nodeUrl = `http://${host}:${port}`;
@@ -93,7 +95,7 @@ export function useConsole() {
                 wsRef.current = null;
             }
         };
-    }, [pushLine]);
+    }, [pushLine, activeServerId, clear, pushLines]);
 
     // Initial scroll on mount & save on unmount
     useEffect(() => {

@@ -1,3 +1,7 @@
-fix(routes): update axum path parameters from :id to {id} syntax
+feat(core): migrate to dynamic multi-server architecture
 
-Axum v0.7+ requires `{id}` for capture groups in paths. The old `:id` syntax caused a runtime panic during router initialization.
+- Implemented `activeServerStore` as the single source of truth for the currently selected server.
+- Removed all hardcoded `/minecraft` paths and `default` server IDs across the panel.
+- Refactored `tauriBridge` and Tauri backend (`get_players_list`) to accept dynamic server paths.
+- Updated `useServerOptions`, `usePlayerConfig`, `backupStore`, `WorldsPanel`, `AutomationsPanel`, and other components to dynamically target the active server's root and ID.
+- Bumped daemon version to 0.1.26 for release.

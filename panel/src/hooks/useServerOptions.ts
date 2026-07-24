@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 export interface ServerProps {
     'max-players': string;
@@ -18,6 +19,7 @@ export interface ServerProps {
 }
 
 export function useServerOptions() {
+    const { getActiveServerPath } = useActiveServerStore();
     const [properties, setProperties] = useState<ServerProps | null>(null);
     const [originalContent, setOriginalContent] = useState<string>("");
     const [serverIcon, setServerIcon] = useState<string | null>(null);
@@ -37,7 +39,8 @@ export function useServerOptions() {
         setLoading(true);
         try {
             const { nodeUrl, token } = getCredentials();
-            const content = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
+            const serverPath = getActiveServerPath();
+            const content = await tauriBridge.nodeReadFileText(nodeUrl, token, `${serverPath}/server.properties`);
             setOriginalContent(content);
             const lines = content.split('\n');
             const props: any = {};
@@ -59,7 +62,8 @@ export function useServerOptions() {
 
         try {
             const { nodeUrl, token } = getCredentials();
-            const base64 = await tauriBridge.nodeReadFile(nodeUrl, token, '/minecraft/server-icon.png');
+            const serverPath = getActiveServerPath();
+            const base64 = await tauriBridge.nodeReadFile(nodeUrl, token, `${serverPath}/server-icon.png`);
             setServerIcon(`data:image/png;base64,${base64}`);
         } catch (error) {
             // Icon might not exist, silently ignore
@@ -71,7 +75,7 @@ export function useServerOptions() {
 
     useEffect(() => {
         fetchProperties();
-    }, []);
+    }, [getActiveServerPath]);
 
     const handleSave = async () => {
         if (!properties) return;
@@ -96,7 +100,8 @@ export function useServerOptions() {
             }
 
             const { nodeUrl, token } = getCredentials();
-            await tauriBridge.nodeWriteFile(nodeUrl, token, '/minecraft/server.properties', updatedLines.join('\n'));
+            const serverPath = getActiveServerPath();
+            await tauriBridge.nodeWriteFile(nodeUrl, token, `${serverPath}/server.properties`, updatedLines.join('\n'));
             setOriginalContent(updatedLines.join('\n'));
             setSavedSuccess(true);
             setTimeout(() => setSavedSuccess(false), 2500);

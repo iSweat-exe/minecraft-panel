@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { tauriBridge } from '../../lib/tauriBridge';
+import { useActiveServerStore } from '../../store/activeServerStore';
 
 export interface PlayerConfig {
     rconEnabled: boolean;
@@ -9,6 +10,7 @@ export interface PlayerConfig {
 }
 
 export function usePlayerConfig(playerUuid: string) {
+    const { getActiveServerPath } = useActiveServerStore();
     const [config, setConfig] = useState<PlayerConfig | null>(null);
 
     const getCredentials = () => {
@@ -30,7 +32,8 @@ export function usePlayerConfig(playerUuid: string) {
 
             try {
                 const { nodeUrl, token } = getCredentials();
-                const props = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
+                const serverPath = getActiveServerPath();
+                const props = await tauriBridge.nodeReadFileText(nodeUrl, token, `${serverPath}/server.properties`);
                 const match = props.match(/^level-name=(.*)$/m);
                 if (match && match[1]) {
                     levelName = match[1].trim();
@@ -51,9 +54,10 @@ export function usePlayerConfig(playerUuid: string) {
                 // Ignore error
             }
 
+            const serverPath = getActiveServerPath();
             const possibleDirs = [
-                `/minecraft/${levelName}/playerdata`,
-                `/minecraft/${levelName}/players/data`
+                `${serverPath}/${levelName}/playerdata`,
+                `${serverPath}/${levelName}/players/data`
             ];
 
             let actualFilePath = "";
@@ -73,7 +77,7 @@ export function usePlayerConfig(playerUuid: string) {
             }
 
             if (!actualFilePath) {
-                actualFilePath = `/minecraft/${levelName}/playerdata/${playerUuid}.dat`;
+                actualFilePath = `${getActiveServerPath()}/${levelName}/playerdata/${playerUuid}.dat`;
             }
 
             if (isMounted) {
@@ -86,7 +90,7 @@ export function usePlayerConfig(playerUuid: string) {
         return () => {
             isMounted = false;
         };
-    }, [playerUuid]);
+    }, [playerUuid, getActiveServerPath]);
 
     return config;
 }

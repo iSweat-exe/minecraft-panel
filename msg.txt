@@ -1,9 +1,0 @@
-﻿refactor(daemon)!: migrate to SQLite and native REST APIs
-
-BREAKING CHANGE: Removed legacy SSH dependencies and flat-file JSON state.
-
-- Added sqlx and tokio-cron-scheduler to daemon.
-- Created SQLite database with users, sessions, history, and automations tables.
-- Implemented daemon REST API endpoints for state management.
-- Removed deprecated SSH host exec, crontab, and transfer methods from Tauri bridge.
-- Refactored frontend components to consume new /api/v1 routes directly.

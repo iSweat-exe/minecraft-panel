@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Globe, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { tauriBridge } from '../../lib/tauriBridge';
+import { useActiveServerStore } from '../../store/activeServerStore';
 import { logAction } from '../../lib/actionLogger';
 import { Button } from '../ui/Button';
 
 const RAM_PRESETS = [2, 4, 6, 8, 12, 16, 24, 32];
 
 export const DockerSettingsCard: React.FC = () => {
+    const { activeServerId } = useActiveServerStore();
     const [ramGb, setRamGb] = useState<number>(4);
     const [totalHostGb, setTotalHostGb] = useState<number>(16);
     const [updating, setUpdating] = useState<boolean>(false);
@@ -29,7 +31,11 @@ export const DockerSettingsCard: React.FC = () => {
             .catch(() => {});
 
         // Fetch active docker container memory limit if available
-        tauriBridge.nodeInspectContainer(nodeUrl, token, 'default')
+        const promise = activeServerId ? 
+            tauriBridge.nodeInspectContainer(nodeUrl, token, activeServerId) : 
+            Promise.resolve(null);
+        
+        promise
             .then(info => {
                 const bytes = info?.HostConfig?.Memory || 0;
                 if (bytes > 0) {
@@ -38,7 +44,7 @@ export const DockerSettingsCard: React.FC = () => {
                 }
             })
             .catch(() => {});
-    }, []);
+    }, [activeServerId]);
 
     const handleRamChange = async (targetGb: number) => {
         const validGb = Math.min(Math.max(targetGb, 1), totalHostGb);

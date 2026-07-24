@@ -54,7 +54,7 @@ export const WorldsPanel: React.FC = () => {
                                     <div className="flex flex-col items-center justify-center text-muted-foreground">
                                         <Globe size={48} className="mb-4 opacity-20" />
                                         <p className="text-lg font-medium mb-1">Aucun monde trouvé.</p>
-                                        <p className="text-sm">Assurez-vous qu'il y a des dossiers avec 'level.dat' dans /minecraft</p>
+                                        <p className="text-sm">Assurez-vous qu'il y a des dossiers avec 'level.dat' à la racine de votre serveur</p>
                                     </div>
                                 </TableCell>
                             </TableRow>

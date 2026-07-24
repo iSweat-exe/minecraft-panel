@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSearchModsQuery, fetchLatestVersion } from '../api/modrinth';
 import type { ModrinthProject } from '../api/modrinth';
 import { useModsStore } from '../store/modsStore';
+import { useActiveServerStore } from '../store/activeServerStore';
 import { tauriBridge } from '../lib/tauriBridge';
 import { ModFilters } from './mods/ModFilters';
 import { ModCard } from './mods/ModCard';
@@ -24,6 +25,8 @@ export const ModsPanel: React.FC = () => {
         setLastSelectedVersion: setSelectedVersion,
         setLastSelectedLoader: setSelectedLoader
     } = useModsStore();
+    
+    const { getActiveServerPath } = useActiveServerStore();
 
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(0);
@@ -54,12 +57,18 @@ export const ModsPanel: React.FC = () => {
 
     const getResolvedModPath = (rawPath: string): string => {
         const trimmed = (rawPath || '').trim();
+        const serverPath = getActiveServerPath();
+        
+        // If it looks like the default '/minecraft/mods', adjust to active server
+        if (trimmed === '/minecraft/mods') {
+            return `${serverPath}/mods`;
+        }
         if (!trimmed || trimmed === 'mods' || trimmed === 'mods/' || trimmed === './mods' || trimmed === './mods/') {
-            return '/minecraft/mods';
+            return `${serverPath}/mods`;
         }
         if (trimmed.startsWith('/')) return trimmed;
         if (trimmed.startsWith('~/')) return trimmed;
-        return `/minecraft/${trimmed.replace(/^\.\//, '')}`;
+        return `${serverPath}/${trimmed.replace(/^\.\//, '')}`;
     };
 
     const fetchInstalledFiles = async () => {

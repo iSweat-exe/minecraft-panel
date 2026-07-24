@@ -7,6 +7,7 @@ import { useToastStore } from '../store/toastStore';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 type JobType = 'restart' | 'start' | 'stop' | 'backup' | 'clean_backups' | 'clean_logs' | 'custom';
 
@@ -28,7 +29,8 @@ export const AutomationsPanel: React.FC = () => {
     const [newJobTime, setNewJobTime] = useState('04:00');
 
     const [servers, setServers] = useState<{id: string, name: string}[]>([]);
-    const [selectedServer, setSelectedServer] = useState<string>('mc-server-default');
+    const activeServerId = useActiveServerStore(state => state.activeServerId);
+    const [selectedServer, setSelectedServer] = useState<string>(activeServerId || 'mc-server-default');
 
     useEffect(() => {
         loadCrontab();
@@ -45,7 +47,7 @@ export const AutomationsPanel: React.FC = () => {
             
             const list = await tauriBridge.nodeListServers(nodeUrl, token);
             setServers(list.map(s => ({ id: s.server_id, name: s.name })));
-            if (list.length > 0) {
+            if (list.length > 0 && !activeServerId) {
                 setSelectedServer(list[0].server_id);
             }
         } catch(e) {

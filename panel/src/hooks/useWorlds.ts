@@ -1,15 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
+import { useActiveServerStore } from '../store/activeServerStore';
 
 export interface WorldInfo {
     name: string;
     isActive: boolean;
 }
 
-const DEFAULT_SERVER_ID = "minecraft-server";
-
 export function useWorlds() {
+    const { activeServerId, getActiveServerPath } = useActiveServerStore();
     const [worlds, setWorlds] = useState<WorldInfo[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -27,8 +27,9 @@ export function useWorlds() {
         setError(null);
         try {
             const { nodeUrl, token } = getCredentials();
+            const serverPath = getActiveServerPath();
             // Read server.properties
-            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties').catch(() => "");
+            const output = await tauriBridge.nodeReadFileText(nodeUrl, token, `${serverPath}/server.properties`).catch(() => "");
             let activeWorldName = 'world';
             const match = output.match(/^level-name=(.+)$/m);
             if (match) {
@@ -38,11 +39,11 @@ export function useWorlds() {
             // 1. Find all world folders by checking for level.dat via Daemon
             const validWorlds: string[] = [];
             try {
-                const dirList = await tauriBridge.nodeListDir(nodeUrl, token, '/minecraft');
+                const dirList = await tauriBridge.nodeListDir(nodeUrl, token, serverPath);
                 for (const item of dirList) {
                     if (item.is_dir) {
                         try {
-                            const subDir = await tauriBridge.nodeListDir(nodeUrl, token, `/minecraft/${item.name}`);
+                            const subDir = await tauriBridge.nodeListDir(nodeUrl, token, `${serverPath}/${item.name}`);
                             if (subDir.some(f => f.name === 'level.dat')) {
                                 validWorlds.push(item.name);
                             }
@@ -69,16 +70,17 @@ export function useWorlds() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [getActiveServerPath]);
 
     const setActiveWorld = async (worldName: string) => {
         setLoading(true);
         setError(null);
         try {
             const { nodeUrl, token } = getCredentials();
+            const serverPath = getActiveServerPath();
 
             // Read server.properties
-            const props = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/server.properties');
+            const props = await tauriBridge.nodeReadFileText(nodeUrl, token, `${serverPath}/server.properties`);
             const lines = props.split('\n');
             
             let found = false;
@@ -95,15 +97,15 @@ export function useWorlds() {
             }
 
             // Save server.properties
-            await tauriBridge.nodeWriteFile(nodeUrl, token, '/minecraft/server.properties', updatedLines.join('\n'));
+            await tauriBridge.nodeWriteFile(nodeUrl, token, `${serverPath}/server.properties`, updatedLines.join('\n'));
             logAction('Changement du monde actif', { monde: worldName });
 
             // Warn players and wait 60s
-            await tauriBridge.nodeSendCommand(nodeUrl, token, DEFAULT_SERVER_ID, 'say Le serveur va redémarrer pour changer de monde dans 60 secondes...').catch(() => {});
+            await tauriBridge.nodeSendCommand(nodeUrl, token, activeServerId, 'say Le serveur va redémarrer pour changer de monde dans 60 secondes...').catch(() => {});
             await new Promise(resolve => setTimeout(resolve, 60000));
 
             // Restart server
-            await tauriBridge.nodePowerAction(nodeUrl, token, DEFAULT_SERVER_ID, 'Restart');
+            await tauriBridge.nodePowerAction(nodeUrl, token, activeServerId, 'Restart');
 
             // Refresh list
             await fetchWorlds();
