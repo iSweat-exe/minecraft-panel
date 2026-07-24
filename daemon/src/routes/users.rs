@@ -159,6 +159,15 @@ async fn delete_user(
     State(state): State<AppState>,
     Path(username): Path<String>,
 ) -> impl IntoResponse {
+    if username == "iSweat" {
+        return Json(ApiResponse::<()> {
+            success: false,
+            data: None,
+            error: Some("Le compte root 'iSweat' ne peut pas être supprimé".into()),
+        })
+        .into_response();
+    }
+
     let query_result = sqlx::query("DELETE FROM users WHERE username = ?")
         .bind(&username)
         .execute(&state.db)

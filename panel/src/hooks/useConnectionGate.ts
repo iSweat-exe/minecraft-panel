@@ -41,6 +41,25 @@ export function useConnectionGate() {
                 // Verify Daemon Token
                 await tauriBridge.nodeGetInfo(nodeUrl, password);
                 localStorage.setItem('node_token', password);
+
+                // Fetch root admin profile from daemon
+                const users = await tauriBridge.getPanelUsers(nodeUrl, password);
+                const rootUser = users.find((u: any) => u.username === 'iSweat');
+                if (rootUser) {
+                    localStorage.setItem('panel_username', rootUser.username);
+                    localStorage.setItem('panel_display_name', rootUser.display_name || rootUser.username);
+                    setDisplayName(rootUser.display_name || rootUser.username);
+                    if (rootUser.avatar_base64) {
+                        localStorage.setItem('panel_avatar_base64', rootUser.avatar_base64);
+                        setAvatarBase64(rootUser.avatar_base64);
+                    } else {
+                        localStorage.removeItem('panel_avatar_base64');
+                        setAvatarBase64('');
+                    }
+                } else {
+                    localStorage.setItem('panel_username', 'iSweat');
+                    localStorage.setItem('panel_display_name', 'iSweat');
+                }
             } else {
                 // For subusers, we need to read the users file from the daemon using the admin token
                 const adminToken = localStorage.getItem('node_token');
@@ -48,7 +67,19 @@ export function useConnectionGate() {
                     throw new Error("L'administrateur doit se connecter au moins une fois pour configurer le Daemon.");
                 }
                 
-                await tauriBridge.verifyPanelUser(nodeUrl, adminToken, subUsername, password);
+                const verifiedUser = await tauriBridge.verifyPanelUser(nodeUrl, adminToken, subUsername, password);
+                localStorage.setItem('panel_username', verifiedUser.username);
+                if (verifiedUser.display_name) {
+                    localStorage.setItem('panel_display_name', verifiedUser.display_name);
+                    setDisplayName(verifiedUser.display_name);
+                } else {
+                    localStorage.setItem('panel_display_name', verifiedUser.username);
+                    setDisplayName(verifiedUser.username);
+                }
+                if (verifiedUser.avatar_base64) {
+                    localStorage.setItem('panel_avatar_base64', verifiedUser.avatar_base64);
+                    setAvatarBase64(verifiedUser.avatar_base64);
+                }
             }
 
             localStorage.setItem('node_host', host);
