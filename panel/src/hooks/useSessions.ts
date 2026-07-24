@@ -95,7 +95,7 @@ export function useSessionPing() {
                     connected_at: connectedAt,
                     last_seen: Date.now(),
                     ip: userInfo.ip,
-                    ipv6: userInfo.ipv6,
+                    ipv6: userInfo.ipv6 || null,
                     location: userInfo.location,
                     os: userInfo.os
                 };

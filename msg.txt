@@ -1,5 +1,4 @@
-fix(api): align session and history payload schemas
+fix(api): implement missing upload/download routes in daemon
 
-- daemon: update `Session` and `HistoryEntry` structs and sqlite schemas to match the frontend payloads
-- panel: fix 404s by removing `/v1` prefix from `/api/history`, `/api/sessions`, and `/api/users` API calls
-- daemon: bump version to 0.1.29
+- daemon: implement `/api/v1/files/upload` and `/api/v1/files/download` endpoints that are used by Tauri `node_client` to handle Modrinth jar downloads.
+- panel: ensure `useSessions` always sends `ipv6` as `null` if undefined to prevent `422 Unprocessable Entity` parsing errors on the daemon.
