@@ -177,6 +177,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
         version: 180,
         size: 100,
         modified: 180,
+        permissions: 100,
         actions: 140
     }, 'sftp-column-widths');
 
@@ -260,6 +261,10 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                             </div>
                             <Resizer columnKey="modified" />
                         </TableHead>
+                        <TableHead className="relative group" style={{ width: 'var(--col-permissions)', minWidth: 'var(--col-permissions)', maxWidth: 'var(--col-permissions)' }}>
+                            Permissions
+                            <Resizer columnKey="permissions" />
+                        </TableHead>
                         <TableHead className="text-right relative group" style={{ width: 'var(--col-actions)', minWidth: 'var(--col-actions)', maxWidth: 'var(--col-actions)' }}>
                             Actions
                         </TableHead>
@@ -268,7 +273,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                 <TableBody>
                     {entries.length === 0 && !loading && (
                         <TableRow>
-                            <TableCell colSpan={isModsFolder ? 6 : 5} className="py-6">
+                            <TableCell colSpan={isModsFolder ? 7 : 6} className="py-6">
                                 <EmptyState
                                     icon={Folder}
                                     title="Ce dossier est vide"
@@ -337,6 +342,9 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                                 </TableCell>
                                 <TableCell className="text-muted-foreground text-xs">
                                     {formatDate(entry.modified)}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-xs font-mono">
+                                    {entry.permissions || '---'}
                                 </TableCell>
                                 <TableCell className="text-right">
                                     <div className="flex items-center justify-end gap-3">

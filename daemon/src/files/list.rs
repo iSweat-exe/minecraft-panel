@@ -30,12 +30,25 @@ pub async fn list_dir(path: &str) -> Result<Vec<FileEntry>> {
             .duration_since(std::time::SystemTime::UNIX_EPOCH)
             .unwrap_or_default()
             .as_secs();
+            
+        let permissions = {
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                Some(format!("{:03o}", meta.permissions().mode() & 0o777))
+            }
+            #[cfg(not(unix))]
+            {
+                None
+            }
+        };
 
         entries.push(FileEntry {
             name,
             is_dir: meta.is_dir(),
             size: meta.len(),
             modified,
+            permissions,
         });
     }
 

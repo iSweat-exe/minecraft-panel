@@ -95,6 +95,8 @@ pub struct FileEntry {
     pub is_dir: bool,
     pub size: u64,
     pub modified: u64,
+    #[serde(default)]
+    pub permissions: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -157,6 +157,10 @@ export const ModFileRow: React.FC<ModFileRowProps> = ({
                 {formatDate(entry.modified)}
             </TableCell>
             
+            <TableCell className="text-muted-foreground text-xs font-mono">
+                {entry.permissions || '---'}
+            </TableCell>
+            
             <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-4">
                     <div className="flex items-center justify-end gap-3">

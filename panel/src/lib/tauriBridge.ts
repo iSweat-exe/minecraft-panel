@@ -76,6 +76,7 @@ export interface FileEntry {
     is_dir: boolean;
     size: number;
     modified: number;
+    permissions?: string;
 }
 
 export interface DockerContainerInfo {
