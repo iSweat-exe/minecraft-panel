@@ -27,12 +27,14 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const users = await tauriBridge.getPanelUsers(nodeUrl, token);
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const users = (res?.success && Array.isArray(res.data)) ? res.data : [];
+            
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             
             // Find current user or fallback to admin permissions
             const isSubuserMode = localStorage.getItem('panel_login_mode') === 'subuser';
-            let current = users.find(u => u.username.toLowerCase() === storedUsername.toLowerCase());
+            let current = users.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
                 current = {
                     username: storedUsername,
@@ -62,10 +64,15 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const updated = await tauriBridge.savePanelUser(nodeUrl, token, user);
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/users', user);
             await logAction(`Sauvegarde de l'utilisateur ${user.username}`, { role: user.role, permissions: user.permissions });
+            
+            // Refetch all to get updated list
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const updated = (res?.success && Array.isArray(res.data)) ? res.data : [];
+
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
-            let current = updated.find(u => u.username.toLowerCase() === storedUsername.toLowerCase());
+            let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
                 current = { username: storedUsername, role: 'admin', permissions: ['*'] };
             }
@@ -85,10 +92,14 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const updated = await tauriBridge.deletePanelUser(nodeUrl, token, username);
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/users/${username}`);
             await logAction(`Suppression de l'utilisateur ${username}`, { username });
+            
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/users');
+            const updated = (res?.success && Array.isArray(res.data)) ? res.data : [];
+
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
-            let current = updated.find(u => u.username.toLowerCase() === storedUsername.toLowerCase());
+            let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
                 current = { username: storedUsername, role: 'admin', permissions: ['*'] };
             }

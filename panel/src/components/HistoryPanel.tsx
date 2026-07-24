@@ -88,22 +88,29 @@ export const HistoryPanel: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
-            const content = await tauriBridge.nodeReadFileText(nodeUrl, token, '/minecraft/.panel_logs/history.jsonl').catch(() => null);
-            if (!content) {
+            const response = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/history').catch(() => null);
+            if (!response || !response.success || !Array.isArray(response.data)) {
                 setLogs([]);
                 return;
             }
             
-            // Fix concatenated JSON objects caused by missing newline bug
-            const fixedContent = content.replace(/\}\{/g, '}\n{');
-            const lines = fixedContent.split('\n').filter(l => l.trim() !== '');
-            const parsedLogs: ActionLog[] = lines.map(line => {
+            const parsedLogs: ActionLog[] = response.data.map((log: any) => {
+                let details;
                 try {
-                    return JSON.parse(line);
-                } catch (e) {
-                    return null;
+                    details = log.details ? JSON.parse(log.details) : undefined;
+                } catch {
+                    details = log.details;
                 }
-            }).filter(Boolean);
+                
+                return {
+                    id: log.id,
+                    timestamp: log.timestamp * 1000,
+                    user: log.user,
+                    userId: log.user_id,
+                    action: log.action,
+                    details
+                };
+            });
 
             parsedLogs.sort((a, b) => b.timestamp - a.timestamp);
             setLogs(parsedLogs);

@@ -185,6 +185,17 @@ pub struct FileHashResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileHashMultipleRequest {
+    pub path: String,
+    pub patterns: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileHashMultipleResponse {
+    pub hashes: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemHostResponse {
     pub os_name: String,
     pub os_version: String,
@@ -260,4 +271,6 @@ pub struct DockerRunRequest {
 pub struct DockerUpdateRequest {
     pub new_name: Option<String>,
     pub restart_policy: Option<String>,
+    pub memory: Option<String>,
+    pub memory_swap: Option<String>,
 }

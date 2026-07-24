@@ -129,33 +129,6 @@ export interface ServerCrashesResponse {
 }
 
 export const tauriBridge = {
-    sshConnect: (host: string, port: number, username: string, keyPath?: string, password?: string, expectedFingerprint?: string) =>
-        invoke<void>('ssh_connect', { host, port, username, keyPath, password, expectedFingerprint }),
-
-    sshStatus: () => invoke<ConnectionState>('ssh_status'),
-    sshDisconnect: () => invoke<void>('ssh_disconnect'),
-    sshExecute: (command: string) => invoke<string>('ssh_execute', { command }),
-    
-    serviceAction: (action: 'start' | 'stop' | 'restart') =>
-        invoke<void>('service_action', { action }),
-    serviceStatus: () => invoke<ServiceState>('service_status'),
-    
-    rconExecute: (cmd: string, port: number, password: string) =>
-        invoke<string>('rcon_execute', { cmd, port, password }),
-
-    mcPing: () => invoke<McPing>('mc_ping'),
-    metricsSubscribe: () => invoke<void>('metrics_subscribe'),
-    metricsUnsubscribe: () => invoke<void>('metrics_unsubscribe'),
-
-    consoleSubscribe: () => invoke<void>('console_subscribe'),
-    consoleUnsubscribe: () => invoke<void>('console_unsubscribe'),
-    consoleSendCommand: (cmd: string) => invoke<void>('console_send_command', { cmd }),
-    
-    // SFTP
-    sftpListDir: (path: string) => invoke<FileEntry[]>('sftp_list_dir', { path }),
-    sftpReadFile: (path: string) => invoke<string>('sftp_read_file', { path }),
-    sftpReadFileBase64: (path: string) => invoke<string>('sftp_read_file_base64', { path }),
-    rconExecuteMulti: (cmds: string[], port: number, password: string) => invoke<string[]>('rcon_execute_multi', { cmds, port, password }),
     getPlayersList: (nodeUrl: string, nodeToken: string) => invoke<unknown[]>('get_players_list', { nodeUrl, nodeToken }),
     
     // Sub-users & Permissions
@@ -186,6 +159,8 @@ export const tauriBridge = {
         containerId: string;
         newName?: string;
         restartPolicy?: string;
+        memory?: string;
+        memorySwap?: string;
     }) => invoke<void>('node_docker_update_container', { nodeUrl, nodeToken, ...options }),
     nodeDockerRecreateContainer: (nodeUrl: string, nodeToken: string, options: {
         containerId: string;
@@ -196,13 +171,7 @@ export const tauriBridge = {
         restartPolicy?: string;
     }) => invoke<string>('node_docker_recreate_container', { nodeUrl, nodeToken, ...options, envVars: options.envVars }),
 
-    // VPS Interactive Terminal
-    terminalStart: (cols: number, rows: number) => invoke<void>('terminal_start', { cols, rows }),
-    terminalWrite: (data: number[]) => invoke<void>('terminal_write', { data }),
-    sftpUploadFile: (localPath: string, remotePath: string) => invoke<void>('sftp_upload_file', { localPath, remotePath }),
-    sftpDownloadFile: (remotePath: string, localPath: string) => invoke<void>('sftp_download_file', { remotePath, localPath }),
-    
-    cancelBackup: () => invoke<void>('cancel_backup'),
+
     
     onConsoleLine: (callback: (line: string) => void): Promise<UnlistenFn> =>
         listen<string>('console-line', (event) => callback(event.payload)),
@@ -266,5 +235,5 @@ export const tauriBridge = {
     nodeGetServerPing: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<MinecraftPingResponse>('node_get_server_ping', { nodeUrl, nodeToken, serverId }),
     nodeGetServerCrashes: (nodeUrl: string, nodeToken: string, serverId: string) => invoke<ServerCrashesResponse>('node_get_server_crashes', { nodeUrl, nodeToken, serverId }),
     nodeGetServerLogs: (nodeUrl: string, nodeToken: string, serverId: string, lines?: number) => invoke<ServerLogsResponse>('node_get_server_logs', { nodeUrl, nodeToken, serverId, lines }),
-    nodeHostExec: (nodeUrl: string, nodeToken: string, command: string) => invoke<HostExecResponse>('node_host_exec', { nodeUrl, nodeToken, command }),
+    nodeApiRequest: (nodeUrl: string, nodeToken: string, method: string, path: string, body?: any) => invoke<any>('node_api_request', { nodeUrl, nodeToken, method, path, body }),
 };

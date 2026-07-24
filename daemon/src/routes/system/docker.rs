@@ -1,8 +1,11 @@
 use anyhow::{Context, Result};
-use axum::{extract::{Path, State}, Json};
+use axum::{
+    extract::{Path, State},
+    Json,
+};
 use protocol::{
-    ApiResponse, DockerConfigUpdateRequest, DockerContainerInfo, DockerImageInfo,
-    DockerRunRequest, DockerUpdateRequest
+    ApiResponse, DockerConfigUpdateRequest, DockerContainerInfo, DockerImageInfo, DockerRunRequest,
+    DockerUpdateRequest,
 };
 use std::process::Command as StdCommand;
 
@@ -58,7 +61,11 @@ pub async fn container_logs(
     Path(id): Path<String>,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
-    match state.docker.run_docker_command(&["logs", "--tail", "150", &id]).await {
+    match state
+        .docker
+        .run_docker_command(&["logs", "--tail", "150", &id])
+        .await
+    {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -79,7 +86,11 @@ pub async fn system_prune(
     _auth: NodeAuth,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
-    match state.docker.run_docker_command(&["system", "prune", "-af", "--volumes"]).await {
+    match state
+        .docker
+        .run_docker_command(&["system", "prune", "-af", "--volumes"])
+        .await
+    {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -95,7 +106,11 @@ pub async fn pull_image(
     State(state): State<AppState>,
     Json(payload): Json<PullImagePayload>,
 ) -> Json<ApiResponse<String>> {
-    match state.docker.run_docker_command(&["pull", &payload.image_name]).await {
+    match state
+        .docker
+        .run_docker_command(&["pull", &payload.image_name])
+        .await
+    {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -117,8 +132,15 @@ pub async fn run_container(
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
 ) -> Json<ApiResponse<String>> {
-    let mut args = vec!["run", "-d", "--security-opt", "seccomp=unconfined", "--security-opt", "apparmor=unconfined"];
-    
+    let mut args = vec![
+        "run",
+        "-d",
+        "--security-opt",
+        "seccomp=unconfined",
+        "--security-opt",
+        "apparmor=unconfined",
+    ];
+
     if let Some(name) = &payload.name {
         let clean = name.trim();
         if !clean.is_empty() {
@@ -126,7 +148,7 @@ pub async fn run_container(
             args.push(clean);
         }
     }
-    
+
     if let Some(policy) = &payload.restart_policy {
         let clean = policy.trim();
         if !clean.is_empty() {
@@ -134,7 +156,7 @@ pub async fn run_container(
             args.push(clean);
         }
     }
-    
+
     let mut port_args = Vec::new();
     if let Some(ports) = &payload.ports {
         for p in ports.split(',') {
@@ -148,7 +170,7 @@ pub async fn run_container(
         args.push("-p");
         args.push(p);
     }
-    
+
     let mut env_args = Vec::new();
     if let Some(envs) = &payload.env_vars {
         for e in envs {
@@ -162,9 +184,9 @@ pub async fn run_container(
         args.push("-e");
         args.push(e);
     }
-    
+
     args.push(&payload.image);
-    
+
     match state.docker.run_docker_command(&args).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
@@ -177,21 +199,52 @@ pub async fn update_container(
     State(state): State<AppState>,
     Json(payload): Json<DockerUpdateRequest>,
 ) -> Json<ApiResponse<String>> {
+    let mut update_args = vec!["update"];
+
     if let Some(policy) = &payload.restart_policy {
         let clean = policy.trim();
         if !clean.is_empty() {
-            let _ = state.docker.run_docker_command(&["update", "--restart", clean, &id]).await;
+            update_args.push("--restart");
+            update_args.push(clean);
         }
     }
-    
+
+    if let Some(memory) = &payload.memory {
+        let clean = memory.trim();
+        if !clean.is_empty() {
+            update_args.push("--memory");
+            update_args.push(clean);
+        }
+    }
+
+    if let Some(swap) = &payload.memory_swap {
+        let clean = swap.trim();
+        if !clean.is_empty() {
+            update_args.push("--memory-swap");
+            update_args.push(clean);
+        }
+    }
+
+    if update_args.len() > 1 {
+        update_args.push(&id);
+        let _ = state.docker.run_docker_command(&update_args).await;
+    }
+
     if let Some(name) = &payload.new_name {
         let clean = name.trim();
         if !clean.is_empty() {
-            let _ = state.docker.run_docker_command(&["rename", &id, clean]).await;
+            let _ = state
+                .docker
+                .run_docker_command(&["rename", &id, clean])
+                .await;
         }
     }
-    
-    match state.docker.run_docker_command(&["restart", "-t", "10", &id]).await {
+
+    match state
+        .docker
+        .run_docker_command(&["restart", "-t", "10", &id])
+        .await
+    {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -204,9 +257,16 @@ pub async fn recreate_container(
     Json(payload): Json<DockerRunRequest>,
 ) -> Json<ApiResponse<String>> {
     let _ = state.docker.run_docker_command(&["rm", "-f", &id]).await;
-    
-    let mut args = vec!["run", "-d", "--security-opt", "seccomp=unconfined", "--security-opt", "apparmor=unconfined"];
-    
+
+    let mut args = vec![
+        "run",
+        "-d",
+        "--security-opt",
+        "seccomp=unconfined",
+        "--security-opt",
+        "apparmor=unconfined",
+    ];
+
     if let Some(name) = &payload.name {
         let clean = name.trim();
         if !clean.is_empty() {
@@ -214,7 +274,7 @@ pub async fn recreate_container(
             args.push(clean);
         }
     }
-    
+
     if let Some(policy) = &payload.restart_policy {
         let clean = policy.trim();
         if !clean.is_empty() {
@@ -222,7 +282,7 @@ pub async fn recreate_container(
             args.push(clean);
         }
     }
-    
+
     let mut port_args = Vec::new();
     if let Some(ports) = &payload.ports {
         for p in ports.split(',') {
@@ -236,7 +296,7 @@ pub async fn recreate_container(
         args.push("-p");
         args.push(p);
     }
-    
+
     let mut env_args = Vec::new();
     if let Some(envs) = &payload.env_vars {
         for e in envs {
@@ -250,9 +310,9 @@ pub async fn recreate_container(
         args.push("-e");
         args.push(e);
     }
-    
+
     args.push(&payload.image);
-    
+
     match state.docker.run_docker_command(&args).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),

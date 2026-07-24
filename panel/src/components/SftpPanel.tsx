@@ -80,7 +80,6 @@ export const SftpPanel: React.FC = () => {
                         sftp.fetchDir(sftp.currentPath);
                     }}
                     onClose={() => {
-                        tauriBridge.cancelBackup();
                         sftp.setUploadFiles(null);
                         sftp.fetchDir(sftp.currentPath);
                     }}

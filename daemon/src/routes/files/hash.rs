@@ -22,3 +22,18 @@ pub async fn hash_file(
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
 }
+
+pub async fn hash_multiple(
+    _auth: NodeAuth,
+    Json(payload): Json<protocol::FileHashMultipleRequest>,
+) -> Json<ApiResponse<protocol::FileHashMultipleResponse>> {
+    match crate::files::hash_multiple_files(&payload.path, &payload.patterns)
+        .await
+        .context(format!("Failed to hash files in: {}", payload.path))
+    {
+        Ok(hashes) => Json(ApiResponse::ok(protocol::FileHashMultipleResponse {
+            hashes,
+        })),
+        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+    }
+}

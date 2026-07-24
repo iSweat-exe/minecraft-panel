@@ -30,4 +30,10 @@ lazy_static = "1.5.0"
 base64 = "0.22.1"
 craftping = { version = "0.7.0", features = ["async-tokio"] }
 tracing-appender = "0.2.5"
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "chrono", "uuid"] }
+tokio-cron-scheduler = "0.13"
+flate2 = "1.0"
+tar = "0.4"
+uuid = { version = "1.10", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
 

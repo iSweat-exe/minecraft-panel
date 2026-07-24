@@ -128,14 +128,19 @@ impl AutoUpdater {
 
         println!("Fetching latest release info from GitHub...");
         let release_url = "https://api.github.com/repos/isweat-exe/minecraft-panel/releases/latest";
-        let response = client.get(release_url).send().await.context("Failed to connect to GitHub API")?;
-        
+        let response = client
+            .get(release_url)
+            .send()
+            .await
+            .context("Failed to connect to GitHub API")?;
+
         if !response.status().is_success() {
             anyhow::bail!("GitHub API returned HTTP {}", response.status());
         }
 
-        let release_resp: serde_json::Value = response.json().await.context("Failed to parse JSON")?;
-        
+        let release_resp: serde_json::Value =
+            response.json().await.context("Failed to parse JSON")?;
+
         let tag_name = release_resp["tag_name"].as_str().unwrap_or("unknown");
         println!("Found latest version: {}", tag_name);
 
@@ -150,23 +155,34 @@ impl AutoUpdater {
         // TODO: Improve CI/CD pipeline.
         // let asset_name = format!("daemon-{}-{}", os, arch);
         let asset_name = format!("daemon");
-        
-        let assets = release_resp["assets"].as_array().context("No assets found in release")?;
+
+        let assets = release_resp["assets"]
+            .as_array()
+            .context("No assets found in release")?;
         let mut download_url = None;
 
         for asset in assets {
             if let Some(name) = asset["name"].as_str() {
                 if name == asset_name || name == format!("{}.exe", asset_name) {
-                    download_url = asset["browser_download_url"].as_str().map(|s| s.to_string());
+                    download_url = asset["browser_download_url"]
+                        .as_str()
+                        .map(|s| s.to_string());
                     break;
                 }
             }
         }
 
-        let download_url = download_url.context(format!("Could not find binary for architecture {}/{} (looked for {})", os, arch, asset_name))?;
+        let download_url = download_url.context(format!(
+            "Could not find binary for architecture {}/{} (looked for {})",
+            os, arch, asset_name
+        ))?;
         println!("Downloading from: {}", download_url);
 
-        let response = client.get(&download_url).send().await.context("Failed to download binary")?;
+        let response = client
+            .get(&download_url)
+            .send()
+            .await
+            .context("Failed to download binary")?;
         if !response.status().is_success() {
             anyhow::bail!("Download failed with HTTP {}", response.status());
         }
@@ -184,7 +200,8 @@ impl AutoUpdater {
             use std::os::unix::fs::PermissionsExt;
             let mut perms = std::fs::metadata(&new_exe)?.permissions();
             perms.set_mode(0o755);
-            std::fs::set_permissions(&new_exe, perms).context("Failed to set executable permissions")?;
+            std::fs::set_permissions(&new_exe, perms)
+                .context("Failed to set executable permissions")?;
         }
 
         let backup_path = current_exe.with_extension("old");

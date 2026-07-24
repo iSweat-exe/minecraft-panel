@@ -83,7 +83,7 @@ export const ConsolePanel: React.FC = () => {
             if (!host || !port || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
             
-            const data = await tauriBridge.nodeHostExec(nodeUrl, token, cmd);
+            const data = await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/system/host/exec', { command: cmd });
             const output = (data.stdout + '\n' + data.stderr).trim();
             if (output) {
                 setHostLines(prev => [...prev, { type: 'output', text: output }]);

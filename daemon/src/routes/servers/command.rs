@@ -43,16 +43,19 @@ pub async fn server_rcon_multi(
 ) -> Json<ApiResponse<Vec<String>>> {
     let mut responses = Vec::new();
     let container_name = format!("mc-server-{}", id);
-    
+
     for cmd in payload.commands {
         let args = vec!["exec", "-i", &container_name, "rcon-cli", &cmd];
         match state.docker.run_docker_command(&args).await {
             Ok(output) => responses.push(output),
             Err(e) => {
-                return Json(ApiResponse::err(format!("Failed to execute RCON command: {:#}", e)));
+                return Json(ApiResponse::err(format!(
+                    "Failed to execute RCON command: {:#}",
+                    e
+                )));
             }
         }
     }
-    
+
     Json(ApiResponse::ok(responses))
 }

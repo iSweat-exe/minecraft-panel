@@ -3,7 +3,6 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Clock, Plus, Trash2, Power, Download, Save, TriangleAlert, Info } from 'lucide-react';
 import { tauriBridge } from '../lib/tauriBridge';
-import { useConnectionStore } from '../store/connectionStore';
 import { useToastStore } from '../store/toastStore';
 import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
@@ -19,150 +18,121 @@ interface CronJob {
     rawLine: string;
 }
 
-const CRON_TAG = '# MINECRAFT-PANEL-JOB';
+
 
 export const AutomationsPanel: React.FC = () => {
-    const { sshStatus } = useConnectionStore();
     const [jobs, setJobs] = useState<CronJob[]>([]);
     const [loading, setLoading] = useState(true);
-
     const [isEditing, setIsEditing] = useState(false);
     const [newJobType, setNewJobType] = useState<JobType>('restart');
-    const [newJobTime, setNewJobTime] = useState('04:00'); // HH:MM
+    const [newJobTime, setNewJobTime] = useState('04:00');
+
+    const [servers, setServers] = useState<{id: string, name: string}[]>([]);
+    const [selectedServer, setSelectedServer] = useState<string>('mc-server-default');
 
     useEffect(() => {
-        if (sshStatus === 'connected') {
-            loadCrontab();
+        loadCrontab();
+        fetchServers();
+    }, []);
+
+    const fetchServers = async () => {
+        try {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) return;
+            const nodeUrl = `http://${host}:${port}`;
+            
+            const list = await tauriBridge.nodeListServers(nodeUrl, token);
+            setServers(list.map(s => ({ id: s.server_id, name: s.name })));
+            if (list.length > 0) {
+                setSelectedServer(list[0].server_id);
+            }
+        } catch(e) {
+            console.error("Failed to fetch servers", e);
         }
-    }, [sshStatus]);
+    };
 
     const loadCrontab = async () => {
         setLoading(true);
         try {
-            const out = await tauriBridge.sshExecute(`crontab -l || echo ""`);
-            const lines = out.split('\n');
-            const parsedJobs: CronJob[] = [];
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (line.startsWith(CRON_TAG)) {
-                    // The next line is the actual cron job
-                    const nextLine = lines[i + 1]?.trim();
-                    if (nextLine && !nextLine.startsWith('#')) {
-                        const parts = nextLine.split(' ');
-                        const cronExp = parts.slice(0, 5).join(' ');
-                        const command = parts.slice(5).join(' ');
-                        
-                        let type: JobType = 'custom';
-                        if (command.includes('systemctl --user restart minecraft')) type = 'restart';
-                        else if (command.includes('systemctl --user start minecraft')) type = 'start';
-                        else if (command.includes('systemctl --user stop minecraft')) type = 'stop';
-                        else if (command.includes('tar -czf')) type = 'backup';
-                        else if (command.includes('find ~/minecraft_backups')) type = 'clean_backups';
-                        else if (command.includes('find ~/minecraft/logs')) type = 'clean_logs';
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) return;
+            const nodeUrl = `http://${host}:${port}`;
 
-                        parsedJobs.push({
-                            id: Math.random().toString(36).substr(2, 9),
-                            type,
-                            cronExp,
-                            command,
-                            rawLine: nextLine
-                        });
-                        i++; // Skip next line
-                    }
-                }
+            const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/automations');
+            if (res?.success && Array.isArray(res.data)) {
+                const parsedJobs: CronJob[] = res.data.map((job: any) => ({
+                    id: job.id,
+                    type: job.action_type as JobType,
+                    cronExp: job.cron_expr,
+                    command: `Serveur: ${job.target_server || 'Global'}`,
+                    rawLine: `ID: ${job.id}`
+                }));
+                setJobs(parsedJobs);
+            } else {
+                setJobs([]);
             }
-            setJobs(parsedJobs);
         } catch (err: any) {
-            if (err !== 'Not connected') {
-                console.error("Failed to load crontab:", err);
-            }
+            console.error("Failed to load automations:", err);
         } finally {
             setLoading(false);
-        }
-    };
-
-    const saveCrontab = async (newJobs: CronJob[]) => {
-        try {
-            const out = await tauriBridge.sshExecute(`crontab -l || echo ""`);
-            // Strip old panel jobs
-            const lines = out.split('\n');
-            const newLines: string[] = [];
-            let skipNext = false;
-            
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                if (skipNext) {
-                    skipNext = false;
-                    continue;
-                }
-                if (line.startsWith(CRON_TAG)) {
-                    skipNext = true; // skip the command line
-                    continue;
-                }
-                if (line.length > 0) {
-                    newLines.push(line);
-                }
-            }
-
-            // Append new jobs
-            for (const job of newJobs) {
-                newLines.push(CRON_TAG + '-' + job.type.toUpperCase());
-                newLines.push(job.rawLine);
-            }
-
-            const newCrontab = newLines.join('\n') + '\n';
-            const escaped = newCrontab.replace(/"/g, '\\"');
-            await tauriBridge.sshExecute(`echo "${escaped}" | crontab -`);
-            setJobs(newJobs);
-            useToastStore.getState().addToast({ type: 'success', message: 'Crontab mis à jour' });
-        } catch (err) {
-            console.error(err);
-            useToastStore.getState().addToast({ type: 'error', message: 'Erreur lors de la mise à jour du crontab' });
         }
     };
 
     const handleAddJob = async () => {
         const [hours, minutes] = newJobTime.split(':');
         const cronExp = `${minutes} ${hours} * * *`;
-        let command = '';
         
-        if (newJobType === 'restart') {
-            command = 'XDG_RUNTIME_DIR=/run/user/$(id -u) systemctl --user restart minecraft > /dev/null 2>&1';
-        } else if (newJobType === 'start') {
-            command = 'XDG_RUNTIME_DIR=/run/user/$(id -u) systemctl --user start minecraft > /dev/null 2>&1';
-        } else if (newJobType === 'stop') {
-            command = 'XDG_RUNTIME_DIR=/run/user/$(id -u) systemctl --user stop minecraft > /dev/null 2>&1';
-        } else if (newJobType === 'backup') {
-            command = 'mkdir -p ~/minecraft_backups && tar -czf ~/minecraft_backups/backup_$(date +\\%Y\\%m\\%d_\\%H\\%M\\%S).tar.gz -C ~/minecraft . > /dev/null 2>&1';
-        } else if (newJobType === 'clean_backups') {
-            command = 'find ~/minecraft_backups -name "*.tar.gz" -mtime +7 -delete > /dev/null 2>&1';
-        } else if (newJobType === 'clean_logs') {
-            command = 'find ~/minecraft/logs -name "*.log.gz" -mtime +7 -delete > /dev/null 2>&1';
+        try {
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            const payload = {
+                name: `Tâche ${newJobType}`,
+                cron_expr: cronExp,
+                action_type: newJobType,
+                target_server: (newJobType === 'backup' || newJobType.startsWith('clean_')) ? null : selectedServer,
+                payload: null
+            };
+
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/automations', payload);
+            
+            await loadCrontab();
+            logAction('Ajout d\'une tâche planifiée', { type: newJobType, time: newJobTime });
+            
+            setIsEditing(false);
+            useToastStore.getState().addToast({ type: 'success', message: 'Tâche créée' });
+        } catch (err) {
+            console.error(err);
+            useToastStore.getState().addToast({ type: 'error', message: 'Erreur lors de la création de la tâche' });
         }
-
-        const newJob: CronJob = {
-            id: Math.random().toString(36).substr(2, 9),
-            type: newJobType,
-            cronExp,
-            command,
-            rawLine: `${cronExp} ${command}`
-        };
-
-        await saveCrontab([...jobs, newJob]);
-        
-        logAction('Ajout d\'une tâche planifiée', { type: newJobType, time: newJobTime });
-        
-        setIsEditing(false);
     };
 
     const handleDeleteJob = async (id: string) => {
         const ok = await ConfirmDialog.call({ message: 'Êtes-vous sûr de vouloir supprimer cette tâche planifiée ?' });
         if (ok) {
-            const job = jobs.find(j => j.id === id);
-            await saveCrontab(jobs.filter(j => j.id !== id));
-            if (job) {
-                logAction('Suppression d\'une tâche planifiée', { type: job.type });
+            try {
+                const host = localStorage.getItem('node_host');
+                const port = localStorage.getItem('node_port') || '8080';
+                const token = localStorage.getItem('node_token');
+                if (!host || !token) throw new Error("Daemon credentials missing");
+                const nodeUrl = `http://${host}:${port}`;
+
+                await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/automations/${id}`);
+                
+                const job = jobs.find(j => j.id === id);
+                await loadCrontab();
+                if (job) {
+                    logAction('Suppression d\'une tâche planifiée', { type: job.type });
+                }
+            } catch (err) {
+                console.error(err);
             }
         }
     };
@@ -207,7 +177,7 @@ export const AutomationsPanel: React.FC = () => {
                             <label className="text-sm font-medium text-muted-foreground">Type d'action</label>
                             <Select 
                                 value={newJobType}
-                                onValueChange={(val) => setNewJobType(val as 'restart' | 'backup')}
+                                onValueChange={(val) => setNewJobType(val as JobType)}
                             >
                                 <SelectTrigger className="w-full">
                                     <SelectValue placeholder="Sélectionnez une action" />
@@ -223,6 +193,35 @@ export const AutomationsPanel: React.FC = () => {
                             </Select>
                         </div>
                         
+                        {(newJobType === 'restart' || newJobType === 'start' || newJobType === 'stop') && (
+                            <div className="flex flex-col gap-2">
+                                <label className="text-sm font-medium text-muted-foreground">Serveur Cible (Conteneur)</label>
+                                {servers.length > 0 ? (
+                                    <Select 
+                                        value={selectedServer}
+                                        onValueChange={(val) => setSelectedServer(val)}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue placeholder="Sélectionnez un serveur" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {servers.map(s => (
+                                                <SelectItem key={s.id} value={s.id}>{s.name} ({s.id})</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <input 
+                                        type="text" 
+                                        className="bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
+                                        value={selectedServer}
+                                        onChange={e => setSelectedServer(e.target.value)}
+                                        placeholder="ID du conteneur (ex: mc-server-default)"
+                                    />
+                                )}
+                            </div>
+                        )}
+
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium text-muted-foreground">Heure d'exécution (Quotidien)</label>
                             <input 

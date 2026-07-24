@@ -15,4 +15,5 @@ pub fn router() -> Router<AppState> {
         .route("/api/v1/files/write", post(write::write_file))
         .route("/api/v1/files/action", post(action::file_action))
         .route("/api/v1/files/hash", get(hash::hash_file))
+        .route("/api/v1/files/hash_multiple", post(hash::hash_multiple))
 }

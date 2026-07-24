@@ -1,10 +1,12 @@
 mod auth;
 mod config;
 mod console;
+mod db;
 mod docker;
 mod files;
 mod metrics;
 mod routes;
+mod scheduler;
 mod update;
 
 use anyhow::Result;
@@ -56,10 +58,26 @@ async fn main() -> Result<()> {
         managed_containers.len()
     );
 
+    let db_pool = match db::init_db().await {
+        Ok(pool) => {
+            info!("SQLite database initialized");
+            pool
+        }
+        Err(e) => {
+            eprintln!("Failed to initialize database: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if let Err(e) = scheduler::start_scheduler(db_pool.clone()).await {
+        eprintln!("Failed to start scheduler: {}", e);
+    }
+
     let state = AppState {
         config: config.clone(),
         docker: docker_mgr,
         start_time: std::time::Instant::now(),
+        db: db_pool,
     };
 
     let router = create_router(state);

@@ -70,6 +70,9 @@ pub async fn execute_command(
                 exit_code: output.status.code(),
             }))
         }
-        Err(e) => Json(ApiResponse::err(format!("Failed to execute command: {}", e))),
+        Err(e) => Json(ApiResponse::err(format!(
+            "Failed to execute command: {}",
+            e
+        ))),
     }
 }

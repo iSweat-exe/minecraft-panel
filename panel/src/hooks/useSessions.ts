@@ -88,46 +88,38 @@ export function useSessionPing() {
                 
                 const userInfo = await getUserInfo();
 
-                const payload = JSON.stringify({
+                const payload = {
                     uuid: sessionUuid,
                     name: displayName,
-                    avatar: avatarData,
-                    connectedAt,
-                    lastSeen: Date.now(),
+                    avatar: avatarData || null,
+                    connected_at: connectedAt,
+                    last_seen: Date.now(),
                     ip: userInfo.ip,
                     ipv6: userInfo.ipv6,
                     location: userInfo.location,
                     os: userInfo.os
-                });
+                };
 
-                // Write session file
-                const sessionPath = `/minecraft/.panel_sessions/${sessionUuid}.json`;
-                
-                // Ensure directory exists by attempting to write to it
-                await tauriBridge.nodeWriteFile(nodeUrl, token, sessionPath, payload);
+                // Upsert session
+                await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/sessions', payload);
 
-                // List files
-                const files = await tauriBridge.nodeListDir(nodeUrl, token, '/minecraft/.panel_sessions').catch(() => []);
-                const activeSessions: PanelSession[] = [];
-                const now = Date.now();
-                
-                for (const f of files) {
-                    if (!f.is_dir && f.name.endsWith('.json')) {
-                        try {
-                            const text = await tauriBridge.nodeReadFileText(nodeUrl, token, `/minecraft/.panel_sessions/${f.name}`);
-                            const session = JSON.parse(text);
-                            // Delete if older than 30 days
-                            if (now - session.lastSeen > 30 * 24 * 60 * 60 * 1000) {
-                                await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${f.name}`, "delete").catch(() => {});
-                            } else {
-                                activeSessions.push(session);
-                            }
-                        } catch (e) {}
-                    }
+                // Fetch active sessions
+                const listRes = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/v1/sessions').catch(() => null);
+                if (listRes && listRes.success && Array.isArray(listRes.data)) {
+                    const activeSessions = listRes.data.map((s: any) => ({
+                        uuid: s.uuid,
+                        name: s.name,
+                        avatar: s.avatar || '',
+                        connectedAt: s.connected_at,
+                        lastSeen: s.last_seen,
+                        ip: s.ip || 'Inconnu',
+                        ipv6: s.ipv6 || undefined,
+                        location: s.location || 'Inconnu',
+                        os: s.os || 'Inconnu'
+                    }));
+                    activeSessions.sort((a: any, b: any) => a.connectedAt - b.connectedAt);
+                    setSessions(activeSessions);
                 }
-                
-                activeSessions.sort((a, b) => a.connectedAt - b.connectedAt);
-                setSessions(activeSessions);
 
             } catch (err) {
                 console.error("Failed to ping session:", err);

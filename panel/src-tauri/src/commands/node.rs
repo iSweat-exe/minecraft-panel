@@ -1,9 +1,9 @@
 use crate::error::AppError;
 use crate::node_client::DaemonClient;
 use protocol::{
-    ContainerSpec, DaemonInfoResponse, PowerActionResponse, ServerPowerAction,
-    ServerStatusResponse, SystemMetricsResponse, FileEntry, FileAction,
-    SystemHostResponse, SystemHealthResponse, ServerLogsResponse, MinecraftPingResponse, ServerCrashesResponse
+    ContainerSpec, DaemonInfoResponse, FileAction, FileEntry, MinecraftPingResponse,
+    PowerActionResponse, ServerCrashesResponse, ServerLogsResponse, ServerPowerAction,
+    ServerStatusResponse, SystemHealthResponse, SystemHostResponse, SystemMetricsResponse,
 };
 
 #[tauri::command]
@@ -88,15 +88,26 @@ pub async fn node_download_remote(
         .timeout(std::time::Duration::from_secs(300))
         .build()
         .map_err(|e| AppError::Message(e.to_string()))?;
-        
-    let res = client.get(&url).send().await.map_err(|e| AppError::Message(e.to_string()))?;
-    
+
+    let res = client
+        .get(&url)
+        .send()
+        .await
+        .map_err(|e| AppError::Message(e.to_string()))?;
+
     if !res.status().is_success() {
-        return Err(AppError::Message(format!("Failed to download {}: HTTP {}", url, res.status())));
+        return Err(AppError::Message(format!(
+            "Failed to download {}: HTTP {}",
+            url,
+            res.status()
+        )));
     }
-    
-    let bytes = res.bytes().await.map_err(|e| AppError::Message(e.to_string()))?;
-    
+
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| AppError::Message(e.to_string()))?;
+
     let daemon = DaemonClient::new(node_url, node_token);
     daemon.upload_file(&dest, bytes.to_vec()).await
 }
@@ -167,7 +178,8 @@ pub async fn node_read_file_text(
     use base64::Engine;
     let client = DaemonClient::new(node_url, node_token);
     let base64_str = client.read_file(&path).await?;
-    let bytes = base64::engine::general_purpose::STANDARD.decode(&base64_str)
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(&base64_str)
         .map_err(|e| AppError::Message(format!("Base64 decode error: {}", e)))?;
     String::from_utf8(bytes).map_err(|e| AppError::Message(format!("UTF-8 decode error: {}", e)))
 }
@@ -219,27 +231,43 @@ pub async fn node_download_file(
         .timeout(std::time::Duration::from_secs(300))
         .build()
         .map_err(|e| AppError::Message(e.to_string()))?;
-        
+
     let mut url = node_url;
     if url.ends_with('/') {
         url.pop();
     }
-    
-    let download_url = format!("{}/api/v1/files/download?path={}", url, urlencoding::encode(&remote_path));
-    
-    let res = client.get(&download_url)
+
+    let download_url = format!(
+        "{}/api/v1/files/download?path={}",
+        url,
+        urlencoding::encode(&remote_path)
+    );
+
+    let res = client
+        .get(&download_url)
         .header(protocol::NODE_TOKEN_HEADER, node_token)
-        .header(protocol::PROTOCOL_VERSION_HEADER, protocol::PROTOCOL_VERSION.to_string())
+        .header(
+            protocol::PROTOCOL_VERSION_HEADER,
+            protocol::PROTOCOL_VERSION.to_string(),
+        )
         .send()
         .await
         .map_err(|e| AppError::Message(e.to_string()))?;
-        
+
     if !res.status().is_success() {
-        return Err(AppError::Message(format!("Daemon returned HTTP {}", res.status())));
+        return Err(AppError::Message(format!(
+            "Daemon returned HTTP {}",
+            res.status()
+        )));
     }
-    
-    let bytes = res.bytes().await.map_err(|e| AppError::Message(e.to_string()))?;
-    tokio::fs::write(&local_path, bytes).await.map_err(|e| AppError::Message(e.to_string()))?;
+
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| AppError::Message(e.to_string()))?;
+    tokio::fs::write(&local_path, bytes)
+        .await
+        .map_err(|e| AppError::Message(e.to_string()))?;
     Ok(())
 }
 
@@ -301,12 +329,15 @@ pub async fn node_get_server_logs(
     let client = DaemonClient::new(node_url, node_token);
     client.get_server_logs(&server_id, lines).await
 }
+
 #[tauri::command]
-pub async fn node_host_exec(
+pub async fn node_api_request(
     node_url: String,
     node_token: String,
-    command: String,
-) -> Result<protocol::HostExecResponse, AppError> {
+    method: String,
+    path: String,
+    body: Option<serde_json::Value>,
+) -> Result<serde_json::Value, AppError> {
     let client = DaemonClient::new(node_url, node_token);
-    client.host_exec(&command).await
+    client.api_request(&method, &path, body).await
 }

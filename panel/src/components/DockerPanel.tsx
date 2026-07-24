@@ -935,7 +935,7 @@ export const DockerPanel: React.FC = () => {
             >
                 <form onSubmit={handleSaveConfig} className="space-y-4">
                     <Alert variant="warning" icon>
-                        ⚠️ L'enregistrement de la nouvelle configuration entraînera le <strong>redémarrage automatique</strong> du conteneur pour appliquer vos modifications.
+                        L'enregistrement de la nouvelle configuration entraînera le <strong>redémarrage automatique</strong> du conteneur pour appliquer vos modifications.
                     </Alert>
 
                     <div className="space-y-2">

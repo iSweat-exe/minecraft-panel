@@ -47,9 +47,18 @@ export const DockerSettingsCard: React.FC = () => {
         setStatusMessage(null);
 
         try {
-            await tauriBridge.sshExecute(
-                `docker update --memory=${validGb}g --memory-swap=${validGb}g mc-server-default 2>/dev/null || true`
-            );
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
+
+            await tauriBridge.nodeDockerUpdateContainer(nodeUrl, token, {
+                containerId: 'mc-server-default',
+                memory: `${validGb}g`,
+                memorySwap: `${validGb}g`
+            });
+
             await logAction(`Modification de l'allocation RAM Docker à ${validGb} Go`, { ramGb: validGb });
             setStatusMessage(`RAM mise à jour à ${validGb} Go (${validGb * 1024} Mo)`);
         } catch (e: any) {
@@ -65,17 +74,18 @@ export const DockerSettingsCard: React.FC = () => {
         setStatusMessage(null);
 
         try {
-            const script = `
-                mkdir -p /etc/docker
-                if [ -f /etc/docker/daemon.json ]; then
-                    python3 -c 'import json; f=open("/etc/docker/daemon.json", "r+"); d=json.load(f); d["dns"]=["1.1.1.1", "8.8.8.8"]; f.seek(0); json.dump(d, f, indent=2); f.truncate()' 2>/dev/null || echo '{"dns": ["1.1.1.1", "8.8.8.8"]}' > /etc/docker/daemon.json
-                else
-                    echo '{"dns": ["1.1.1.1", "8.8.8.8"]}' > /etc/docker/daemon.json
-                fi
-                (systemctl restart docker || service docker restart) 2>/dev/null || true
-            `;
+            const host = localStorage.getItem('node_host');
+            const port = localStorage.getItem('node_port') || '8080';
+            const token = localStorage.getItem('node_token');
+            if (!host || !token) throw new Error("Daemon credentials missing");
+            const nodeUrl = `http://${host}:${port}`;
 
-            await tauriBridge.sshExecute(script);
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'PUT', '/api/v1/system/docker-config', {
+                config: {
+                    "dns": ["1.1.1.1", "8.8.8.8"]
+                }
+            });
+
             await logAction("Application du correctif DNS IPv4 Docker (1.1.1.1 / 8.8.8.8)", {});
             setStatusMessage("DNS Docker configurés sur 1.1.1.1 & 8.8.8.8 ! Démon redémarré.");
         } catch (e: any) {

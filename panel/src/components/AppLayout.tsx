@@ -30,8 +30,7 @@ import {
     PanelLeftOpen,
     Blocks,
     Clock,
-    Server,
-    Terminal
+    Server
 } from 'lucide-react';
 
 const NAV_ITEMS = [
@@ -114,7 +113,7 @@ export const AppLayout: React.FC = () => {
                 const token = localStorage.getItem('node_token');
                 if (host && token) {
                     const nodeUrl = `http://${host}:${port}`;
-                    tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${sessionUuid}.json`, 'delete').catch(() => {});
+                    tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});
                 }
             }
         }).then(un => {
@@ -140,7 +139,7 @@ export const AppLayout: React.FC = () => {
                 const token = localStorage.getItem('node_token');
                 if (host && token) {
                     const nodeUrl = `http://${host}:${port}`;
-                    await tauriBridge.nodeFileAction(nodeUrl, token, `/minecraft/.panel_sessions/${sessionUuid}.json`, 'delete').catch(() => {});
+                    await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});
                 }
             }
         } catch (e) {

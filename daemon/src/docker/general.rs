@@ -25,14 +25,17 @@ impl DockerManager {
             let image = c.image.unwrap_or_default();
             let status = c.status.unwrap_or_default();
             let state = c.state.unwrap_or_default();
-            
+
             let mut ports_str = String::new();
             if let Some(ports) = c.ports {
                 for p in ports {
                     let ip = p.ip.unwrap_or_default();
                     let public = p.public_port.map(|v| v.to_string()).unwrap_or_default();
                     let private = p.private_port.to_string();
-                    let typ = p.typ.map(|t| t.to_string()).unwrap_or_else(|| "tcp".to_string());
+                    let typ = p
+                        .typ
+                        .map(|t| t.to_string())
+                        .unwrap_or_else(|| "tcp".to_string());
                     if !ports_str.is_empty() {
                         ports_str.push_str(", ");
                     }
@@ -79,7 +82,7 @@ impl DockerManager {
         let mut result = Vec::new();
         for img in images {
             let id = img.id.clone();
-            
+
             // Repotags is usually ["repository:tag"]
             let mut repository = "<none>".to_string();
             let mut tag = "<none>".to_string();
@@ -121,7 +124,7 @@ impl DockerManager {
             .output()
             .await
             .context("Failed to execute docker cli command")?;
-            
+
         if output.status.success() {
             Ok(String::from_utf8_lossy(&output.stdout).to_string())
         } else {

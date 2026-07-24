@@ -5,7 +5,7 @@ pub mod read;
 pub mod write;
 
 pub use action::perform_action;
-pub use hash::hash_file;
+pub use hash::{hash_file, hash_multiple_files};
 pub use list::list_dir;
 pub use read::read_file;
 pub use write::write_file;

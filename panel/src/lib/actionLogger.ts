@@ -18,16 +18,12 @@ export async function logAction(action: string, details?: any) {
         const user = localStorage.getItem('panel_username') || localStorage.getItem('panel_display_name') || localStorage.getItem('ssh_username') || 'Anonyme';
         const userId = localStorage.getItem('panel_session_uuid') || 'unknown';
         
-        const logEntry: ActionLog = {
-            id: crypto.randomUUID(),
-            timestamp: Date.now(),
+        const logEntry = {
             user,
-            userId,
+            user_id: userId,
             action,
-            details
+            details: details ? JSON.stringify(details) : undefined
         };
-        
-        const logLine = JSON.stringify(logEntry) + "\n";
         
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
@@ -35,15 +31,7 @@ export async function logAction(action: string, details?: any) {
         if (!host || !token) return;
         const nodeUrl = `http://${host}:${port}`;
 
-        const logPath = '/minecraft/.panel_logs/history.jsonl';
-        
-        // Ensure folder exists
-        await tauriBridge.nodeFileAction(nodeUrl, token, '/minecraft/.panel_logs', "mkdir").catch(() => {});
-        
-        // Read existing, append, write
-        const existing = await tauriBridge.nodeReadFileText(nodeUrl, token, logPath).catch(() => "");
-        await tauriBridge.nodeWriteFile(nodeUrl, token, logPath, existing + logLine);
-        
+        await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/v1/history', logEntry);
     } catch (e) {
         console.error('Failed to log action:', e);
     }

@@ -1,3 +1,4 @@
+pub mod backups;
 pub mod crontab;
 pub mod docker;
 pub mod health;
@@ -18,6 +19,10 @@ pub fn router() -> Router<AppState> {
         .route("/api/v1/metrics", get(metrics::get_metrics))
         .route("/api/v1/update", post(update::trigger_update))
         .route(
+            "/api/v1/system/backups/{server_id}",
+            get(backups::list_backups).post(backups::create_backup),
+        )
+        .route(
             "/api/v1/system/crontab",
             get(crontab::get_crontab).put(crontab::update_crontab),
         )
@@ -36,11 +41,11 @@ pub fn router() -> Router<AppState> {
         )
         .route(
             "/api/v1/system/docker/containers/{id}",
-            axum::routing::put(docker::update_container)
+            axum::routing::put(docker::update_container),
         )
         .route(
             "/api/v1/system/docker/containers/{id}/recreate",
-            post(docker::recreate_container)
+            post(docker::recreate_container),
         )
         .route(
             "/api/v1/system/docker/containers/{id}/action",
@@ -54,10 +59,7 @@ pub fn router() -> Router<AppState> {
             "/api/v1/system/docker/containers/{id}/inspect",
             get(docker::container_inspect),
         )
-        .route(
-            "/api/v1/system/docker/images",
-            get(docker::list_all_images),
-        )
+        .route("/api/v1/system/docker/images", get(docker::list_all_images))
         .route(
             "/api/v1/system/docker/images/pull",
             post(docker::pull_image),
@@ -66,8 +68,5 @@ pub fn router() -> Router<AppState> {
             "/api/v1/system/docker/images/{id}",
             axum::routing::delete(docker::remove_image),
         )
-        .route(
-            "/api/v1/system/docker/prune",
-            post(docker::system_prune),
-        )
+        .route("/api/v1/system/docker/prune", post(docker::system_prune))
 }

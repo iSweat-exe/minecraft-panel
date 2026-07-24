@@ -139,23 +139,22 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
         let isMounted = true;
         const computeHashes = async () => {
             try {
-                const cmd = `cd '${currentPath.replace(/'/g, "'\\''")}' && sha1sum *.jar *.disable *.disabled 2>/dev/null`;
-                const output = await tauriBridge.sshExecute(cmd);
+                const host = localStorage.getItem('node_host');
+                const port = localStorage.getItem('node_port') || '8080';
+                const token = localStorage.getItem('node_token');
+                if (!host || !token) return;
+                const nodeUrl = `http://${host}:${port}`;
+
+                const res = await tauriBridge.nodeApiRequest(
+                    nodeUrl,
+                    token,
+                    "POST",
+                    "/api/v1/files/hash_multiple",
+                    { path: currentPath, patterns: ["*.jar", "*.disable", "*.disabled"] }
+                );
+                const fileHashMap = res?.data?.hashes || {};
                 
-                if (!output || !isMounted) return;
-                
-                const fileHashMap: Record<string, string> = {};
-                const lines = output.trim().split('\n');
-                for (const line of lines) {
-                    const parts = line.trim().split(/\s+/);
-                    if (parts.length >= 2) {
-                        const hash = parts[0];
-                        const filename = parts.slice(1).join(' '); // filename can have spaces
-                        if (hash.length === 40) {
-                            fileHashMap[filename] = hash;
-                        }
-                    }
-                }
+                if (!isMounted) return;
                 
                 if (Object.keys(fileHashMap).length > 0) {
                     await preloadModsByHashes(fileHashMap);
@@ -164,7 +163,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                     }
                 }
             } catch (e) {
-                console.error("Failed to compute hashes via SSH", e);
+                console.error("Failed to compute hashes via Daemon API", e);
             }
         };
         
