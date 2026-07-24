@@ -7,6 +7,7 @@ pub mod info;
 pub mod logs;
 pub mod memory;
 pub mod metrics;
+pub mod pty;
 pub mod update;
 
 use crate::routes::AppState;
@@ -33,6 +34,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/v1/system/memory", get(memory::get_memory))
         .route("/api/v1/system/host", get(host::get_host))
         .route("/api/v1/system/host/exec", post(host::execute_command))
+        .route("/api/v1/system/host/pty", get(pty::host_pty_ws))
         .route("/api/v1/system/health", get(health::get_health))
         .route("/api/v1/system/logs", get(logs::get_logs))
         .route(

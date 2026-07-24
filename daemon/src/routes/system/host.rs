@@ -95,7 +95,7 @@ pub async fn execute_command(
 
     match output_result {
         Ok(output) => {
-            let mut stdout = String::from_utf8_lossy(&output.stdout).to_string();
+            let stdout = String::from_utf8_lossy(&output.stdout).to_string();
             // script command often leaves \r\n, but sometimes we just want to pass the raw output to xterm.
             // xterm handles \r\n natively.
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();

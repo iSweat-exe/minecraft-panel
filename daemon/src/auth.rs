@@ -22,10 +22,19 @@ where
             .get::<DaemonConfig>()
             .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Config missing"))?;
 
-        let token = parts
+        let mut token = parts
             .headers
             .get(NODE_TOKEN_HEADER)
-            .and_then(|h| h.to_str().ok());
+            .and_then(|h| h.to_str().ok())
+            .map(|s| s.to_string());
+
+        if token.is_none() {
+            if let Ok(Query(WsAuthQuery { token: Some(t) })) =
+                Query::<WsAuthQuery>::from_request_parts(parts, _state).await
+            {
+                token = Some(t);
+            }
+        }
 
         match token {
             Some(t) if t == config.node_token => Ok(NodeAuth),
