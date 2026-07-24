@@ -44,7 +44,8 @@ async fn handle_pty_socket(mut socket: WebSocket) {
     #[cfg(not(target_os = "windows"))]
     let cmd = std::env::var("SHELL").unwrap_or_else(|_| "/bin/bash".to_string());
 
-    let cmd_builder = CommandBuilder::new(cmd);
+    #[allow(unused_mut)]
+    let mut cmd_builder = CommandBuilder::new(cmd);
     
     #[cfg(not(target_os = "windows"))]
     {
