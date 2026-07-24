@@ -105,8 +105,8 @@ export const HistoryPanel: React.FC = () => {
                 return {
                     id: log.id,
                     timestamp: log.timestamp * 1000,
-                    user: log.user,
-                    userId: log.user_id,
+                    user: log.user || 'Anonyme',
+                    userId: log.user_id || 'unknown',
                     action: log.action,
                     details
                 };
