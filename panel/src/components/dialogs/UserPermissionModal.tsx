@@ -340,7 +340,7 @@ export const UserPermissionModal: React.FC<UserPermissionModalProps> = ({
 
                     {/* Footer Actions */}
                     <div className="flex items-center justify-between pt-4 border-t border-border">
-                        {userToEdit && userToEdit.role !== 'admin' ? (
+                        {userToEdit ? (
                             <Button
                                 type="button"
                                 onClick={handleDelete}

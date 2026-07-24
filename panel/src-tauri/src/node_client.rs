@@ -1037,4 +1037,86 @@ impl DaemonClient {
 
         Ok(json)
     }
+
+    pub async fn get_users(&self) -> Result<Vec<crate::models::PanelUser>, AppError> {
+        let url = self.build_url("/api/users");
+        let res = self
+            .client
+            .get(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!(
+                "Daemon returned HTTP {}",
+                res.status()
+            )));
+        }
+
+        let body: ApiResponse<Vec<crate::models::PanelUser>> = res.json().await?;
+        if body.success {
+            Ok(body.data.unwrap_or_default())
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "Unknown daemon error".into()),
+            ))
+        }
+    }
+
+    pub async fn save_user(&self, user: &crate::models::PanelUser) -> Result<Vec<crate::models::PanelUser>, AppError> {
+        let url = self.build_url("/api/users");
+        let res = self
+            .client
+            .post(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .json(user)
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!(
+                "Daemon returned HTTP {}",
+                res.status()
+            )));
+        }
+
+        let body: ApiResponse<Vec<crate::models::PanelUser>> = res.json().await?;
+        if body.success {
+            Ok(body.data.unwrap_or_default())
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "Unknown daemon error".into()),
+            ))
+        }
+    }
+
+    pub async fn delete_user(&self, username: &str) -> Result<Vec<crate::models::PanelUser>, AppError> {
+        let url = self.build_url(&format!("/api/users/{}", urlencoding::encode(username)));
+        let res = self
+            .client
+            .delete(&url)
+            .header(NODE_TOKEN_HEADER, &self.node_token)
+            .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string())
+            .send()
+            .await?;
+
+        if !res.status().is_success() {
+            return Err(AppError::Message(format!(
+                "Daemon returned HTTP {}",
+                res.status()
+            )));
+        }
+
+        let body: ApiResponse<Vec<crate::models::PanelUser>> = res.json().await?;
+        if body.success {
+            Ok(body.data.unwrap_or_default())
+        } else {
+            Err(AppError::Message(
+                body.error.unwrap_or_else(|| "Unknown daemon error".into()),
+            ))
+        }
+    }
 }

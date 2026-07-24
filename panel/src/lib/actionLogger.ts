@@ -22,7 +22,7 @@ export async function logAction(action: string, details?: any) {
             user,
             user_id: userId,
             action,
-            details: details ? JSON.stringify(details) : undefined
+            details: details ? JSON.stringify(details) : "{}"
         };
         
         const host = localStorage.getItem('node_host');

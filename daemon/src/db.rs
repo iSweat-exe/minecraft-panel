@@ -4,13 +4,19 @@ use std::env;
 
 pub async fn init_db() -> Result<SqlitePool> {
     // Determine database path
-    let db_path = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://daemon.db".to_string());
+    let default_path = ".panel_users/daemon.db";
+    let db_path = env::var("DATABASE_URL").unwrap_or_else(|_| format!("sqlite://{}", default_path));
+
+    // Ensure the directory exists if we are using the default path
+    if db_path.starts_with("sqlite://.panel_users/") {
+        let _ = std::fs::create_dir_all(".panel_users");
+    }
 
     use sqlx::sqlite::SqliteConnectOptions;
     use std::str::FromStr;
 
     let options = SqliteConnectOptions::from_str(&db_path)
-        .unwrap_or_else(|_| SqliteConnectOptions::new().filename("daemon.db"))
+        .unwrap_or_else(|_| SqliteConnectOptions::new().filename(default_path))
         .create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
