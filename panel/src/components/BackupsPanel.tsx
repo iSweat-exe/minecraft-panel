@@ -63,7 +63,7 @@ export const BackupsPanel: React.FC = () => {
                     </div>
                     <h3 className="text-lg font-semibold text-foreground mb-2">Restaurer un Monde</h3>
                     <p className="text-sm text-muted-foreground mb-6">
-                        Envoyez une archive <code>.zip</code> pour écraser et restaurer un monde.
+                        Envoyez une archive <code>.tar.gz</code> pour écraser et restaurer un monde.
                         <br/><span className="text-warning/80 text-xs">Le serveur s'arrêtera automatiquement.</span>
                     </p>
                     <Button

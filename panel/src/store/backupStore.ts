@@ -109,10 +109,10 @@ export const useBackupStore = create<BackupStore>()(
             const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
             const time = now.toTimeString().split(' ')[0].replace(/:/g, '-'); // HH-mm-ss
 
-            const defaultName = `minecraft_backup_${date}_${time}.zip`;
+            const defaultName = `minecraft_backup_${date}_${time}.tar.gz`;
             
             const localPath = await save({
-                filters: [{ name: 'Archive ZIP', extensions: ['zip'] }],
+                filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],
                 defaultPath: defaultName,
                 title: 'Sauvegarder le monde Minecraft'
             });
@@ -146,7 +146,7 @@ export const useBackupStore = create<BackupStore>()(
             }
 
             set({ statusText: 'Compression du monde sur le serveur...' });
-            const remotePath = `${serverPath}/${worldName}_backup.zip`;
+            const remotePath = `${serverPath}/${worldName}_backup.tar.gz`;
             
             await tauriBridge.nodeFileAction(nodeUrl, token, serverPath, { 
                 archive: { 
@@ -188,7 +188,7 @@ export const useBackupStore = create<BackupStore>()(
             const nodeUrl = `http://${host}:${port}`;
             
             const selected = await open({
-                filters: [{ name: 'Archive ZIP', extensions: ['zip'] }],
+                filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],
                 multiple: false,
                 title: 'Restaurer une sauvegarde'
             });
@@ -206,7 +206,7 @@ export const useBackupStore = create<BackupStore>()(
 
             const localFileName = localPath.split(/[/\\]/).pop();
             set({ statusText: 'Envoi de', currentFile: localFileName });
-            const remotePath = `${serverPath}/restore_backup.zip`;
+            const remotePath = `${serverPath}/restore_backup.tar.gz`;
             await tauriBridge.nodeUploadFile(nodeUrl, token, localPath, remotePath);
 
             set({ statusText: 'Restauration...', currentFile: null });
