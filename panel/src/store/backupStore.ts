@@ -128,14 +128,21 @@ export const useBackupStore = create<BackupStore>()(
             const worldName = match ? match[1].trim() : 'world';
 
             set({ statusText: 'Recherche des dimensions...' });
-            const targets = [worldName];
+            const targets: string[] = [];
             try {
                 const dirList = await tauriBridge.nodeListDir(nodeUrl, token, serverPath);
                 const folders = dirList.filter((d: any) => d.is_dir).map((d: any) => d.name);
+                
+                if (folders.includes(worldName)) targets.push(worldName);
                 if (folders.includes(`${worldName}_nether`)) targets.push(`${worldName}_nether`);
                 if (folders.includes(`${worldName}_the_end`)) targets.push(`${worldName}_the_end`);
             } catch (e) {
                 console.warn("Failed to list dir for extra dimensions");
+                targets.push(worldName); // fallback
+            }
+
+            if (targets.length === 0) {
+                throw new Error(`Le monde '${worldName}' n'existe pas encore. Démarrez le serveur une première fois.`);
             }
 
             set({ statusText: 'Compression du monde sur le serveur...' });

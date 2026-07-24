@@ -57,9 +57,10 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
                 cmd.arg(filename);
             }
 
-            let status = cmd.status()?;
-            if !status.success() {
-                bail!("Failed to create archive");
+            let output = cmd.output()?;
+            if !output.status.success() {
+                let err_msg = String::from_utf8_lossy(&output.stderr);
+                bail!("Failed to create archive: {}", err_msg.trim());
             }
         }
         FileAction::Extract => {
