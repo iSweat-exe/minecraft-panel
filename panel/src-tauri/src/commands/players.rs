@@ -31,11 +31,16 @@ pub async fn get_players_list(
 ) -> Result<Vec<PlayerInfo>, AppError> {
     let client = DaemonClient::new(node_url, node_token);
 
+    let usercache_path = format!("{}/usercache.json", server_path);
+    let ops_path = format!("{}/ops.json", server_path);
+    let banned_path = format!("{}/banned-players.json", server_path);
+    let whitelist_path = format!("{}/whitelist.json", server_path);
+
     let (usercache_res, ops_res, banned_res, whitelist_res) = tokio::join!(
-        client.read_file(&format!("{}/usercache.json", server_path)),
-        client.read_file(&format!("{}/ops.json", server_path)),
-        client.read_file(&format!("{}/banned-players.json", server_path)),
-        client.read_file(&format!("{}/whitelist.json", server_path))
+        client.read_file(&usercache_path),
+        client.read_file(&ops_path),
+        client.read_file(&banned_path),
+        client.read_file(&whitelist_path)
     );
 
     let parse = |res: Result<String, _>| -> Vec<BasePlayer> {
