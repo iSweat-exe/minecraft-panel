@@ -9,6 +9,7 @@ pub mod users;
 use crate::config::DaemonConfig;
 use crate::docker::DockerManager;
 use axum::Router;
+use axum::extract::DefaultBodyLimit;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -27,6 +28,7 @@ pub fn create_router(state: AppState) -> Router {
         .merge(sessions::router())
         .merge(history::router())
         .merge(automations::router())
+        .layer(DefaultBodyLimit::disable())
         .layer(axum::Extension(state.config.clone()))
         .with_state(state)
 }

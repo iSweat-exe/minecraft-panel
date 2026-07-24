@@ -1,4 +1,3 @@
-fix(api): implement missing upload/download routes in daemon
+fix(api): fix 413 Payload Too Large when uploading files
 
-- daemon: implement `/api/v1/files/upload` and `/api/v1/files/download` endpoints that are used by Tauri `node_client` to handle Modrinth jar downloads.
-- panel: ensure `useSessions` always sends `ipv6` as `null` if undefined to prevent `422 Unprocessable Entity` parsing errors on the daemon.
+- daemon: disable Axum's `DefaultBodyLimit` to allow uploading large files (e.g. mods from Modrinth) via the new `/api/v1/files/upload` route.
