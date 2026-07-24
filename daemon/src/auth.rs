@@ -17,10 +17,13 @@ where
     type Rejection = (StatusCode, &'static str);
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        let config = parts
-            .extensions
-            .get::<DaemonConfig>()
-            .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Config missing"))?;
+        let node_token = {
+            let config = parts
+                .extensions
+                .get::<DaemonConfig>()
+                .ok_or((StatusCode::INTERNAL_SERVER_ERROR, "Config missing"))?;
+            config.node_token.clone()
+        };
 
         let mut token = parts
             .headers
@@ -37,7 +40,7 @@ where
         }
 
         match token {
-            Some(t) if t == config.node_token => Ok(NodeAuth),
+            Some(t) if t == node_token => Ok(NodeAuth),
             _ => Err((StatusCode::UNAUTHORIZED, "Invalid or missing node token")),
         }
     }
