@@ -25,7 +25,12 @@ pub async fn get_panel_users(
         .await;
 
     match client.read_file(DB_PATH).await {
-        Ok(text) => {
+        Ok(base64_text) => {
+            use base64::Engine;
+            let decoded = base64::engine::general_purpose::STANDARD
+                .decode(&base64_text)
+                .unwrap_or_default();
+            let text = String::from_utf8(decoded).unwrap_or_default();
             let users: Vec<PanelUser> = serde_json::from_str(&text).unwrap_or_default();
             Ok(users)
         }

@@ -1,0 +1,6 @@
+fix(panel): correctly decode Base64 when reading panel users
+
+- The daemon's `read_file` endpoint returns a Base64-encoded string for file contents.
+- `get_panel_users` was attempting to parse this Base64 string directly as JSON, resulting in a parsing failure and defaulting to an empty user list.
+- This prevented sub-users from logging in ("Utilisateur non trouvé").
+- Added proper Base64 decoding in `get_panel_users` before parsing the JSON.
