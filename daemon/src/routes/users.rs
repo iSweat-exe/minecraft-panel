@@ -157,7 +157,7 @@ async fn save_user(
     };
 
     match query_result {
-        Ok(_) => list_users(State(state)).await.into_response(),
+        Ok(_) => list_users(_auth, State(state)).await.into_response(),
         Err(e) => Json(ApiResponse::<()> {
             success: false,
             data: None,
@@ -187,7 +187,7 @@ async fn delete_user(
         .await;
 
     match query_result {
-        Ok(_) => list_users(State(state)).await.into_response(),
+        Ok(_) => list_users(_auth, State(state)).await.into_response(),
         Err(e) => Json(ApiResponse::<()> {
             success: false,
             data: None,
