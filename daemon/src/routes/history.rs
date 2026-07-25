@@ -31,76 +31,57 @@ pub fn router() -> Router<AppState> {
     Router::new().route("/api/history", get(list_history).post(save_history))
 }
 
-async fn list_history(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
-    let result =
+async fn list_history(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<Vec<HistoryEntry>>>, crate::error::DaemonError> {
+    let rows =
         sqlx::query_as::<_, DbHistory>("SELECT * FROM history ORDER BY timestamp DESC LIMIT 50")
             .fetch_all(&state.db)
-            .await;
+            .await?;
 
-    match result {
-        Ok(rows) => {
-            let mut history = Vec::new();
-            for row in rows {
-                history.push(HistoryEntry {
-                    id: Some(row.id),
-                    user: row.user,
-                    user_id: row.user_id,
-                    action: row.action,
-                    details: row.details,
-                    timestamp: Some(row.timestamp),
-                });
-            }
-            Json(ApiResponse {
-                success: true,
-                data: Some(history),
-                error: None,
-            })
-            .into_response()
-        }
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
+    let mut history = Vec::new();
+    for row in rows {
+        history.push(HistoryEntry {
+            id: Some(row.id),
+            user: row.user,
+            user_id: row.user_id,
+            action: row.action,
+            details: row.details,
+            timestamp: Some(row.timestamp),
+        });
     }
+    
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(history),
+        error: None,
+    }))
 }
 
 async fn save_history(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<HistoryEntry>,
-) -> impl IntoResponse {
+) -> Result<Json<ApiResponse<HistoryEntry>>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
-    let id = payload
-        .id
-        .clone()
-        .unwrap_or_else(|| Uuid::new_v4().to_string());
+    let id = payload.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
 
-    let query_result = sqlx::query(
-        "INSERT INTO history (id, user, user_id, action, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+    sqlx::query(
+        "INSERT INTO history (id, user, user_id, action, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)"
     )
     .bind(&id)
     .bind(&payload.user)
     .bind(&payload.user_id)
     .bind(&payload.action)
     .bind(&payload.details)
-    .bind(now)
+    .bind(payload.timestamp.unwrap_or(now))
     .execute(&state.db)
-    .await;
+    .await?;
 
-    match query_result {
-        Ok(_) => Json(ApiResponse {
-            success: true,
-            data: Some(payload),
-            error: None,
-        })
-        .into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(payload),
+        error: None,
+    }))
 }

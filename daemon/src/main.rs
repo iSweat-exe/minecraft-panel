@@ -3,6 +3,7 @@ mod config;
 mod console;
 mod db;
 mod docker;
+mod error;
 mod files;
 mod metrics;
 mod routes;

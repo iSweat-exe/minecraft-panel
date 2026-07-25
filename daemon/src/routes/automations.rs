@@ -43,53 +43,46 @@ pub fn router() -> Router<AppState> {
         .route("/api/automations/{id}", delete(delete_automation))
 }
 
-async fn list_automations(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
-    let result = sqlx::query_as::<_, DbAutomation>("SELECT * FROM automations")
+async fn list_automations(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<Vec<Automation>>>, crate::error::DaemonError> {
+    let rows = sqlx::query_as::<_, DbAutomation>("SELECT * FROM automations")
         .fetch_all(&state.db)
-        .await;
+        .await?;
 
-    match result {
-        Ok(rows) => {
-            let mut automations = Vec::new();
-            for row in rows {
-                automations.push(Automation {
-                    id: Some(row.id),
-                    name: row.name,
-                    cron_expr: row.cron_expr,
-                    action_type: row.action_type,
-                    target_server: row.target_server,
-                    payload: row.payload,
-                    created_at: Some(row.created_at),
-                });
-            }
-            Json(ApiResponse {
-                success: true,
-                data: Some(automations),
-                error: None,
-            })
-            .into_response()
-        }
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
+    let mut automations = Vec::new();
+    for row in rows {
+        automations.push(Automation {
+            id: Some(row.id),
+            name: row.name,
+            cron_expr: row.cron_expr,
+            action_type: row.action_type,
+            target_server: row.target_server,
+            payload: row.payload,
+            created_at: Some(row.created_at),
+        });
     }
+    
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(automations),
+        error: None,
+    }))
 }
 
 async fn save_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Automation>,
-) -> impl IntoResponse {
+) -> Result<Json<ApiResponse<Automation>>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
     let id = payload
         .id
         .clone()
         .unwrap_or_else(|| Uuid::new_v4().to_string());
 
-    let query_result = sqlx::query(
+    sqlx::query(
         "INSERT INTO automations (id, name, cron_expr, action_type, target_server, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET name = excluded.name, cron_expr = excluded.cron_expr, action_type = excluded.action_type, target_server = excluded.target_server, payload = excluded.payload"
     )
     .bind(&id)
@@ -98,52 +91,28 @@ async fn save_automation(
     .bind(&payload.action_type)
     .bind(&payload.target_server)
     .bind(&payload.payload)
-    .bind(now)
+    .bind(payload.created_at.unwrap_or(now))
     .execute(&state.db)
-    .await;
+    .await?;
 
-    // TODO: dynamically update tokio-cron-scheduler
-
-    match query_result {
-        Ok(_) => Json(ApiResponse {
-            success: true,
-            data: Some(payload),
-            error: None,
-        })
-        .into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(payload),
+        error: None,
+    }))
 }
 
 async fn delete_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> impl IntoResponse {
-    let query_result = sqlx::query("DELETE FROM automations WHERE id = ?")
+) -> Result<Json<ApiResponse<Vec<Automation>>>, crate::error::DaemonError> {
+    sqlx::query("DELETE FROM automations WHERE id = ?")
         .bind(&id)
         .execute(&state.db)
-        .await;
+        .await?;
 
     // TODO: dynamically remove from tokio-cron-scheduler
 
-    match query_result {
-        Ok(_) => Json(ApiResponse::<()> {
-            success: true,
-            data: None,
-            error: None,
-        })
-        .into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    list_automations(_auth, State(state)).await
 }

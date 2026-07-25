@@ -43,49 +43,42 @@ struct DbSession {
     os: String,
 }
 
-async fn list_sessions(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
-    let result = sqlx::query_as::<_, DbSession>("SELECT * FROM sessions")
+async fn list_sessions(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<Vec<Session>>>, crate::error::DaemonError> {
+    let rows = sqlx::query_as::<_, DbSession>("SELECT * FROM sessions")
         .fetch_all(&state.db)
-        .await;
+        .await?;
 
-    match result {
-        Ok(rows) => {
-            let mut sessions = Vec::new();
-            for row in rows {
-                sessions.push(Session {
-                    uuid: row.uuid,
-                    name: row.name,
-                    avatar: row.avatar,
-                    connected_at: row.connected_at,
-                    last_seen: row.last_seen,
-                    ip: row.ip,
-                    ipv6: row.ipv6,
-                    location: row.location,
-                    os: row.os,
-                });
-            }
-            Json(ApiResponse {
-                success: true,
-                data: Some(sessions),
-                error: None,
-            })
-            .into_response()
-        }
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
+    let mut sessions = Vec::new();
+    for row in rows {
+        sessions.push(Session {
+            uuid: row.uuid,
+            name: row.name,
+            avatar: row.avatar,
+            connected_at: row.connected_at,
+            last_seen: row.last_seen,
+            ip: row.ip,
+            ipv6: row.ipv6,
+            location: row.location,
+            os: row.os,
+        });
     }
+    
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(sessions),
+        error: None,
+    }))
 }
 
 async fn save_session(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Session>,
-) -> impl IntoResponse {
-    let query_result = sqlx::query(
+) -> Result<Json<ApiResponse<Session>>, crate::error::DaemonError> {
+    sqlx::query(
         "INSERT INTO sessions (uuid, name, avatar, connected_at, last_seen, ip, ipv6, location, os) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
          ON CONFLICT(uuid) DO UPDATE SET last_seen = excluded.last_seen, name = excluded.name, avatar = excluded.avatar, ip = excluded.ip, ipv6 = excluded.ipv6, location = excluded.location, os = excluded.os"
@@ -100,46 +93,24 @@ async fn save_session(
     .bind(&payload.location)
     .bind(&payload.os)
     .execute(&state.db)
-    .await;
+    .await?;
 
-    match query_result {
-        Ok(_) => Json(ApiResponse {
-            success: true,
-            data: Some(payload),
-            error: None,
-        })
-        .into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(payload),
+        error: None,
+    }))
 }
 
 async fn delete_session(
     _auth: NodeAuth,
     State(state): State<AppState>,
-    Path(uuid): Path<String>,
-) -> impl IntoResponse {
-    let query_result = sqlx::query("DELETE FROM sessions WHERE uuid = ?")
-        .bind(&uuid)
+    Path(id): Path<String>,
+) -> Result<Json<ApiResponse<Vec<Session>>>, crate::error::DaemonError> {
+    sqlx::query("DELETE FROM sessions WHERE uuid = ?")
+        .bind(&id)
         .execute(&state.db)
-        .await;
+        .await?;
 
-    match query_result {
-        Ok(_) => Json(ApiResponse::<()> {
-            success: true,
-            data: None,
-            error: None,
-        })
-        .into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    list_sessions(_auth, State(state)).await
 }

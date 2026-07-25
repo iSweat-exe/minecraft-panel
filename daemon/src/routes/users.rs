@@ -45,50 +45,43 @@ struct DbUser {
     display_name: Option<String>,
 }
 
-async fn list_users(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
-    let users_result = sqlx::query_as::<_, DbUser>("SELECT * FROM users")
+async fn list_users(
+    _auth: NodeAuth,
+    State(state): State<AppState>,
+) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
+    let rows = sqlx::query_as::<_, DbUser>("SELECT * FROM users")
         .fetch_all(&state.db)
-        .await;
+        .await?;
 
-    match users_result {
-        Ok(rows) => {
-            let mut users = Vec::new();
-            for row in rows {
-                let permissions: Vec<String> =
-                    serde_json::from_str(&row.permissions).unwrap_or_default();
-                users.push(PanelUser {
-                    uuid: Some(row.uuid),
-                    username: row.username,
-                    role: row.role,
-                    permissions,
-                    created_at: Some(row.created_at),
-                    password_hash: row.password_hash,
-                    password: None,
-                    avatar_base64: row.avatar_base64,
-                    display_name: row.display_name,
-                });
-            }
-            Json(ApiResponse {
-                success: true,
-                data: Some(users),
-                error: None,
-            })
-            .into_response()
-        }
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
+    let mut users = Vec::new();
+    for row in rows {
+        let permissions: Vec<String> =
+            serde_json::from_str(&row.permissions).unwrap_or_default();
+        users.push(PanelUser {
+            uuid: Some(row.uuid),
+            username: row.username,
+            role: row.role,
+            permissions,
+            created_at: Some(row.created_at),
+            password_hash: row.password_hash,
+            password: None,
+            avatar_base64: row.avatar_base64,
+            display_name: row.display_name,
+        });
     }
+    
+    Ok(Json(ApiResponse {
+        success: true,
+        data: Some(users),
+        error: None,
+    }))
 }
 
 async fn save_user(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<PanelUser>,
-) -> impl IntoResponse {
+) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
     let uuid = payload.uuid.unwrap_or_else(|| Uuid::new_v4().to_string());
     let perms_json =
@@ -102,30 +95,14 @@ async fn save_user(
     let existing = sqlx::query_as::<_, UuidRow>("SELECT uuid FROM users WHERE username = ?")
         .bind(&payload.username)
         .fetch_optional(&state.db)
-        .await;
-
-    if let Err(e) = existing {
-        return Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response();
-    }
-
-    let existing = existing.unwrap();
+        .await?;
 
     // Prevent creating a new user with the reserved root username
     if payload.username == "iSweat" && existing.is_none() {
-        return Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some("Le pseudo 'iSweat' est réservé au compte root".into()),
-        })
-        .into_response();
+        return Err(crate::error::DaemonError::Custom("Le pseudo 'iSweat' est réservé au compte root".into()));
     }
 
-    let query_result = if let Some(row) = existing {
+    if let Some(row) = existing {
         sqlx::query(
             "UPDATE users SET role = ?, permissions = ?, password_hash = COALESCE(?, password_hash), avatar_base64 = ?, display_name = ? WHERE uuid = ?"
         )
@@ -136,7 +113,7 @@ async fn save_user(
         .bind(&payload.display_name)
         .bind(&row.uuid)
         .execute(&state.db)
-        .await
+        .await?;
     } else {
         sqlx::query(
             "INSERT INTO users (uuid, username, role, permissions, created_at, password_hash, avatar_base64, display_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -150,46 +127,25 @@ async fn save_user(
         .bind(&payload.avatar_base64)
         .bind(&payload.display_name)
         .execute(&state.db)
-        .await
-    };
-
-    match query_result {
-        Ok(_) => list_users(_auth, State(state)).await.into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
+        .await?;
     }
+
+    list_users(_auth, State(state)).await
 }
 
 async fn delete_user(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(username): Path<String>,
-) -> impl IntoResponse {
+) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
     if username == "iSweat" {
-        return Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some("Le compte root 'iSweat' ne peut pas être supprimé".into()),
-        })
-        .into_response();
+        return Err(crate::error::DaemonError::Custom("Le compte root 'iSweat' ne peut pas être supprimé".into()));
     }
 
-    let query_result = sqlx::query("DELETE FROM users WHERE username = ?")
+    sqlx::query("DELETE FROM users WHERE username = ?")
         .bind(&username)
         .execute(&state.db)
-        .await;
+        .await?;
 
-    match query_result {
-        Ok(_) => list_users(_auth, State(state)).await.into_response(),
-        Err(e) => Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        })
-        .into_response(),
-    }
+    list_users(_auth, State(state)).await
 }
