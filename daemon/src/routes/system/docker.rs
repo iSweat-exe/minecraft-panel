@@ -132,62 +132,10 @@ pub async fn run_container(
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
 ) -> Json<ApiResponse<String>> {
-    let mut args = vec![
-        "run",
-        "-d",
-        "--security-opt",
-        "seccomp=unconfined",
-        "--security-opt",
-        "apparmor=unconfined",
-    ];
+    let args = build_docker_run_args(&payload);
+    let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
-    if let Some(name) = &payload.name {
-        let clean = name.trim();
-        if !clean.is_empty() {
-            args.push("--name");
-            args.push(clean);
-        }
-    }
-
-    if let Some(policy) = &payload.restart_policy {
-        let clean = policy.trim();
-        if !clean.is_empty() {
-            args.push("--restart");
-            args.push(clean);
-        }
-    }
-
-    let mut port_args = Vec::new();
-    if let Some(ports) = &payload.ports {
-        for p in ports.split(',') {
-            let clean = p.trim();
-            if !clean.is_empty() {
-                port_args.push(clean.to_string());
-            }
-        }
-    }
-    for p in &port_args {
-        args.push("-p");
-        args.push(p);
-    }
-
-    let mut env_args = Vec::new();
-    if let Some(envs) = &payload.env_vars {
-        for e in envs {
-            let clean = e.trim();
-            if !clean.is_empty() {
-                env_args.push(clean.to_string());
-            }
-        }
-    }
-    for e in &env_args {
-        args.push("-e");
-        args.push(e);
-    }
-
-    args.push(&payload.image);
-
-    match state.docker.run_docker_command(&args).await {
+    match state.docker.run_docker_command(&str_args).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -258,62 +206,10 @@ pub async fn recreate_container(
 ) -> Json<ApiResponse<String>> {
     let _ = state.docker.run_docker_command(&["rm", "-f", &id]).await;
 
-    let mut args = vec![
-        "run",
-        "-d",
-        "--security-opt",
-        "seccomp=unconfined",
-        "--security-opt",
-        "apparmor=unconfined",
-    ];
+    let args = build_docker_run_args(&payload);
+    let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
-    if let Some(name) = &payload.name {
-        let clean = name.trim();
-        if !clean.is_empty() {
-            args.push("--name");
-            args.push(clean);
-        }
-    }
-
-    if let Some(policy) = &payload.restart_policy {
-        let clean = policy.trim();
-        if !clean.is_empty() {
-            args.push("--restart");
-            args.push(clean);
-        }
-    }
-
-    let mut port_args = Vec::new();
-    if let Some(ports) = &payload.ports {
-        for p in ports.split(',') {
-            let clean = p.trim();
-            if !clean.is_empty() {
-                port_args.push(clean.to_string());
-            }
-        }
-    }
-    for p in &port_args {
-        args.push("-p");
-        args.push(p);
-    }
-
-    let mut env_args = Vec::new();
-    if let Some(envs) = &payload.env_vars {
-        for e in envs {
-            let clean = e.trim();
-            if !clean.is_empty() {
-                env_args.push(clean.to_string());
-            }
-        }
-    }
-    for e in &env_args {
-        args.push("-e");
-        args.push(e);
-    }
-
-    args.push(&payload.image);
-
-    match state.docker.run_docker_command(&args).await {
+    match state.docker.run_docker_command(&str_args).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -402,4 +298,54 @@ async fn update_docker_config_impl(new_config: serde_json::Value) -> Result<Stri
             anyhow::bail!("Config written, but systemctl reload failed: {}", err_msg)
         }
     }
+}
+
+fn build_docker_run_args(payload: &DockerRunRequest) -> Vec<String> {
+    let mut args = vec![
+        "run".to_string(),
+        "-d".to_string(),
+        "--security-opt".to_string(),
+        "seccomp=unconfined".to_string(),
+        "--security-opt".to_string(),
+        "apparmor=unconfined".to_string(),
+    ];
+
+    if let Some(name) = &payload.name {
+        let clean = name.trim();
+        if !clean.is_empty() {
+            args.push("--name".to_string());
+            args.push(clean.to_string());
+        }
+    }
+
+    if let Some(policy) = &payload.restart_policy {
+        let clean = policy.trim();
+        if !clean.is_empty() {
+            args.push("--restart".to_string());
+            args.push(clean.to_string());
+        }
+    }
+
+    if let Some(ports) = &payload.ports {
+        for p in ports.split(",") {
+            let clean = p.trim();
+            if !clean.is_empty() {
+                args.push("-p".to_string());
+                args.push(clean.to_string());
+            }
+        }
+    }
+
+    if let Some(envs) = &payload.env_vars {
+        for e in envs {
+            let clean = e.trim();
+            if !clean.is_empty() {
+                args.push("-e".to_string());
+                args.push(clean.to_string());
+            }
+        }
+    }
+
+    args.push(payload.image.clone());
+    args
 }

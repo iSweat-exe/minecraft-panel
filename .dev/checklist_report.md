@@ -88,7 +88,7 @@
 ### 🟠 Haute
 
 - [x] REF-01 — Dédupliquer `node_client.rs` (~1100 lignes → méthode `request<T>()` générique)
-- [ ] REF-02 — Extraire `build_docker_run_args()` commun à `run_container`/`recreate_container`
+- [x] REF-02 — Extraire `build_docker_run_args()` commun à `run_container`/`recreate_container`
 
 ### 🟡 Moyenne
 
