@@ -6,7 +6,7 @@
 ## 🚨 Priorités immédiates (avant toute mise en prod)
 
 - [x] **SEC-05** — Authentification manquante sur `/api/users`, `/api/sessions`, `/api/history`, `/api/automations`
-- [ ] **SEC-04** — `SessionAuth` utilise `node_token` au lieu de `jwt_secret` (auth.rs)
+- [x] **SEC-04** — `SessionAuth` utilise `node_token` au lieu de `jwt_secret` (auth.rs)
 - [ ] **SEC-03** — Refuser le démarrage du daemon si secrets non configurés (config.rs)
 - [ ] **SEC-01** — Endpoint `execute_command` : RCE via commande arbitraire (host.rs)
 - [ ] **SEC-02** — PTY WebSocket : shell root interactif sans contrainte (pty.rs)
@@ -21,7 +21,7 @@
 - [ ] SEC-01 — RCE via `execute_command` (host.rs L49-94)
 - [ ] SEC-02 — PTY WebSocket sans sandboxing (pty.rs L19-24)
 - [ ] SEC-03 — Secrets/tokens en dur par défaut (config.rs L17-19)
-- [ ] SEC-04 — JWT signé avec `node_token` au lieu de `jwt_secret` (auth.rs L64-69)
+- [x] SEC-04 — JWT signé avec `node_token` au lieu de `jwt_secret` (auth.rs L64-69)
 - [x] SEC-05 — Routes users/sessions/history/automations sans auth
 
 ### 🟠 Haute
