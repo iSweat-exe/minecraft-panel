@@ -2,12 +2,17 @@ use crate::error::AppError;
 use crate::models::PanelUser;
 use crate::node_client::DaemonClient;
 use sha2::{Digest, Sha256};
+use bcrypt::{hash, verify, DEFAULT_COST};
 
-fn hash_password(password: &str) -> String {
+fn hash_password_legacy(password: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(password.as_bytes());
     let result = hasher.finalize();
     result.iter().map(|b| format!("{:02x}", b)).collect()
+}
+
+fn hash_password(password: &str) -> String {
+    hash(password, DEFAULT_COST).unwrap()
 }
 
 #[tauri::command]
@@ -63,17 +68,27 @@ pub async fn verify_panel_user(
     username: String,
     password: String,
 ) -> Result<PanelUser, AppError> {
-    let users = get_panel_users(node_url, node_token).await?;
+    let users = get_panel_users(node_url.clone(), node_token.clone()).await?;
     let target = users
         .into_iter()
         .find(|u| u.username.to_lowercase() == username.to_lowercase());
 
     match target {
         Some(user) => {
-            let input_hash = hash_password(password.trim());
             if let Some(ref db_hash) = user.password_hash {
-                if db_hash == &input_hash {
-                    return Ok(user);
+                if db_hash.starts_with('$') {
+                    if verify(password.trim(), db_hash).unwrap_or(false) {
+                        return Ok(user);
+                    }
+                } else {
+                    let legacy_input = hash_password_legacy(password.trim());
+                    if db_hash == &legacy_input {
+                        let mut updated_user = user.clone();
+                        updated_user.password_hash = Some(hash_password(password.trim()));
+                        let client = DaemonClient::new(node_url, node_token);
+                        let _ = client.save_user(&updated_user).await;
+                        return Ok(updated_user);
+                    }
                 }
             }
             Err(AppError::Message("Mot de passe incorrect".into()))

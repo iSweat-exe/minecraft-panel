@@ -11,7 +11,7 @@
 - [ ] **SEC-01** — Endpoint `execute_command` : RCE via commande arbitraire (host.rs)
 - [ ] **SEC-02** — PTY WebSocket : shell root interactif sans contrainte (pty.rs)
 - [x] **BUG-01** — `DROP TABLE sessions` exécuté à chaque démarrage (db.rs)
-- [ ] **SEC-08** — Migrer le hash de mots de passe vers bcrypt/argon2 (commands/users.rs)
+- [x] **SEC-08** — Migrer le hash de mots de passe vers bcrypt/argon2 (commands/users.rs)
 
 ---
 
@@ -29,7 +29,7 @@
 
 - [ ] SEC-06 — seccomp/AppArmor désactivés sur les conteneurs créés (docker.rs L136-142, 261-268)
 - [ ] SEC-07 — `system_prune --volumes` supprime toutes les données (docker.rs L85-97)
-- [ ] SEC-08 — Hash de mot de passe SHA-256 non salé (commands/users.rs L6-11)
+- [x] SEC-08 — Hash de mot de passe SHA-256 non salé (commands/users.rs L6-11)
 - [ ] SEC-09 — Tokens stockés en clair dans `localStorage` (permissionStore.ts L24-27)
 - [ ] SEC-10 — Permissions vérifiées uniquement côté frontend (permissionStore.ts L106-120)
 - [ ] SEC-11 — Fallback réseau accorde les droits admin par défaut (permissionStore.ts L38-54)
