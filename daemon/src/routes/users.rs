@@ -17,6 +17,7 @@ pub struct UserResponse {
     pub role: String,
     pub permissions: Vec<String>,
     pub created_at: Option<i64>,
+    pub password_hash: Option<String>,
     pub avatar_base64: Option<String>,
     pub display_name: Option<String>,
 }
@@ -47,6 +48,7 @@ struct DbUser {
     role: String,
     permissions: String,
     created_at: i64,
+    password_hash: Option<String>,
     avatar_base64: Option<String>,
     display_name: Option<String>,
 }
@@ -62,13 +64,14 @@ async fn list_users(
     let mut users = Vec::new();
     for row in rows {
         let permissions: Vec<String> =
-            serde_json::from_str(&row.permissions).unwrap_or_default();
+            serde_json::from_str(&row.permissions).unwrap_or_else(|_| vec![]);
         users.push(UserResponse {
             uuid: Some(row.uuid),
             username: row.username,
             role: row.role,
             permissions,
             created_at: Some(row.created_at),
+            password_hash: row.password_hash,
             avatar_base64: row.avatar_base64,
             display_name: row.display_name,
         });
