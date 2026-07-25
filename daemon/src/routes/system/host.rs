@@ -50,6 +50,8 @@ pub async fn execute_command(
     _auth: NodeAuth,
     Json(payload): Json<protocol::HostExecRequest>,
 ) -> Json<ApiResponse<protocol::HostExecResponse>> {
+    tracing::warn!(command = %payload.command, "Action sensible: exécution de commande hôte");
+
     #[cfg(target_os = "windows")]
     let output_result = {
         let mut cmd = Command::new("cmd");

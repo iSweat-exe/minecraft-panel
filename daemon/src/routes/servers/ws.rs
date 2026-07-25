@@ -30,10 +30,19 @@ pub async fn ws_console_handler(
             .into_response();
     }
 
-    ws.on_upgrade(move |socket| handle_ws_socket(socket, id, state))
+    let has_read = claims.permissions.iter().any(|p| p == "*" || p == "console:read");
+    if !has_read {
+        return (
+            axum::http::StatusCode::FORBIDDEN,
+            "Missing console:read permission",
+        )
+            .into_response();
+    }
+
+    ws.on_upgrade(move |socket| handle_ws_socket(socket, id, state, claims))
 }
 
-async fn handle_ws_socket(socket: WebSocket, server_id: String, state: AppState) {
+async fn handle_ws_socket(socket: WebSocket, server_id: String, state: AppState, claims: protocol::DaemonClaims) {
     let (mut sender, receiver) = socket.split();
     let (tx, rx) = broadcast::channel::<String>(100);
 
@@ -60,6 +69,7 @@ async fn handle_ws_socket(socket: WebSocket, server_id: String, state: AppState)
         state.docker.clone(),
         console_mgr,
         receiver,
+        claims,
     );
 
     tokio::select! {
@@ -95,16 +105,23 @@ fn spawn_ws_receiver(
     docker: crate::docker::DockerManager,
     console_mgr: Arc<crate::console::ConsoleStreamManager>,
     mut receiver: futures_util::stream::SplitStream<WebSocket>,
+    claims: protocol::DaemonClaims,
 ) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
+        let has_write = claims.permissions.iter().any(|p| p == "*" || p == "console:write");
+
         while let Some(Ok(Message::Text(text))) = receiver.next().await {
             if let Ok(client_msg) = serde_json::from_str::<ClientWsMessage>(&text) {
                 match client_msg {
                     ClientWsMessage::SendCommand { command } => {
-                        let _ = console_mgr.send_command(&server_id, &command).await;
+                        if has_write {
+                            let _ = console_mgr.send_command(&server_id, &command).await;
+                        }
                     }
                     ClientWsMessage::ResizePty { cols, rows } => {
-                        let _ = docker.resize_tty(&server_id, cols, rows).await;
+                        if has_write {
+                            let _ = docker.resize_tty(&server_id, cols, rows).await;
+                        }
                     }
                     ClientWsMessage::Ping => {}
                     _ => {}

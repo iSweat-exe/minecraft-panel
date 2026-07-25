@@ -17,7 +17,10 @@ pub async fn delete_server(
         .await
         .context(format!("Failed to remove server {}", id))
     {
-        Ok(_) => Json(ApiResponse::ok(format!("Server {} removed", id))),
+        Ok(_) => {
+            tracing::warn!(server_id = %id, "Action sensible: suppression du serveur (Docker)");
+            Json(ApiResponse::ok(format!("Server {} removed", id)))
+        },
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
 }

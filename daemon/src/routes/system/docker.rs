@@ -318,11 +318,14 @@ pub async fn update_docker_config(
     if let Err((_, msg)) = auth.require_permission("system:docker") {
         return axum::Json(protocol::ApiResponse::err(msg.to_string()));
     }
+
+    tracing::warn!(user = %auth.username, "Action sensible: modification de la configuration Docker");
+    
     match update_docker_config_impl(payload.config)
         .await
         .context("Failed to update Docker configuration")
     {
-        Ok(s) => Json(ApiResponse::ok(s)),
+        Ok(msg) => Json(ApiResponse::ok(msg)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
 }

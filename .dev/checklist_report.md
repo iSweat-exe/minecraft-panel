@@ -100,8 +100,8 @@
 
 ### 🟢 Basse
 
-- [ ] REF-07 — Vérifier les `permissions` du JWT côté daemon (pas seulement `server_id`) (ws.rs)
-- [ ] REF-08 — Ajouter un audit log des actions sensibles côté daemon
+- [x] REF-07 — Vérifier les `permissions` du JWT côté daemon (pas seulement `server_id`) (ws.rs)
+- [x] REF-08 — Ajouter un audit log des actions sensibles côté daemon
 - [ ] REF-09 — Limiter `DefaultBodyLimit::disable()` aux seules routes d'upload (mod.rs L31)
 - [ ] REF-10 — Ajouter `.panel_users/`, `daemon.db`, `daemon.log`, `*.env` au `.gitignore`
 - [ ] REF-11 — Ajouter des tests unitaires/intégration (aucun actuellement)
