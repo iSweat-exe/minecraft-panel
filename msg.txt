@@ -1,0 +1,4 @@
+﻿feat(daemon): prepare release v0.1.44 and rename to vps-panel
+
+- rename internal references from minecraft-panel to vps-panel
+- add api_discovery route

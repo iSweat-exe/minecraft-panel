@@ -1,16 +1,16 @@
 use serde::{Deserialize, Serialize};
 
-/// Standard label key to identify containers managed by minecraft-panel daemon
-pub const LABEL_MANAGED: &str = "minecraft-panel.managed";
+/// Standard label key to identify containers managed by vps-panel daemon
+pub const LABEL_MANAGED: &str = "vps-panel.managed";
 
 /// Standard label key for the unique server ID
-pub const LABEL_SERVER_ID: &str = "minecraft-panel.server_id";
+pub const LABEL_SERVER_ID: &str = "vps-panel.server_id";
 
 /// Standard label key for server owner / user
-pub const LABEL_OWNER: &str = "minecraft-panel.owner";
+pub const LABEL_OWNER: &str = "vps-panel.owner";
 
 /// Standard label key for server name
-pub const LABEL_NAME: &str = "minecraft-panel.name";
+pub const LABEL_NAME: &str = "vps-panel.name";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ContainerResources {

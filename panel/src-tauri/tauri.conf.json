@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "minecraft-panel",
+  "productName": "vps-panel",
   "version": "0.1.6",
-  "identifier": "com.isweat.minecraft-panel",
+  "identifier": "com.isweat.vps-panel",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "minecraft-panel",
+        "title": "vps-panel",
         "width": 800,
         "height": 600,
         "decorations": false
@@ -37,7 +37,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/isweat-exe/minecraft-panel/releases/latest/download/latest.json"
+        "https://github.com/isweat-exe/vps-panel/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhDMjhGNDc0OUQ2OEY5OUEKUldTYStXaWRkUFFvakhEdW92MnEwRGlFTzBTSTZYMUFFZVNUeUdnOU90Um9UaVkyKzE5VCttM2kK"
     }

@@ -1,4 +1,4 @@
-# ✅ Checklist de suivi — Audit minecraft-panel
+# ✅ Checklist de suivi — Audit vps-panel
 
 > Coche les cases au fur et à mesure des corrections. Basé sur l'audit du 25/07/2026 (47 findings).
 > Légende : 🔴 Critique · 🟠 Haute · 🟡 Moyenne · 🟢 Basse

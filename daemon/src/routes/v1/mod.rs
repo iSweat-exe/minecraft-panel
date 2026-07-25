@@ -6,6 +6,7 @@ pub mod sessions;
 pub mod system;
 pub mod users;
 pub mod auth_routes;
+pub mod api_discovery;
 
 use axum::Router;
 use crate::routes::AppState;
@@ -20,4 +21,5 @@ pub fn router() -> Router<AppState> {
         .merge(history::router())
         .merge(automations::router())
         .merge(auth_routes::router())
+        .merge(api_discovery::router())
 }

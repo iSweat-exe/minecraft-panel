@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "minecraft-panel",
+      "name": "vps-panel",
       "dependencies": {
         "@monaco-editor/react": "^4.7.0",
         "@radix-ui/react-select": "^2.3.4",

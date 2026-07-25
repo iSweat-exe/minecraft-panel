@@ -2,7 +2,7 @@
 name = "protocol"
 version = "0.1.0"
 edition = "2021"
-description = "Shared types, WebSocket messages, API contracts, and auth protocol between minecraft-panel and daemon"
+description = "Shared types, WebSocket messages, API contracts, and auth protocol between vps-panel and daemon"
 authors = ["iSweat"]
 
 [dependencies]
@@ -13,4 +13,3 @@ jsonwebtoken = "9.3"
 thiserror = "2.0"
 ed25519-dalek = { version = "2.1", features = ["alloc"] }
 base64 = "0.22"
-

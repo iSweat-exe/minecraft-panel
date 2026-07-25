@@ -1,4 +1,4 @@
-# Checklist de Refactoring — Daemon minecraft-panel
+# Checklist de Refactoring — Daemon vps-panel
 
 > Basée sur l'audit de qualité du 2026-07-25 (37 problèmes identifiés). Cocher au fur et à mesure.
 
@@ -61,6 +61,7 @@
 ## ⚠️ Hors périmètre — à traiter séparément (sécurité, non coché ici)
 
 Repérés pendant l'audit qualité mais **non inclus** dans cette checklist de refactoring — nécessitent un suivi dédié :
+
 - `privileged: true` + `seccomp/apparmor=unconfined` sur les containers créés (`docker/create.rs`)
 - `/api/v1/system/host/exec` : exécution de commandes shell arbitraires
 - Mot de passe admin par défaut `"changeme"` sans forçage de changement au premier login

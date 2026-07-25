@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { tauriBridge, DockerContainerInfo, DockerImageInfo } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
-import { 
-    Play, 
-    Square, 
-    RotateCw, 
-    Trash2, 
-    FileText, 
-    RefreshCw, 
-    Sparkles, 
-    Download, 
-    Plus, 
-    Eye, 
+import {
+    Play,
+    Square,
+    RotateCw,
+    Trash2,
+    FileText,
+    RefreshCw,
+    Sparkles,
+    Download,
+    Plus,
+    Eye,
     HardDrive,
     ShieldAlert,
     Settings
@@ -39,12 +39,12 @@ export const DockerPanel: React.FC = () => {
     const [images, setImages] = useState<DockerImageInfo[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
-    
+
     // Filters & Search
     const [searchContainer, setSearchContainer] = useState<string>('');
     const [searchImage, setSearchImage] = useState<string>('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'running' | 'stopped'>('all');
-    
+
     // Modals
     const [logModal, setLogModal] = useState<{ open: boolean; containerName: string; logs: string; loading: boolean }>({
         open: false,
@@ -52,7 +52,7 @@ export const DockerPanel: React.FC = () => {
         logs: '',
         loading: false,
     });
-    
+
     const [inspectModal, setInspectModal] = useState<{ open: boolean; containerId: string; data: string; loading: boolean }>({
         open: false,
         containerId: '',
@@ -315,10 +315,10 @@ export const DockerPanel: React.FC = () => {
     };
 
     const filteredContainers = containers.filter(c => {
-        const matchesSearch = c.names.toLowerCase().includes(searchContainer.toLowerCase()) || 
-                              c.image.toLowerCase().includes(searchContainer.toLowerCase()) ||
-                              c.id.toLowerCase().includes(searchContainer.toLowerCase());
-        
+        const matchesSearch = c.names.toLowerCase().includes(searchContainer.toLowerCase()) ||
+            c.image.toLowerCase().includes(searchContainer.toLowerCase()) ||
+            c.id.toLowerCase().includes(searchContainer.toLowerCase());
+
         const isRunning = c.state === 'running';
         if (filterStatus === 'running') return matchesSearch && isRunning;
         if (filterStatus === 'stopped') return matchesSearch && !isRunning;
@@ -327,8 +327,8 @@ export const DockerPanel: React.FC = () => {
 
     const filteredImages = images.filter(img => {
         return img.repository.toLowerCase().includes(searchImage.toLowerCase()) ||
-               img.tag.toLowerCase().includes(searchImage.toLowerCase()) ||
-               img.id.toLowerCase().includes(searchImage.toLowerCase());
+            img.tag.toLowerCase().includes(searchImage.toLowerCase()) ||
+            img.id.toLowerCase().includes(searchImage.toLowerCase());
     });
 
     const runningCount = containers.filter(c => c.state === 'running').length;
@@ -449,25 +449,22 @@ export const DockerPanel: React.FC = () => {
                             <div className="flex items-center bg-background border border-border/80 rounded-lg p-1">
                                 <button
                                     onClick={() => setFilterStatus('all')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                                        filterStatus === 'all' ? 'bg-docker/10 text-docker font-semibold' : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${filterStatus === 'all' ? 'bg-docker/10 text-docker font-semibold' : 'text-muted-foreground hover:text-foreground'
+                                        }`}
                                 >
                                     Tous ({containers.length})
                                 </button>
                                 <button
                                     onClick={() => setFilterStatus('running')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                                        filterStatus === 'running' ? 'bg-emerald-500/10 text-emerald-400 font-semibold' : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${filterStatus === 'running' ? 'bg-emerald-500/10 text-emerald-400 font-semibold' : 'text-muted-foreground hover:text-foreground'
+                                        }`}
                                 >
                                     En cours ({runningCount})
                                 </button>
                                 <button
                                     onClick={() => setFilterStatus('stopped')}
-                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                                        filterStatus === 'stopped' ? 'bg-surface-hover text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
-                                    }`}
+                                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${filterStatus === 'stopped' ? 'bg-surface-hover text-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+                                        }`}
                                 >
                                     Arrêtés ({stoppedCount})
                                 </button>
@@ -499,7 +496,7 @@ export const DockerPanel: React.FC = () => {
                                         {filteredContainers.map((c) => {
                                             const isRunning = c.state === 'running';
                                             const isRestarting = c.state === 'restarting';
-                                            const isMinecraft = c.names.includes('minecraft-panel-server');
+                                            const isMinecraft = c.names.includes('vps-panel-server');
 
                                             return (
                                                 <TableRow key={c.id}>

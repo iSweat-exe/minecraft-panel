@@ -112,11 +112,11 @@ impl AutoUpdater {
     /// Performs a manual CLI update by fetching the latest release from GitHub
     pub async fn perform_cli_update() -> Result<()> {
         let client = reqwest::Client::builder()
-            .user_agent("minecraft-panel-daemon")
+            .user_agent("vps-panel-daemon")
             .build()?;
 
         println!("Fetching latest release info from GitHub...");
-        let release_url = "https://api.github.com/repos/isweat-exe/minecraft-panel/releases/latest";
+        let release_url = "https://api.github.com/repos/isweat-exe/vps-panel/releases/latest";
         let response = client
             .get(release_url)
             .send()
