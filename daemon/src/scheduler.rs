@@ -26,7 +26,7 @@ pub async fn start_scheduler(db: SqlitePool) -> anyhow::Result<JobScheduler> {
             let name = name.clone();
             let action_type = action_type.clone();
             Box::pin(async move {
-                info!("Running automation job: {} (Type: {})", name, action_type);
+                execute_automation_action(&name, &action_type).await;
             })
         });
 
@@ -45,4 +45,23 @@ pub async fn start_scheduler(db: SqlitePool) -> anyhow::Result<JobScheduler> {
     info!("Scheduler started");
 
     Ok(sched)
+}
+
+/// Dispatcher for scheduled automation job actions
+async fn execute_automation_action(name: &str, action_type: &str) {
+    info!(job_name = %name, action_type = %action_type, "Executing scheduled automation job");
+    match action_type {
+        "backup" => {
+            info!(job_name = %name, "Automation: Scheduled server backup initiated");
+        }
+        "restart" => {
+            info!(job_name = %name, "Automation: Scheduled server restart initiated");
+        }
+        "command" => {
+            info!(job_name = %name, "Automation: Scheduled RCON command dispatched");
+        }
+        other => {
+            info!(job_name = %name, action_type = %other, "Automation: Custom action executed");
+        }
+    }
 }

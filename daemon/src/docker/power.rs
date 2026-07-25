@@ -9,7 +9,7 @@ use tracing::{info, warn};
 impl DockerManager {
     /// Execute power actions on a container identified by server_id
     pub async fn power_action(&self, server_id: &str, action: ServerPowerAction) -> Result<()> {
-        let container_name = format!("mc-server-{}", server_id);
+        let container_name = Self::container_name(server_id);
 
         match action {
             ServerPowerAction::Start => {

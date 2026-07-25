@@ -1,24 +1,26 @@
 use anyhow::Result;
 use protocol::SystemMetricsResponse;
-use std::sync::Mutex;
+use std::sync::{LazyLock, Mutex};
 use sysinfo::{CpuRefreshKind, Disks, MemoryRefreshKind, Networks, RefreshKind, System};
 
-lazy_static::lazy_static! {
-    static ref SYSINFO: Mutex<System> = Mutex::new(System::new_with_specifics(
+static SYSINFO: LazyLock<Mutex<System>> = LazyLock::new(|| {
+    Mutex::new(System::new_with_specifics(
         RefreshKind::nothing()
             .with_cpu(CpuRefreshKind::everything())
-            .with_memory(MemoryRefreshKind::everything())
-    ));
+            .with_memory(MemoryRefreshKind::everything()),
+    ))
+});
 
-    static ref NETWORKS: Mutex<Networks> = Mutex::new(Networks::new_with_refreshed_list());
-    static ref PREV_NET: Mutex<(u64, u64)> = Mutex::new((0, 0));
-}
+static NETWORKS: LazyLock<Mutex<Networks>> =
+    LazyLock::new(|| Mutex::new(Networks::new_with_refreshed_list()));
+
+static PREV_NET: LazyLock<Mutex<(u64, u64)>> = LazyLock::new(|| Mutex::new((0, 0)));
 
 pub async fn get_metrics() -> Result<SystemMetricsResponse> {
     tokio::task::spawn_blocking(|| {
-        let mut sys = SYSINFO.lock().unwrap();
-        let mut nets = NETWORKS.lock().unwrap();
-        let mut prev_net = PREV_NET.lock().unwrap();
+        let mut sys = SYSINFO.lock().unwrap_or_else(|e| e.into_inner());
+        let mut nets = NETWORKS.lock().unwrap_or_else(|e| e.into_inner());
+        let mut prev_net = PREV_NET.lock().unwrap_or_else(|e| e.into_inner());
 
         sys.refresh_cpu_usage();
         sys.refresh_memory();

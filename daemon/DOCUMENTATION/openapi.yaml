@@ -1,0 +1,654 @@
+openapi: 3.0.3
+info:
+  title: Minecraft Panel Daemon API
+  description: API complète pour le daemon du panel de gestion Minecraft. Permet de gérer les utilisateurs, les serveurs, les conteneurs Docker, les fichiers, le système hôte, et l'historique/les sessions.
+  version: 0.1.42
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Serveur Daemon local
+
+tags:
+  - name: Authentification
+    description: Gestion de la connexion et des tokens
+  - name: Utilisateurs
+    description: Gestion des comptes du panel
+  - name: Sessions
+    description: Suivi des sessions actives
+  - name: Historique
+    description: Logs d'audit et historique des actions
+  - name: Automatisations
+    description: Tâches planifiées
+  - name: Serveurs
+    description: Gestion des instances de serveurs de jeu
+  - name: Fichiers
+    description: Manipulation des fichiers distants
+  - name: Système & Docker
+    description: Monitoring du VPS et gestion des conteneurs
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+        error:
+          type: string
+          nullable: true
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+    UserResponse:
+      type: object
+      properties:
+        uuid:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        created_at:
+          type: integer
+        password_hash:
+          type: string
+        avatar_base64:
+          type: string
+        display_name:
+          type: string
+    CreateUserRequest:
+      type: object
+      required:
+        - username
+        - role
+        - permissions
+      properties:
+        uuid:
+          type: string
+        username:
+          type: string
+        role:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        password_hash:
+          type: string
+        avatar_base64:
+          type: string
+        display_name:
+          type: string
+    Session:
+      type: object
+      properties:
+        uuid:
+          type: string
+        name:
+          type: string
+        avatar:
+          type: string
+        connected_at:
+          type: integer
+        last_seen:
+          type: integer
+        ip:
+          type: string
+        ipv6:
+          type: string
+        location:
+          type: string
+        os:
+          type: string
+    HistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          type: string
+        user_id:
+          type: string
+        action:
+          type: string
+        details:
+          type: string
+        timestamp:
+          type: integer
+    Automation:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        cron_expr:
+          type: string
+        action_type:
+          type: string
+        target_server:
+          type: string
+        payload:
+          type: string
+        created_at:
+          type: integer
+    ServerPowerAction:
+      type: object
+      required:
+        - action
+      properties:
+        action:
+          type: string
+          enum: [start, stop, restart, kill]
+    ServerCommand:
+      type: object
+      required:
+        - command
+      properties:
+        command:
+          type: string
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      tags:
+        - Authentification
+      summary: Connexion et récupération du JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+
+  # USERS
+  /users:
+    get:
+      tags:
+        - Utilisateurs
+      summary: Liste les utilisateurs
+      responses:
+        '200':
+          description: Opération réussie
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserResponse'
+    post:
+      tags:
+        - Utilisateurs
+      summary: Créer ou mettre à jour un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '200':
+          description: Utilisateur enregistré
+  /users/{username}:
+    delete:
+      tags:
+        - Utilisateurs
+      summary: Supprimer un utilisateur
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Utilisateur supprimé
+
+  # SESSIONS
+  /sessions:
+    get:
+      tags:
+        - Sessions
+      summary: Liste toutes les sessions actives
+      responses:
+        '200':
+          description: Succès
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Session'
+    post:
+      tags:
+        - Sessions
+      summary: Sauvegarder ou mettre à jour une session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Session'
+      responses:
+        '200':
+          description: Session sauvegardée
+  /sessions/{id}:
+    delete:
+      tags:
+        - Sessions
+      summary: Supprimer une session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Session supprimée
+
+  # HISTORY
+  /history:
+    get:
+      tags:
+        - Historique
+      summary: Récupérer l'historique des actions
+      responses:
+        '200':
+          description: Liste de l'historique (50 dernières actions)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/HistoryEntry'
+    post:
+      tags:
+        - Historique
+      summary: Ajouter une entrée dans l'historique
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HistoryEntry'
+      responses:
+        '200':
+          description: Entrée ajoutée
+
+  # AUTOMATIONS
+  /automations:
+    get:
+      tags:
+        - Automatisations
+      summary: Liste les tâches planifiées (Automations)
+      responses:
+        '200':
+          description: Liste des automatisations
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Automation'
+    post:
+      tags:
+        - Automatisations
+      summary: Créer ou mettre à jour une automatisation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Automation'
+      responses:
+        '200':
+          description: Automation créée
+  /automations/{id}:
+    delete:
+      tags:
+        - Automatisations
+      summary: Supprimer une automatisation
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Automation supprimée
+
+  # SERVERS
+  /servers:
+    get:
+      tags:
+        - Serveurs
+      summary: Lister les serveurs
+      responses:
+        '200':
+          description: Succès
+    post:
+      tags:
+        - Serveurs
+      summary: Créer un nouveau serveur Minecraft
+      responses:
+        '200':
+          description: Serveur créé
+  /servers/{id}:
+    delete:
+      tags:
+        - Serveurs
+      summary: Supprimer un serveur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Succès
+  /servers/{id}/power:
+    post:
+      tags:
+        - Serveurs
+      summary: Gérer l'alimentation du serveur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerPowerAction'
+      responses:
+        '200':
+          description: Succès
+  /servers/{id}/command:
+    post:
+      tags:
+        - Serveurs
+      summary: Envoyer une commande console
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServerCommand'
+      responses:
+        '200':
+          description: Commande envoyée
+  /servers/{id}/inspect:
+    get:
+      tags:
+        - Serveurs
+      summary: Inspecter l'état et les stats d'un serveur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Informations du serveur
+  /servers/{id}/ws:
+    get:
+      tags:
+        - Serveurs
+      summary: WebSocket pour streamer la console en temps réel
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '101':
+          description: Switching Protocols (WebSocket)
+  /servers/{id}/ping:
+    get:
+      tags:
+        - Serveurs
+      summary: Obtenir le ping (statut Minecraft) d'un serveur
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Infos MOTD et Ping
+  /servers/{id}/logs:
+    get:
+      tags:
+        - Serveurs
+      summary: Récupérer l'historique des logs de la console
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Logs du conteneur
+
+  # FILES
+  /files/list:
+    get:
+      tags:
+        - Fichiers
+      summary: Lister les fichiers d'un dossier
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fichiers listés
+  /files/read:
+    get:
+      tags:
+        - Fichiers
+      summary: Lire le contenu d'un fichier texte
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contenu du fichier
+  /files/write:
+    post:
+      tags:
+        - Fichiers
+      summary: Sauvegarder ou créer un fichier texte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                path:
+                  type: string
+                content:
+                  type: string
+      responses:
+        '200':
+          description: Fichier écrit
+  /files/upload:
+    post:
+      tags:
+        - Fichiers
+      summary: Uploader des fichiers
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                path:
+                  type: string
+      responses:
+        '200':
+          description: Upload réussi
+  /files/download:
+    get:
+      tags:
+        - Fichiers
+      summary: Télécharger un fichier en binaire
+      parameters:
+        - name: path
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fichier téléchargé
+  /files/action:
+    post:
+      tags:
+        - Fichiers
+      summary: Renommer, supprimer, copier ou déplacer un fichier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                action:
+                  type: string
+                target:
+                  type: string
+                destination:
+                  type: string
+      responses:
+        '200':
+          description: Action terminée
+  
+  # SYSTEM
+  /system/info:
+    get:
+      tags:
+        - Système & Docker
+      summary: Informations du Daemon
+      responses:
+        '200':
+          description: Infos système (version)
+  /system/metrics:
+    get:
+      tags:
+        - Système & Docker
+      summary: Obtenir les métriques globales (CPU, RAM, Disque, Réseau)
+      responses:
+        '200':
+          description: Métriques renvoyées
+  /system/host:
+    get:
+      tags:
+        - Système & Docker
+      summary: Obtenir les informations détaillées du VPS/Hôte
+      responses:
+        '200':
+          description: Infos OS et Kernel
+  /system/docker/containers:
+    get:
+      tags:
+        - Système & Docker
+      summary: Lister tous les conteneurs Docker de la machine
+      responses:
+        '200':
+          description: Liste complète
+  /system/docker/images:
+    get:
+      tags:
+        - Système & Docker
+      summary: Lister les images Docker locales
+      responses:
+        '200':
+          description: Liste des images
+  /system/docker/prune:
+    post:
+      tags:
+        - Système & Docker
+      summary: Nettoyer le système Docker (Prune)
+      responses:
+        '200':
+          description: Espace libéré

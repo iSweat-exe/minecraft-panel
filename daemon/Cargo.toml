@@ -1,8 +1,8 @@
 [package]
 name = "daemon"
-version = "0.1.42"
+version = "0.1.43"
 edition = "2021"
-description = "Node daemon for minecraft-panel managing Docker containers, console streams, and node security"
+description = "Node daemon for vps-panel managing Docker containers, console streams, and node security"
 authors = ["iSweat"]
 
 [dependencies]
@@ -28,7 +28,6 @@ sha1 = "0.10"
 sysinfo = "0.39.6"
 lazy_static = "1.5.0"
 base64 = "0.22.1"
-craftping = { version = "0.7.0", features = ["async-tokio"] }
 tracing-appender = "0.2.5"
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio-rustls", "chrono", "uuid"] }
 tokio-cron-scheduler = "0.13"
@@ -38,4 +37,6 @@ uuid = { version = "1.10", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 portable-pty = "0.9.0"
 bcrypt = "0.16"
-
+utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
+utoipa-axum = "0.2"
+utoipa-swagger-ui = { version = "8", features = ["axum"] }

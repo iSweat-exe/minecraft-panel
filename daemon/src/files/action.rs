@@ -1,18 +1,17 @@
-use super::sanitize_path;
 use anyhow::{bail, Context, Result};
 use protocol::FileAction;
+use std::path::Path;
 
-pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
-    let path = sanitize_path(path)?;
+pub async fn perform_action(path: &Path, action: FileAction, data_dir: &str, server_id: &str) -> Result<()> {
     match action {
         FileAction::Rename { new_name } => {
-            let new_path = sanitize_path(&new_name)?;
+            let new_path = crate::files::sanitize_path(server_id, data_dir, &new_name)?;
             tokio::fs::rename(path, new_path)
                 .await
                 .context("Failed to rename file")?;
         }
         FileAction::Copy { destination } => {
-            let dest_path = sanitize_path(&destination)?;
+            let dest_path = crate::files::sanitize_path(server_id, data_dir, &destination)?;
             tokio::fs::copy(path, dest_path)
                 .await
                 .context("Failed to copy file")?;
@@ -40,9 +39,9 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
             }
         }
         FileAction::Archive { archive_name, targets } => {
-            let archive_path = sanitize_path(&archive_name)?;
+            let archive_path = crate::files::sanitize_path(server_id, data_dir, &archive_name)?;
             
-            let mut cmd = std::process::Command::new("tar");
+            let mut cmd = tokio::process::Command::new("tar");
             cmd.arg("-czf").arg(&archive_path);
 
             if let Some(targets) = targets {
@@ -61,7 +60,7 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
                 cmd.arg(filename);
             }
 
-            let output = cmd.output()?;
+            let output = cmd.output().await?;
             if !output.status.success() {
                 let err_msg = String::from_utf8_lossy(&output.stderr);
                 bail!("Failed to create archive: {}", err_msg.trim());
@@ -69,10 +68,10 @@ pub async fn perform_action(path: &str, action: FileAction) -> Result<()> {
         }
         FileAction::Extract => {
             let parent = path.parent().unwrap_or(std::path::Path::new(""));
-            let mut cmd = std::process::Command::new("tar");
+            let mut cmd = tokio::process::Command::new("tar");
             cmd.current_dir(parent).arg("-xzf").arg(&path);
             
-            let status = cmd.status()?;
+            let status = cmd.status().await?;
 
             if !status.success() {
                 bail!("Failed to extract archive");

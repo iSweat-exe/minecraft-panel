@@ -1,8 +1,7 @@
-use super::sanitize_path;
 use anyhow::{bail, Context, Result};
+use std::path::Path;
 
-pub async fn read_file(path: &str) -> Result<Vec<u8>> {
-    let path = sanitize_path(path)?;
+pub async fn read_file(path: &Path) -> Result<Vec<u8>> {
     if !path.is_file() {
         bail!("Path is not a file");
     }

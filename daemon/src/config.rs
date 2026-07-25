@@ -8,6 +8,7 @@ pub struct DaemonConfig {
     pub node_token: String,
     pub jwt_secret: String,
     pub docker_host: Option<String>,
+    pub data_dir: String,
 }
 
 impl Default for DaemonConfig {
@@ -18,6 +19,7 @@ impl Default for DaemonConfig {
             node_token: String::new(),
             jwt_secret: String::new(),
             docker_host: None,
+            data_dir: "data/servers".to_string(),
         }
     }
 }
@@ -41,6 +43,10 @@ impl DaemonConfig {
             
         if let Ok(val) = std::env::var("DOCKER_HOST") {
             config.docker_host = Some(val);
+        }
+
+        if let Ok(val) = std::env::var("DAEMON_DATA_DIR") {
+            config.data_dir = val;
         }
 
         Ok(config)

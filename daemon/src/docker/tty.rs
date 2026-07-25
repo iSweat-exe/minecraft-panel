@@ -5,7 +5,7 @@ use tracing::info;
 impl DockerManager {
     /// Resize terminal TTY dimensions for a container
     pub async fn resize_tty(&self, server_id: &str, width: u16, height: u16) -> Result<()> {
-        let container_name = format!("mc-server-{}", server_id);
+        let container_name = Self::container_name(server_id);
         let options = bollard::container::ResizeContainerTtyOptions { height, width };
 
         self.docker

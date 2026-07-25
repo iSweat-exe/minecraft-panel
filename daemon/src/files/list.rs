@@ -1,9 +1,8 @@
-use super::sanitize_path;
 use anyhow::{bail, Context, Result};
 use protocol::FileEntry;
+use std::path::Path;
 
-pub async fn list_dir(path: &str) -> Result<Vec<FileEntry>> {
-    let path = sanitize_path(path)?;
+pub async fn list_dir(path: &Path) -> Result<Vec<FileEntry>> {
     let mut entries = Vec::new();
 
     if !path.is_dir() {

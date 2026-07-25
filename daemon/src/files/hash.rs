@@ -1,19 +1,34 @@
-use super::sanitize_path;
 use anyhow::{bail, Context, Result};
 use sha1::{Digest, Sha1};
+use std::path::Path;
+use tokio::io::AsyncReadExt;
 
-pub async fn hash_file(path: &str) -> Result<String> {
-    let path = sanitize_path(path)?;
+async fn compute_sha1(path: &Path) -> Result<String> {
+    let mut file = tokio::fs::File::open(path)
+        .await
+        .context("Failed to open file for hashing")?;
+    let mut hasher = Sha1::new();
+    let mut buffer = [0u8; 65536];
+
+    loop {
+        let n = file
+            .read(&mut buffer)
+            .await
+            .context("Failed to read file chunk for hashing")?;
+        if n == 0 {
+            break;
+        }
+        hasher.update(&buffer[..n]);
+    }
+
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+pub async fn hash_file(path: &Path) -> Result<String> {
     if !path.is_file() {
         bail!("Path is not a file");
     }
-    let data = tokio::fs::read(path)
-        .await
-        .context("Failed to read file for hashing")?;
-    let mut hasher = Sha1::new();
-    hasher.update(&data);
-    let result = hasher.finalize();
-    Ok(format!("{:x}", result))
+    compute_sha1(path).await
 }
 
 fn matches_pattern(filename: &str, patterns: &[String]) -> bool {
@@ -34,10 +49,9 @@ fn matches_pattern(filename: &str, patterns: &[String]) -> bool {
 }
 
 pub async fn hash_multiple_files(
-    dir_path: &str,
+    path: &Path,
     patterns: &[String],
 ) -> Result<std::collections::HashMap<String, String>> {
-    let path = sanitize_path(dir_path)?;
     if !path.is_dir() {
         bail!("Path is not a directory");
     }
@@ -59,13 +73,8 @@ pub async fn hash_multiple_files(
 
         let filename = entry.file_name().to_string_lossy().to_string();
         if matches_pattern(&filename, patterns) {
-            let data = tokio::fs::read(entry.path())
-                .await
-                .context("Failed to read file for hashing")?;
-            let mut hasher = Sha1::new();
-            hasher.update(&data);
-            let result = hasher.finalize();
-            hashes.insert(filename, format!("{:x}", result));
+            let hash_str = compute_sha1(&entry.path()).await?;
+            hashes.insert(filename, hash_str);
         }
     }
 

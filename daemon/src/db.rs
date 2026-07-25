@@ -36,7 +36,8 @@ pub async fn init_db() -> Result<SqlitePool> {
             created_at INTEGER NOT NULL,
             password_hash TEXT,
             avatar_base64 TEXT,
-            display_name TEXT
+            display_name TEXT,
+            is_superadmin INTEGER DEFAULT 0
         );
 
         CREATE TABLE IF NOT EXISTS sessions (
@@ -69,24 +70,41 @@ pub async fn init_db() -> Result<SqlitePool> {
             payload TEXT,
             created_at INTEGER NOT NULL
         );
+
+        CREATE TABLE IF NOT EXISTS server_allocations (
+            server_id TEXT NOT NULL,
+            host_ip TEXT NOT NULL,
+            host_port INTEGER NOT NULL,
+            UNIQUE(host_ip, host_port)
+        );
+
+        CREATE TABLE IF NOT EXISTS servers (
+            id TEXT PRIMARY KEY,
+            spec_json TEXT NOT NULL,
+            spec_version INTEGER NOT NULL DEFAULT 1
+        );
         "#,
     )
     .execute(&pool)
     .await
     .context("Failed to create tables in SQLite database")?;
 
-    // Safe migrations for history table
-    sqlx::query("ALTER TABLE history ADD COLUMN user TEXT")
-        .execute(&pool)
-        .await
-        .ok();
-    sqlx::query("ALTER TABLE history ADD COLUMN user_id TEXT")
-        .execute(&pool)
-        .await
-        .ok();
+    // Safe column migrations with explicit duplicate column check
+    for alter_query in [
+        "ALTER TABLE history ADD COLUMN user TEXT",
+        "ALTER TABLE history ADD COLUMN user_id TEXT",
+        "ALTER TABLE users ADD COLUMN is_superadmin INTEGER DEFAULT 0",
+    ] {
+        if let Err(e) = sqlx::query(alter_query).execute(&pool).await {
+            let msg = e.to_string();
+            if !msg.contains("duplicate column name") && !msg.contains("duplicate column") {
+                tracing::warn!("Migration notice for '{}': {}", alter_query, msg);
+            }
+        }
+    }
 
-    // Seed the root admin user "iSweat" if it doesn't exist
-    let root_exists = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users WHERE username = 'iSweat'")
+    // Seed the root admin user if it doesn't exist
+    let root_exists = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM users WHERE is_superadmin = 1")
         .fetch_one(&pool)
         .await
         .unwrap_or(0);
@@ -98,7 +116,7 @@ pub async fn init_db() -> Result<SqlitePool> {
         let default_hash = bcrypt::hash("changeme", bcrypt::DEFAULT_COST)
             .unwrap_or_else(|_| String::new());
         sqlx::query(
-            "INSERT INTO users (uuid, username, role, permissions, created_at, password_hash, display_name) VALUES (?, 'iSweat', 'admin', '[\"*\"]', ?, ?, 'iSweat')"
+            "INSERT INTO users (uuid, username, role, permissions, created_at, password_hash, display_name, is_superadmin) VALUES (?, 'admin', 'admin', '[\"*\"]', ?, ?, 'Administrator', 1)"
         )
         .bind(&root_uuid)
         .bind(now)
@@ -106,8 +124,53 @@ pub async fn init_db() -> Result<SqlitePool> {
         .execute(&pool)
         .await
         .context("Failed to seed root admin user")?;
-        tracing::info!("Root admin user 'iSweat' created with default password 'changeme'");
+        tracing::info!("Root admin user 'admin' created with default password 'changeme'");
     }
 
     Ok(pool)
 }
+
+pub async fn backfill_unmanaged_containers(
+    pool: &SqlitePool,
+    docker_mgr: &crate::docker::DockerManager,
+    managed_containers: &[protocol::ServerStatusResponse],
+) -> Result<usize> {
+    tracing::info!("Starting database backfill check for unmanaged containers...");
+    let mut backfill_count = 0;
+    for server in managed_containers {
+        let exists = sqlx::query_scalar::<_, i64>("SELECT COUNT(*) FROM servers WHERE id = ?")
+            .bind(&server.server_id)
+            .fetch_one(pool)
+            .await
+            .unwrap_or(0);
+
+        if exists == 0 {
+            tracing::info!(server_id = %server.server_id, "Found managed container without SQLite record. Reconstructing spec for backfill...");
+            if let Ok(spec) = docker_mgr.reconstruct_spec(&server.server_id).await {
+                if let Ok(spec_json) = serde_json::to_string(&spec) {
+                    let res = sqlx::query("INSERT INTO servers (id, spec_json, spec_version) VALUES (?, ?, ?)")
+                        .bind(&server.server_id)
+                        .bind(&spec_json)
+                        .bind(1)
+                        .execute(pool)
+                        .await;
+
+                    if res.is_ok() {
+                        backfill_count += 1;
+                    } else {
+                        tracing::error!(server_id = %server.server_id, "Failed to insert reconstructed spec into database");
+                    }
+                }
+            } else {
+                tracing::error!(server_id = %server.server_id, "Failed to reconstruct spec from Docker container");
+            }
+        }
+    }
+
+    if backfill_count > 0 {
+        tracing::info!("Backfilled {} servers into SQLite", backfill_count);
+    }
+
+    Ok(backfill_count)
+}
+

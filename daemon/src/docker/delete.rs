@@ -6,7 +6,7 @@ use tracing::info;
 impl DockerManager {
     /// Remove container for a server
     pub async fn remove_container(&self, server_id: &str) -> Result<()> {
-        let container_name = format!("mc-server-{}", server_id);
+        let container_name = Self::container_name(server_id);
         let options = RemoveContainerOptions {
             force: true,
             ..Default::default()

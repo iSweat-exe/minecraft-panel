@@ -1,11 +1,4 @@
-pub mod automations;
-pub mod files;
-pub mod history;
-pub mod servers;
-pub mod sessions;
-pub mod system;
-pub mod users;
-pub mod auth_routes;
+pub mod v1;
 
 use std::sync::Arc;
 
@@ -20,6 +13,8 @@ pub struct AppState {
     pub start_time: std::time::Instant,
     pub db: sqlx::SqlitePool,
     pub console_mgr: Arc<crate::console::ConsoleStreamManager>,
+    #[allow(dead_code)]
+    pub scheduler: Option<Arc<tokio_cron_scheduler::JobScheduler>>,
 }
 
 
@@ -48,7 +43,7 @@ async fn rate_limit_middleware(
         .unwrap_or_else(|| std::net::IpAddr::V4(std::net::Ipv4Addr::new(127, 0, 0, 1)));
         
     {
-        let mut map = state.lock().unwrap();
+        let mut map = state.lock().unwrap_or_else(|e| e.into_inner());
         let entry = map.entry(ip).or_insert_with(|| (0, Instant::now()));
         
         // Reset counter every 1 minute
@@ -71,15 +66,18 @@ async fn rate_limit_middleware(
 pub fn create_router(state: AppState) -> Router {
     let rate_limit_state: RateLimitState = Arc::new(Mutex::new(HashMap::new()));
 
+    let cleanup_state = rate_limit_state.clone();
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(Duration::from_secs(300)).await;
+            if let Ok(mut map) = cleanup_state.lock() {
+                map.retain(|_, (_, last_seen)| last_seen.elapsed() <= Duration::from_secs(60));
+            }
+        }
+    });
+
     Router::new()
-        .merge(system::router())
-        .merge(files::router())
-        .merge(servers::router())
-        .merge(users::router())
-        .merge(sessions::router())
-        .merge(history::router())
-        .merge(automations::router())
-        .merge(auth_routes::router())
+        .merge(v1::router())
         .layer(middleware::from_fn(rate_limit_middleware))
         .layer(axum::Extension(rate_limit_state))
         .layer(axum::Extension(state.config.clone()))

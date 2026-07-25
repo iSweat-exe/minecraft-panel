@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
         .init();
 
     info!(
-        "Starting minecraft-panel daemon v{}",
+        "Starting vps-panel daemon v{}",
         env!("CARGO_PKG_VERSION")
     );
 
@@ -54,11 +54,6 @@ async fn main() -> Result<()> {
     // Initialize Docker manager & startup reconciliation
     let docker_mgr = DockerManager::new()?;
     let managed_containers = docker_mgr.list_managed_containers().await?;
-    info!(
-        "Startup reconciliation complete: {} servers active",
-        managed_containers.len()
-    );
-
     let db_pool = match db::init_db().await {
         Ok(pool) => {
             info!("SQLite database initialized");
@@ -70,9 +65,22 @@ async fn main() -> Result<()> {
         }
     };
 
-    if let Err(e) = scheduler::start_scheduler(db_pool.clone()).await {
-        eprintln!("Failed to start scheduler: {}", e);
-    }
+    // Backfill unmanaged containers into SQLite
+    let _ = db::backfill_unmanaged_containers(&db_pool, &docker_mgr, &managed_containers).await;
+
+    info!(
+        "Startup reconciliation complete: {} servers active",
+        managed_containers.len()
+    );
+
+
+    let scheduler = match scheduler::start_scheduler(db_pool.clone()).await {
+        Ok(sched) => Some(std::sync::Arc::new(sched)),
+        Err(e) => {
+            tracing::error!("Failed to start scheduler: {}", e);
+            None
+        }
+    };
 
     let console_mgr = std::sync::Arc::new(
         console::ConsoleStreamManager::new(std::sync::Arc::new(docker_mgr.docker_client().clone())),
@@ -84,6 +92,7 @@ async fn main() -> Result<()> {
         start_time: std::time::Instant::now(),
         db: db_pool,
         console_mgr,
+        scheduler,
     };
 
     let router = create_router(state);

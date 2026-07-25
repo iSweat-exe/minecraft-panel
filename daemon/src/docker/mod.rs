@@ -26,4 +26,8 @@ impl DockerManager {
     pub fn docker_client(&self) -> &Docker {
         &self.docker
     }
+
+    pub fn container_name(server_id: &str) -> String {
+        format!("mc-server-{}", server_id)
+    }
 }

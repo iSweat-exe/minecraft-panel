@@ -129,7 +129,18 @@ pub fn node_generate_console_token(
     sub: Option<String>,
     duration_secs: Option<u64>,
 ) -> Result<String, AppError> {
-    let user_sub = sub.unwrap_or_else(|| "panel_user".to_string());
+    let mut actual_secret = jwt_secret.clone();
+    let mut user_sub = sub.unwrap_or_else(|| "panel_user".to_string());
+    
+    // If jwt_secret contains a subuser identifier (e.g., token::username), extract it
+    if let Some(idx) = jwt_secret.find("::") {
+        actual_secret = jwt_secret[..idx].to_string();
+        let user_part = &jwt_secret[idx + 2..];
+        if !user_part.is_empty() {
+            user_sub = user_part.to_string();
+        }
+    }
+
     let duration = duration_secs.unwrap_or(600); // default 10 minutes
     let permissions = vec![
         "console:read".to_string(),
@@ -137,7 +148,7 @@ pub fn node_generate_console_token(
         "power:control".to_string(),
     ];
 
-    DaemonClient::mint_session_jwt(&user_sub, &server_id, permissions, &jwt_secret, duration)
+    DaemonClient::mint_session_jwt(&user_sub, &server_id, permissions, &actual_secret, duration)
 }
 
 #[tauri::command]

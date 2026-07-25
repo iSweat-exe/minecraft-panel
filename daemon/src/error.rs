@@ -1,4 +1,5 @@
 use axum::{
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };
@@ -13,21 +14,36 @@ pub enum DaemonError {
     Io(#[from] std::io::Error),
     #[error("Internal error: {0}")]
     Anyhow(#[from] anyhow::Error),
-    #[error("{0}")]
-    Custom(String),
+    #[error("Unauthorized: {0}")]
+    Unauthorized(String),
+    #[error("Forbidden: {0}")]
+    Forbidden(String),
+    #[error("Bad request: {0}")]
+    BadRequest(String),
+    #[error("Not found: {0}")]
+    NotFound(String),
 }
 
 impl IntoResponse for DaemonError {
     fn into_response(self) -> Response {
-        let msg = self.to_string();
-        // You can log the error here if needed
-        // log::error!("Daemon API Error: {}", msg);
+        let (status, msg) = match &self {
+            DaemonError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg.clone()),
+            DaemonError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg.clone()),
+            DaemonError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
+            DaemonError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
+            DaemonError::Sqlx(_) | DaemonError::Io(_) | DaemonError::Anyhow(_) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+            }
+        };
         
-        Json(ApiResponse::<()> {
-            success: false,
-            data: None,
-            error: Some(msg),
-        })
-        .into_response()
+        (
+            status,
+            Json(ApiResponse::<()> {
+                success: false,
+                data: None,
+                error: Some(msg),
+            }),
+        )
+            .into_response()
     }
 }

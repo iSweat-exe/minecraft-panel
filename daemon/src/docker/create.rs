@@ -53,7 +53,7 @@ impl DockerManager {
             ..Default::default()
         };
 
-        let container_name = format!("mc-server-{}", spec.server_id);
+        let container_name = Self::container_name(&spec.server_id);
 
         #[allow(unused_mut)]
         let mut env = spec.env.clone();

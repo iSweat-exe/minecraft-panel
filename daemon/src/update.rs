@@ -90,18 +90,7 @@ impl AutoUpdater {
         }
 
         // 4. Atomically swap binary
-        let backup_path = current_exe.with_extension("old");
-        if backup_path.exists() {
-            let _ = fs::remove_file(&backup_path);
-        }
-
-        // Rename running exe to .old, move new binary to current_exe
-        fs::rename(&current_exe, &backup_path).context("Failed to backup current executable")?;
-        if let Err(err) = fs::rename(&new_binary_path, &current_exe) {
-            // Rollback if move fails
-            let _ = fs::rename(&backup_path, &current_exe);
-            anyhow::bail!("Atomic binary swap failed: {}", err);
-        }
+        atomic_binary_swap(&new_binary_path, &current_exe)?;
 
         info!("Binary atomic swap succeeded. Triggering daemon restart...");
 
@@ -151,10 +140,9 @@ impl AutoUpdater {
             other => other,
         };
 
-        // Expected asset name format, e.g., daemon-linux-amd64
-        // TODO: Improve CI/CD pipeline.
-        // let asset_name = format!("daemon-{}-{}", os, arch);
-        let asset_name = format!("daemon");
+        // Match architecture-specific release asset (e.g., daemon-linux-amd64) or fallback asset name ("daemon")
+        let target_asset_name = format!("daemon-{}-{}", os, arch);
+        let fallback_asset_name = "daemon".to_string();
 
         let assets = release_resp["assets"]
             .as_array()
@@ -163,7 +151,11 @@ impl AutoUpdater {
 
         for asset in assets {
             if let Some(name) = asset["name"].as_str() {
-                if name == asset_name || name == format!("{}.exe", asset_name) {
+                if name == target_asset_name
+                    || name == format!("{}.exe", target_asset_name)
+                    || name == fallback_asset_name
+                    || name == format!("{}.exe", fallback_asset_name)
+                {
                     download_url = asset["browser_download_url"]
                         .as_str()
                         .map(|s| s.to_string());
@@ -174,7 +166,7 @@ impl AutoUpdater {
 
         let download_url = download_url.context(format!(
             "Could not find binary for architecture {}/{} (looked for {})",
-            os, arch, asset_name
+            os, arch, target_asset_name
         ))?;
         println!("Downloading from: {}", download_url);
 
@@ -204,20 +196,26 @@ impl AutoUpdater {
                 .context("Failed to set executable permissions")?;
         }
 
-        let backup_path = current_exe.with_extension("old");
-        if backup_path.exists() {
-            let _ = std::fs::remove_file(&backup_path);
-        }
-
         println!("Swapping binaries...");
-        std::fs::rename(&current_exe, &backup_path).context("Failed to backup old binary")?;
-        if let Err(e) = std::fs::rename(&new_exe, &current_exe) {
-            let _ = std::fs::rename(&backup_path, &current_exe);
-            anyhow::bail!("Failed to swap binary: {}", e);
-        }
+        atomic_binary_swap(&new_exe, &current_exe)?;
 
         println!("Update successful! The new version will be used on next restart.");
         // We don't automatically restart systemd here because the user is running it manually in a CLI
         Ok(())
     }
+}
+
+pub fn atomic_binary_swap(new_binary_path: &std::path::Path, current_exe: &std::path::Path) -> Result<()> {
+    let backup_path = current_exe.with_extension("old");
+    if backup_path.exists() {
+        let _ = fs::remove_file(&backup_path);
+    }
+
+    fs::rename(current_exe, &backup_path).context("Failed to backup current executable")?;
+    if let Err(err) = fs::rename(new_binary_path, current_exe) {
+        let _ = fs::rename(&backup_path, current_exe);
+        anyhow::bail!("Atomic binary swap failed: {}", err);
+    }
+
+    Ok(())
 }

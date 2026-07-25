@@ -17,6 +17,22 @@ pub struct CreateServerRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateServerRequest {
+    pub spec: ContainerSpec,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PatchServerRequest {
+    pub name: Option<String>,
+    pub image: Option<String>,
+    pub env: Option<Vec<String>>,
+    pub ports: Option<Vec<crate::docker::PortMapping>>,
+    pub volumes: Option<Vec<crate::docker::VolumeMapping>>,
+    pub resources: Option<crate::docker::ContainerResources>,
+    pub owner: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateServerResponse {
     pub server_id: String,
     pub container_id: String,

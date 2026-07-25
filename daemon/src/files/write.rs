@@ -1,8 +1,7 @@
-use super::sanitize_path;
 use anyhow::{Context, Result};
+use std::path::Path;
 
-pub async fn write_file(path: &str, content: &[u8]) -> Result<()> {
-    let path = sanitize_path(path)?;
+pub async fn write_file(path: &Path, content: &[u8]) -> Result<()> {
     if let Some(parent) = path.parent() {
         tokio::fs::create_dir_all(parent)
             .await

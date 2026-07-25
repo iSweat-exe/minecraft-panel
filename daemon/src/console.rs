@@ -22,7 +22,7 @@ impl ConsoleStreamManager {
         server_id: &str,
         sender: broadcast::Sender<String>,
     ) -> Result<()> {
-        let container_name = format!("mc-server-{}", server_id);
+        let container_name = crate::docker::DockerManager::container_name(server_id);
 
         let options = AttachContainerOptions::<String> {
             stdout: Some(true),
@@ -53,7 +53,7 @@ impl ConsoleStreamManager {
 
     /// Send input command string into container's stdin
     pub async fn send_command(&self, server_id: &str, command: &str) -> Result<()> {
-        let container_name = format!("mc-server-{}", server_id);
+        let container_name = crate::docker::DockerManager::container_name(server_id);
         let mut cmd_bytes = command.as_bytes().to_vec();
         if !cmd_bytes.ends_with(b"\n") {
             cmd_bytes.push(b'\n');
