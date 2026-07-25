@@ -94,6 +94,7 @@ pub async fn node_docker_run_container(
         ports,
         env_vars,
         restart_policy,
+        disable_security_opts: false,
     };
     DaemonClient::new(node_url, node_token)
         .docker_run_container(req)
@@ -149,6 +150,7 @@ pub async fn node_docker_recreate_container(
         ports,
         env_vars,
         restart_policy,
+        disable_security_opts: false,
     };
     DaemonClient::new(node_url, node_token)
         .docker_recreate_container(&container_id, req)

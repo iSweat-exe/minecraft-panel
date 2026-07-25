@@ -271,6 +271,10 @@ pub struct DockerRunRequest {
     pub ports: Option<String>,
     pub env_vars: Option<Vec<String>>,
     pub restart_policy: Option<String>,
+    /// When true, adds `--security-opt seccomp=unconfined --security-opt apparmor=unconfined`.
+    /// Defaults to false — kernel protections stay enabled unless explicitly disabled.
+    #[serde(default)]
+    pub disable_security_opts: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

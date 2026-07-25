@@ -97,18 +97,26 @@ pub async fn container_inspect(
     }
 }
 
+#[derive(serde::Deserialize, Default)]
+pub struct SystemPrunePayload {
+    #[serde(default)]
+    pub include_volumes: bool,
+}
+
 pub async fn system_prune(
     auth: UserAuth,
     State(state): State<AppState>,
+    body: Option<Json<SystemPrunePayload>>,
 ) -> Json<ApiResponse<String>> {
     if let Err((_, msg)) = auth.require_permission("system:docker") {
         return axum::Json(protocol::ApiResponse::err(msg.to_string()));
     }
-    match state
-        .docker
-        .run_docker_command(&["system", "prune", "-af", "--volumes"])
-        .await
-    {
+    let include_volumes = body.map_or(false, |b| b.0.include_volumes);
+    let mut cmd = vec!["system", "prune", "-af"];
+    if include_volumes {
+        cmd.push("--volumes");
+    }
+    match state.docker.run_docker_command(&cmd).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
@@ -340,14 +348,16 @@ async fn update_docker_config_impl(new_config: serde_json::Value) -> Result<Stri
 }
 
 fn build_docker_run_args(payload: &DockerRunRequest) -> Vec<String> {
-    let mut args = vec![
-        "run".to_string(),
-        "-d".to_string(),
-        "--security-opt".to_string(),
-        "seccomp=unconfined".to_string(),
-        "--security-opt".to_string(),
-        "apparmor=unconfined".to_string(),
-    ];
+    let mut args = vec!["run".to_string(), "-d".to_string()];
+
+    if payload.disable_security_opts {
+        args.extend([
+            "--security-opt".to_string(),
+            "seccomp=unconfined".to_string(),
+            "--security-opt".to_string(),
+            "apparmor=unconfined".to_string(),
+        ]);
+    }
 
     if let Some(name) = &payload.name {
         let clean = name.trim();
