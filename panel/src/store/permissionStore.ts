@@ -35,12 +35,11 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             
             // Find current user or fallback to admin permissions
-            const isSubuserMode = localStorage.getItem('panel_login_mode') === 'subuser';
             let current = users.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
                 current = {
                     username: storedUsername,
-                    role: 'unknown',
+                    role: 'subuser',
                     permissions: []
                 };
             }
@@ -71,7 +70,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
-                current = { username: storedUsername, role: 'unknown', permissions: [] };
+                current = { username: storedUsername, role: 'subuser', permissions: [] };
             }
             set({ users: updated, currentUser: current, loading: false });
         } catch (e: any) {
@@ -95,7 +94,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
-                current = { username: storedUsername, role: 'unknown', permissions: [] };
+                current = { username: storedUsername, role: 'subuser', permissions: [] };
             }
             set({ users: updated, currentUser: current, loading: false });
         } catch (e: any) {
