@@ -7,10 +7,7 @@ use protocol::ApiResponse;
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn read_file(_auth: NodeAuth, Query(query): Query<FileQuery>) -> impl IntoResponse {
     match crate::files::read_file(&query.path)

@@ -9,6 +9,12 @@ pub mod download;
 use crate::routes::AppState;
 use axum::routing::{get, post};
 use axum::Router;
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct FileQuery {
+    pub path: String,
+}
 
 pub fn router() -> Router<AppState> {
     Router::new()

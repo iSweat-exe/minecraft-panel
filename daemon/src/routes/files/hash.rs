@@ -5,10 +5,7 @@ use protocol::{ApiResponse, FileHashResponse};
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn hash_file(
     _auth: NodeAuth,

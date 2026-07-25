@@ -7,10 +7,7 @@ use axum::{
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn download_file(
     _auth: NodeAuth,

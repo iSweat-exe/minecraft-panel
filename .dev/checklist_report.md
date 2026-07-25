@@ -76,10 +76,10 @@
 
 ### 🟢 Basse
 
-- [ ] BUG-14 — `FileQuery` dupliqué dans 7 fichiers routes/files
-- [ ] BUG-15 — `ProtocolVersionCheck` optionnel, ignorable (auth.rs L123-127)
-- [ ] BUG-16 — Nouveau `reqwest::Client` créé à chaque commande Tauri (commands/node.rs)
-- [ ] BUG-17 — Chemin `/backups/{server_id}` codé en dur (backups.rs L30)
+- [x] BUG-14 — `FileQuery` dupliqué dans 7 fichiers routes/files
+- [x] BUG-15 — `ProtocolVersionCheck` optionnel, ignorable (auth.rs L123-127)
+- [x] BUG-16 — Nouveau `reqwest::Client` créé à chaque commande Tauri (commands/node.rs)
+- [x] BUG-17 — Chemin `/backups/{server_id}` codé en dur (backups.rs L30)
 
 ---
 

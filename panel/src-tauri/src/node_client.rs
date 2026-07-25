@@ -6,7 +6,10 @@ use protocol::{
     PROTOCOL_VERSION, PROTOCOL_VERSION_HEADER,
 };
 use reqwest::Client;
+use std::sync::OnceLock;
 use std::time::Duration;
+
+static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
 
 #[derive(Clone)]
 pub struct DaemonClient {
@@ -17,10 +20,12 @@ pub struct DaemonClient {
 
 impl DaemonClient {
     pub fn new(node_url: impl Into<String>, node_token: impl Into<String>) -> Self {
-        let client = Client::builder()
-            .timeout(Duration::from_secs(300))
-            .build()
-            .unwrap_or_default();
+        let client = HTTP_CLIENT.get_or_init(|| {
+            Client::builder()
+                .timeout(Duration::from_secs(300))
+                .build()
+                .unwrap_or_default()
+        }).clone();
 
         let mut url = node_url.into();
         if url.ends_with('/') {

@@ -4,10 +4,7 @@ use protocol::ApiResponse;
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn upload_file(
     _auth: NodeAuth,

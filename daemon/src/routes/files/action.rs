@@ -5,10 +5,7 @@ use protocol::{ApiResponse, FileActionRequest};
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn file_action(
     _auth: NodeAuth,

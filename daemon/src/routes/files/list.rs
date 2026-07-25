@@ -5,10 +5,7 @@ use protocol::{ApiResponse, FileEntry};
 
 use crate::auth::NodeAuth;
 
-#[derive(serde::Deserialize)]
-pub struct FileQuery {
-    pub path: String,
-}
+use super::FileQuery;
 
 pub async fn list_files(
     _auth: NodeAuth,

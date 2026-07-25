@@ -122,8 +122,7 @@ where
                 _ => Err((StatusCode::UPGRADE_REQUIRED, "Protocol version mismatch")),
             }
         } else {
-            // Optional: require header or default to matching current version
-            Ok(ProtocolVersionCheck)
+            Err((StatusCode::UPGRADE_REQUIRED, "Protocol version header missing"))
         }
     }
 }

@@ -27,7 +27,7 @@ pub async fn list_backups(
 ) -> Json<ApiResponse<Vec<BackupInfo>>> {
     let mut backups = Vec::new();
 
-    let path = format!("/backups/{}", server_id);
+    let path = format!("./data/backups/{}", server_id);
     if let Ok(mut entries) = tokio::fs::read_dir(&path).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(metadata) = entry.metadata().await {
@@ -66,7 +66,7 @@ pub async fn create_backup(
     Json(payload): Json<CreateBackupRequest>,
 ) -> Json<ApiResponse<String>> {
     let source_dir = format!("/var/lib/docker/volumes/{}_data/_data", server_id);
-    let backup_dir = format!("/backups/{}", server_id);
+    let backup_dir = format!("./data/backups/{}", server_id);
     let _ = tokio::fs::create_dir_all(&backup_dir).await;
 
     let backup_name = payload
