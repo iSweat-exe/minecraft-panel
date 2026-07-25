@@ -2,17 +2,11 @@ use axum::{
     extract::{Path, State},
     Json,
 };
+use protocol::ApiResponse;
 use serde::{Deserialize, Serialize};
 use std::process::Command as StdCommand;
 
 use crate::{auth::NodeAuth, AppState};
-
-#[derive(Serialize)]
-pub struct ApiResponse<T> {
-    pub success: bool,
-    pub data: Option<T>,
-    pub error: Option<String>,
-}
 
 #[derive(Serialize)]
 pub struct BackupInfo {
@@ -47,11 +41,7 @@ pub async fn list_backups(
         }
     }
 
-    Json(ApiResponse {
-        success: true,
-        data: Some(backups),
-        error: None,
-    })
+    Json(ApiResponse::ok(backups))
 }
 
 #[derive(Deserialize)]
@@ -83,20 +73,10 @@ pub async fn create_backup(
         .output();
 
     match output {
-        Ok(out) if out.status.success() => Json(ApiResponse {
-            success: true,
-            data: Some("Backup created".to_string()),
-            error: None,
-        }),
-        Ok(out) => Json(ApiResponse {
-            success: false,
-            data: None,
-            error: Some(String::from_utf8_lossy(&out.stderr).to_string()),
-        }),
-        Err(e) => Json(ApiResponse {
-            success: false,
-            data: None,
-            error: Some(e.to_string()),
-        }),
+        Ok(out) if out.status.success() => Json(ApiResponse::ok("Backup created".to_string())),
+        Ok(out) => Json(ApiResponse::err(
+            String::from_utf8_lossy(&out.stderr).to_string(),
+        )),
+        Err(e) => Json(ApiResponse::err(e.to_string())),
     }
 }

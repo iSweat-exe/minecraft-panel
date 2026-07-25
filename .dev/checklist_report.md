@@ -68,12 +68,12 @@
 
 ### 🟡 Moyenne
 
-- [ ] BUG-08 — Cast `online_players as u32` incorrect sur valeur négative (ping.rs L65-66)
-- [ ] BUG-09 — `logs.rs` charge tout `daemon.log` en mémoire (L25-28)
-- [ ] BUG-10 — `update_container` force un restart même sans changement nécessitant un redémarrage (docker.rs L243-250)
-- [ ] BUG-11 — Erreur de `docker update` ignorée silencieusement (docker.rs L228-231)
-- [ ] BUG-12 — Erreur de suppression ignorée dans `recreate_container` (docker.rs L259)
-- [ ] BUG-13 — `ApiResponse` local dans backups.rs shadow le type protocole (L10-15)
+- [x] BUG-08 — Cast `online_players as u32` incorrect sur valeur négative (ping.rs L65-66)
+- [x] BUG-09 — `logs.rs` charge tout `daemon.log` en mémoire (L25-28)
+- [x] BUG-10 — `update_container` force un restart même sans changement nécessitant un redémarrage (docker.rs L243-250)
+- [x] BUG-11 — Erreur de `docker update` ignorée silencieusement (docker.rs L228-231)
+- [x] BUG-12 — Erreur de suppression ignorée dans `recreate_container` (docker.rs L259)
+- [x] BUG-13 — `ApiResponse` local dans backups.rs shadow le type protocole (L10-15)
 
 ### 🟢 Basse
 

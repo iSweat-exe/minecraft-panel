@@ -62,8 +62,8 @@ pub async fn server_ping(
 
     match craftping::tokio::ping(&mut stream, "127.0.0.1", target_port).await {
         Ok(pong) => Json(ApiResponse::ok(MinecraftPingResponse {
-            online_players: pong.online_players as u32,
-            max_players: pong.max_players as u32,
+            online_players: pong.online_players.max(0) as u32,
+            max_players: pong.max_players.max(0) as u32,
             motd: pong.description.map(|d| d.to_string()).unwrap_or_default(),
             version: pong.version,
             sample: pong.sample.map(|s| {

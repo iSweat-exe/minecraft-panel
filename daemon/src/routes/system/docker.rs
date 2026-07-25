@@ -211,28 +211,39 @@ pub async fn update_container(
         }
     }
 
-    if update_args.len() > 1 {
+    let needs_restart = update_args.len() > 1;
+
+    if needs_restart {
         update_args.push(&id);
-        let _ = state.docker.run_docker_command(&update_args).await;
+        if let Err(e) = state.docker.run_docker_command(&update_args).await {
+            return Json(ApiResponse::err(format!("docker update failed: {:#}", e)));
+        }
     }
 
     if let Some(name) = &payload.new_name {
         let clean = name.trim();
         if !clean.is_empty() {
-            let _ = state
+            if let Err(e) = state
                 .docker
                 .run_docker_command(&["rename", &id, clean])
-                .await;
+                .await
+            {
+                return Json(ApiResponse::err(format!("docker rename failed: {:#}", e)));
+            }
         }
     }
 
-    match state
-        .docker
-        .run_docker_command(&["restart", "-t", "10", &id])
-        .await
-    {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+    if needs_restart {
+        match state
+            .docker
+            .run_docker_command(&["restart", "-t", "10", &id])
+            .await
+        {
+            Ok(v) => Json(ApiResponse::ok(v)),
+            Err(e) => Json(ApiResponse::err(format!("docker restart failed: {:#}", e))),
+        }
+    } else {
+        Json(ApiResponse::ok("Container updated".to_string()))
     }
 }
 
@@ -245,7 +256,12 @@ pub async fn recreate_container(
     if let Err((_, msg)) = auth.require_permission("system:docker") {
         return axum::Json(protocol::ApiResponse::err(msg.to_string()));
     }
-    let _ = state.docker.run_docker_command(&["rm", "-f", &id]).await;
+    if let Err(e) = state.docker.run_docker_command(&["rm", "-f", &id]).await {
+        return Json(ApiResponse::err(format!(
+            "Failed to remove old container: {:#}",
+            e
+        )));
+    }
 
     let args = build_docker_run_args(&payload);
     let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
