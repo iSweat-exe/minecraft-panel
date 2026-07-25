@@ -47,7 +47,7 @@ async fn main() -> Result<()> {
         env!("CARGO_PKG_VERSION")
     );
 
-    let config = DaemonConfig::load_from_env();
+    let config = DaemonConfig::load_from_env()?;
     info!(bind_addr = %config.bind_addr, node_id = %config.node_id, "Configuration loaded");
 
     // Initialize Docker manager & startup reconciliation

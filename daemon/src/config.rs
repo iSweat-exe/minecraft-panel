@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -13,17 +14,16 @@ impl Default for DaemonConfig {
     fn default() -> Self {
         Self {
             bind_addr: "[::]:8080".to_string(),
-
             node_id: "node-local-1".to_string(),
-            node_token: "secret-node-token-change-me".to_string(),  //TODO: Github Secret
-            jwt_secret: "secret-jwt-key-change-me".to_string(),     //TODO: Github Secret
+            node_token: String::new(),
+            jwt_secret: String::new(),
             docker_host: None,
         }
     }
 }
 
 impl DaemonConfig {
-    pub fn load_from_env() -> Self {
+    pub fn load_from_env() -> Result<Self> {
         let mut config = Self::default();
 
         if let Ok(val) = std::env::var("DAEMON_BIND_ADDR") {
@@ -32,16 +32,17 @@ impl DaemonConfig {
         if let Ok(val) = std::env::var("DAEMON_NODE_ID") {
             config.node_id = val;
         }
-        if let Ok(val) = std::env::var("DAEMON_NODE_TOKEN") {
-            config.node_token = val;
-        }
-        if let Ok(val) = std::env::var("DAEMON_JWT_SECRET") {
-            config.jwt_secret = val;
-        }
+        
+        config.node_token = std::env::var("DAEMON_NODE_TOKEN")
+            .context("DAEMON_NODE_TOKEN environment variable is missing. It must be provided to secure the daemon.")?;
+            
+        config.jwt_secret = std::env::var("DAEMON_JWT_SECRET")
+            .context("DAEMON_JWT_SECRET environment variable is missing. It must be provided to secure JWT sessions.")?;
+            
         if let Ok(val) = std::env::var("DOCKER_HOST") {
             config.docker_host = Some(val);
         }
 
-        config
+        Ok(config)
     }
 }
