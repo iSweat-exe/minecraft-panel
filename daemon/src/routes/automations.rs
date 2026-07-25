@@ -7,6 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::auth::NodeAuth;
 use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -47,7 +48,7 @@ pub fn router() -> Router<AppState> {
         .route("/api/automations/{id}", delete(delete_automation))
 }
 
-async fn list_automations(State(state): State<AppState>) -> impl IntoResponse {
+async fn list_automations(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
     let result = sqlx::query_as::<_, DbAutomation>("SELECT * FROM automations")
         .fetch_all(&state.db)
         .await;
@@ -83,6 +84,7 @@ async fn list_automations(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 async fn save_automation(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Automation>,
 ) -> impl IntoResponse {
@@ -124,6 +126,7 @@ async fn save_automation(
 }
 
 async fn delete_automation(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
 ) -> impl IntoResponse {

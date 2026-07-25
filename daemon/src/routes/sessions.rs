@@ -6,6 +6,7 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::auth::NodeAuth;
 use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize)]
@@ -47,7 +48,7 @@ struct DbSession {
     os: String,
 }
 
-async fn list_sessions(State(state): State<AppState>) -> impl IntoResponse {
+async fn list_sessions(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
     let result = sqlx::query_as::<_, DbSession>("SELECT * FROM sessions")
         .fetch_all(&state.db)
         .await;
@@ -85,6 +86,7 @@ async fn list_sessions(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 async fn save_session(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Session>,
 ) -> impl IntoResponse {
@@ -122,6 +124,7 @@ async fn save_session(
 }
 
 async fn delete_session(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Path(uuid): Path<String>,
 ) -> impl IntoResponse {

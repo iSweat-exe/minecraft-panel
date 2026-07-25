@@ -7,6 +7,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::auth::NodeAuth;
 use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -47,7 +48,7 @@ struct DbUser {
     display_name: Option<String>,
 }
 
-async fn list_users(State(state): State<AppState>) -> impl IntoResponse {
+async fn list_users(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
     let users_result = sqlx::query_as::<_, DbUser>("SELECT * FROM users")
         .fetch_all(&state.db)
         .await;
@@ -87,6 +88,7 @@ async fn list_users(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 async fn save_user(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<PanelUser>,
 ) -> impl IntoResponse {
@@ -166,6 +168,7 @@ async fn save_user(
 }
 
 async fn delete_user(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Path(username): Path<String>,
 ) -> impl IntoResponse {

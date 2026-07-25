@@ -2,6 +2,7 @@ use axum::{extract::State, response::IntoResponse, routing::get, Json, Router};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::auth::NodeAuth;
 use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize)]
@@ -35,7 +36,7 @@ pub fn router() -> Router<AppState> {
     Router::new().route("/api/history", get(list_history).post(save_history))
 }
 
-async fn list_history(State(state): State<AppState>) -> impl IntoResponse {
+async fn list_history(_auth: NodeAuth, State(state): State<AppState>) -> impl IntoResponse {
     let result =
         sqlx::query_as::<_, DbHistory>("SELECT * FROM history ORDER BY timestamp DESC LIMIT 50")
             .fetch_all(&state.db)
@@ -71,6 +72,7 @@ async fn list_history(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 async fn save_history(
+    _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<HistoryEntry>,
 ) -> impl IntoResponse {
