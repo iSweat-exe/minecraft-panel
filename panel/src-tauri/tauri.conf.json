@@ -19,7 +19,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: http:; worker-src 'self' blob:; font-src 'self' https: http: data:; connect-src 'self' https: http: ws://localhost:* http://localhost:* ipc: http://ipc.localhost https://ipwho.is https://*.icanhazip.com https://api.modrinth.com; img-src 'self' https: http: data: asset: blob:;"
+      "csp": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; font-src 'self' https: data:; connect-src 'self' ws: wss: http://localhost:* ipc: http://ipc.localhost https://ipwho.is https://*.icanhazip.com https://api.modrinth.com; img-src 'self' https: data: asset: blob:;"
     }
   },
   "bundle": {
