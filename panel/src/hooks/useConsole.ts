@@ -30,7 +30,7 @@ export function useConsole() {
                 const serverId = activeServerId;
 
                 try {
-                    const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+                    const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                     const staticLogs = await tauriBridge.nodeGetServerLogs(nodeUrl, token, serverId, 100);
                     if (isMounted && staticLogs && staticLogs.lines) {
                         clear(); // Clear existing to prevent duplicate appends on re-mount

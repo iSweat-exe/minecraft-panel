@@ -31,7 +31,7 @@ export function useServerControls() {
         const port = localStorage.getItem('node_port') || '8080';
         const token = getToken();
         if (!host || !token) return;
-        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+        const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
         const maxAttempts = 40; // ~60s max
         for (let i = 0; i < maxAttempts; i++) {
@@ -77,7 +77,7 @@ export function useServerControls() {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) return;
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             
             try {
                 const [servers, ping] = await Promise.all([
@@ -129,7 +129,7 @@ export function useServerControls() {
             setPendingAction(null);
             return;
         }
-        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+        const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
         let forced = false;
         try {

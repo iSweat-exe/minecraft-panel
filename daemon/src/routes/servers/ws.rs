@@ -11,7 +11,6 @@ use crate::auth::SessionAuth;
 use crate::routes::AppState;
 
 pub async fn ws_console_handler(
-    _ver: crate::auth::ProtocolVersionCheck,
     ws: WebSocketUpgrade,
     Path(id): Path<String>,
     auth: Result<SessionAuth, (axum::http::StatusCode, &'static str)>,

@@ -33,7 +33,7 @@ export function useServerOptions() {
         const port = localStorage.getItem('node_port') || '8080';
         const token = getToken();
         if (!host || !token) throw new Error("Daemon credentials missing");
-        return { nodeUrl: `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`, token };
+        return { nodeUrl: `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`, token };
     };
 
     const fetchProperties = async () => {

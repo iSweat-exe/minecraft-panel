@@ -104,7 +104,7 @@ export const useBackupStore = create<BackupStore>()(
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             
             const now = new Date();
             const date = now.toISOString().split('T')[0]; // YYYY-MM-DD
@@ -186,7 +186,7 @@ export const useBackupStore = create<BackupStore>()(
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             
             const selected = await open({
                 filters: [{ name: 'Archive tar.gz', extensions: ['tar.gz'] }],

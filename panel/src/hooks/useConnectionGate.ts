@@ -36,7 +36,11 @@ export function useConnectionGate() {
     const connect = async () => {
         try {
             setSshStatus('reconnecting');
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            let cleanHost = host.replace(/^https?:\/\//i, '');
+            if (cleanHost.endsWith('/')) {
+                cleanHost = cleanHost.slice(0, -1);
+            }
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${cleanHost}:${port}`;
             
             if (loginMode === 'admin') {
                 // Verify Daemon Token
@@ -86,13 +90,13 @@ export function useConnectionGate() {
                 }
             }
 
-            localStorage.setItem('node_host', host);
+            localStorage.setItem('node_host', cleanHost);
             localStorage.setItem('node_port', port.toString());
             localStorage.setItem('sub_username', subUsername);
             localStorage.setItem('panel_login_mode', loginMode);
             localStorage.setItem('node_auto_connect', 'true');
             
-            setStoreHost(host);
+            setStoreHost(cleanHost);
             setSshStatus('connected');
             logAction('Connexion au panel', { mode: loginMode === 'admin' ? 'Administrateur' : 'Sous-utilisateur' });
         } catch (err: any) {

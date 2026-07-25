@@ -15,7 +15,7 @@ export function useMetricsAgent() {
                 const token = getToken();
                 if (!host || !token) return;
 
-                const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+                const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                 const metrics = await tauriBridge.nodeGetMetrics(nodeUrl, token);
                 
                 const now = new Date();

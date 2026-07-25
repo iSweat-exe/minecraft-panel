@@ -40,7 +40,7 @@ export function useSftpSelection(state: SftpStateContext) {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, { rename: { new_name: newPath } });
             logAction('Renommage de fichier', { old: oldPath, new: newPath });
@@ -58,7 +58,7 @@ export function useSftpSelection(state: SftpStateContext) {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             for (const file of clipboard.files) {
                 if (state.entries.some(e => e.name === file)) {

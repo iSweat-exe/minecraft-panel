@@ -44,7 +44,7 @@ export const AutomationsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) return;
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             
             const list = await tauriBridge.nodeListServers(nodeUrl, token);
             setServers(list.map(s => ({ id: s.server_id, name: s.name })));
@@ -63,7 +63,7 @@ export const AutomationsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) return;
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/automations');
             if (res?.success && Array.isArray(res.data)) {
@@ -94,7 +94,7 @@ export const AutomationsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const payload = {
                 name: `Tâche ${newJobType}`,
@@ -125,7 +125,7 @@ export const AutomationsPanel: React.FC = () => {
                 const port = localStorage.getItem('node_port') || '8080';
                 const token = getToken();
                 if (!host || !token) throw new Error("Daemon credentials missing");
-                const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+                const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
                 await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/automations/${id}`);
                 

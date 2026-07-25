@@ -89,7 +89,7 @@ export const AppLayout: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) return;
-            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+            const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             const list = await tauriBridge.nodeListServers(nodeUrl, token);
             setServers(list.map(s => ({ id: s.server_id, name: s.name })));
         } catch (e) {
@@ -139,7 +139,7 @@ export const AppLayout: React.FC = () => {
                 const port = localStorage.getItem('node_port') || '8080';
                 const token = getToken();
                 if (host && token) {
-                    const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+                    const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                     tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});
                 }
             }
@@ -165,7 +165,7 @@ export const AppLayout: React.FC = () => {
                 const port = localStorage.getItem('node_port') || '8080';
                 const token = getToken();
                 if (host && token) {
-                    const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
+                    const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                     await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});
                 }
             }

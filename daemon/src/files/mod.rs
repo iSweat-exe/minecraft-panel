@@ -23,10 +23,12 @@ pub(crate) fn sanitize_path(path_str: &str) -> Result<PathBuf> {
         bail!("Path traversal is not allowed");
     }
     
-    // Ensure the path is within the allowed Docker volumes directory
-    let allowed_root = std::path::Path::new("/var/lib/docker/volumes/");
-    if !path.starts_with(allowed_root) {
-        bail!("Access denied: path must be inside /var/lib/docker/volumes/");
+    // Ensure the path is within the allowed Minecraft server directories
+    let allowed_root_1 = std::path::Path::new("/minecraft-");
+    let allowed_root_2 = std::path::Path::new("/minecraft/"); // For the 'default' server
+    let path_str_lossy = path.to_string_lossy();
+    if !path_str_lossy.starts_with("/minecraft-") && !path_str_lossy.starts_with("/minecraft/") && path_str_lossy != "/minecraft" {
+        bail!("Access denied: path must be inside a /minecraft server directory");
     }
     
     Ok(path)
