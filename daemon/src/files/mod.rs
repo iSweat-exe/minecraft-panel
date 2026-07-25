@@ -22,6 +22,13 @@ pub(crate) fn sanitize_path(path_str: &str) -> Result<PathBuf> {
     {
         bail!("Path traversal is not allowed");
     }
+    
+    // Ensure the path is within the allowed Docker volumes directory
+    let allowed_root = std::path::Path::new("/var/lib/docker/volumes/");
+    if !path.starts_with(allowed_root) {
+        bail!("Access denied: path must be inside /var/lib/docker/volumes/");
+    }
+    
     Ok(path)
 }
 
