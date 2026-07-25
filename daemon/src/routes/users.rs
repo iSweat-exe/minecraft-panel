@@ -11,16 +11,23 @@ use crate::auth::NodeAuth;
 use crate::routes::AppState;
 
 #[derive(Serialize, Deserialize, Clone)]
-pub struct PanelUser {
+pub struct UserResponse {
     pub uuid: Option<String>,
     pub username: String,
     pub role: String,
     pub permissions: Vec<String>,
     pub created_at: Option<i64>,
-    #[serde(skip_serializing)]
+    pub avatar_base64: Option<String>,
+    pub display_name: Option<String>,
+}
+
+#[derive(Deserialize, Clone)]
+pub struct CreateUserRequest {
+    pub uuid: Option<String>,
+    pub username: String,
+    pub role: String,
+    pub permissions: Vec<String>,
     pub password_hash: Option<String>,
-    #[serde(skip_serializing)]
-    pub password: Option<String>,
     pub avatar_base64: Option<String>,
     pub display_name: Option<String>,
 }
@@ -40,7 +47,6 @@ struct DbUser {
     role: String,
     permissions: String,
     created_at: i64,
-    password_hash: Option<String>,
     avatar_base64: Option<String>,
     display_name: Option<String>,
 }
@@ -48,7 +54,7 @@ struct DbUser {
 async fn list_users(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
     let rows = sqlx::query_as::<_, DbUser>("SELECT * FROM users")
         .fetch_all(&state.db)
         .await?;
@@ -57,14 +63,12 @@ async fn list_users(
     for row in rows {
         let permissions: Vec<String> =
             serde_json::from_str(&row.permissions).unwrap_or_default();
-        users.push(PanelUser {
+        users.push(UserResponse {
             uuid: Some(row.uuid),
             username: row.username,
             role: row.role,
             permissions,
             created_at: Some(row.created_at),
-            password_hash: row.password_hash,
-            password: None,
             avatar_base64: row.avatar_base64,
             display_name: row.display_name,
         });
@@ -80,8 +84,8 @@ async fn list_users(
 async fn save_user(
     _auth: NodeAuth,
     State(state): State<AppState>,
-    Json(payload): Json<PanelUser>,
-) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
+    Json(payload): Json<CreateUserRequest>,
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
     let uuid = payload.uuid.unwrap_or_else(|| Uuid::new_v4().to_string());
     let perms_json =
@@ -137,7 +141,7 @@ async fn delete_user(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(username): Path<String>,
-) -> Result<Json<ApiResponse<Vec<PanelUser>>>, crate::error::DaemonError> {
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
     if username == "iSweat" {
         return Err(crate::error::DaemonError::Custom("Le compte root 'iSweat' ne peut pas être supprimé".into()));
     }
