@@ -22,12 +22,7 @@ pub struct Session {
     pub os: String,
 }
 
-#[derive(Serialize)]
-pub struct ApiResponse<T> {
-    pub success: bool,
-    pub data: Option<T>,
-    pub error: Option<String>,
-}
+use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()

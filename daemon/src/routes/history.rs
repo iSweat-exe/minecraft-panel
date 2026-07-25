@@ -25,12 +25,7 @@ struct DbHistory {
     timestamp: i64,
 }
 
-#[derive(Serialize)]
-pub struct ApiResponse<T> {
-    pub success: bool,
-    pub data: Option<T>,
-    pub error: Option<String>,
-}
+use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/api/history", get(list_history).post(save_history))

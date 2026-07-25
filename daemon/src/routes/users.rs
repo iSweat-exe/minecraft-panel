@@ -25,12 +25,7 @@ pub struct PanelUser {
     pub display_name: Option<String>,
 }
 
-#[derive(Serialize)]
-pub struct ApiResponse<T> {
-    pub success: bool,
-    pub data: Option<T>,
-    pub error: Option<String>,
-}
+use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
