@@ -54,6 +54,8 @@ impl DockerManager {
         };
 
         let container_name = format!("mc-server-{}", spec.server_id);
+
+        #[allow(unused_mut)]
         let mut env = spec.env.clone();
 
         #[cfg(unix)]

@@ -37,8 +37,7 @@ async fn handle_ws_socket(socket: WebSocket, server_id: String, state: AppState)
     let (mut sender, receiver) = socket.split();
     let (tx, rx) = broadcast::channel::<String>(100);
 
-    let console_mgr =
-        crate::console::ConsoleStreamManager::new(Arc::new(state.docker.docker_client().clone()));
+    let console_mgr = state.console_mgr.clone();
 
     if let Err(err) = console_mgr
         .attach_and_broadcast(&server_id, tx.clone())
@@ -59,7 +58,7 @@ async fn handle_ws_socket(socket: WebSocket, server_id: String, state: AppState)
     let mut recv_task = spawn_ws_receiver(
         server_id.clone(),
         state.docker.clone(),
-        Arc::new(console_mgr),
+        console_mgr,
         receiver,
     );
 

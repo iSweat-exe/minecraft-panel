@@ -39,10 +39,10 @@ pub async fn node_docker_container_logs(
     node_url: String,
     node_token: String,
     container_name: String,
-    _tail: Option<u32>,
+    tail: Option<u32>,
 ) -> Result<String, AppError> {
     DaemonClient::new(node_url, node_token)
-        .docker_container_logs(&container_name)
+        .docker_container_logs(&container_name, tail)
         .await
 }
 

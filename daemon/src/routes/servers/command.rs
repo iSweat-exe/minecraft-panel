@@ -3,7 +3,6 @@ use axum::extract::{Path, State};
 use axum::response::IntoResponse;
 use axum::Json;
 use protocol::ApiResponse;
-use std::sync::Arc;
 
 use crate::auth::UserAuth;
 use crate::routes::AppState;
@@ -27,9 +26,8 @@ pub async fn server_command(
     if let Err(rejection) = auth.require_permission("server:console") {
         return (rejection.0, axum::Json(ApiResponse::<()>::err(rejection.1))).into_response();
     }
-    let console_mgr =
-        crate::console::ConsoleStreamManager::new(Arc::new(state.docker.docker_client().clone()));
-    match console_mgr
+    match state
+        .console_mgr
         .send_command(&id, &payload.command)
         .await
         .context(format!("Failed to send command to server {}", id))

@@ -60,11 +60,11 @@
 
 ### 🟠 Haute
 
-- [ ] BUG-03 — `ConsoleStreamManager` réinstancié à chaque requête, jamais partagé (ws.rs, command.rs)
-- [ ] BUG-04 — Paramètre `_tail` ignoré dans les logs de conteneur (commands/docker.rs L42)
-- [ ] BUG-05 — `backups.rs` : `std::process::Command` bloquant en contexte async (L77-83)
-- [ ] BUG-06 — `crontab.rs` : `std::process::Command` bloquant (L16-19, 47-50)
-- [ ] BUG-07 — `update_docker_config` : `systemctl` bloquant (docker.rs L389-393)
+- [x] BUG-03 — `ConsoleStreamManager` réinstancié à chaque requête, jamais partagé (ws.rs, command.rs)
+- [x] BUG-04 — Paramètre `_tail` ignoré dans les logs de conteneur (commands/docker.rs L42)
+- [x] BUG-05 — `backups.rs` : `std::process::Command` bloquant en contexte async (L77-83)
+- [x] BUG-06 — `crontab.rs` : `std::process::Command` bloquant (L16-19, 47-50)
+- [x] BUG-07 — `update_docker_config` : `systemctl` bloquant (docker.rs L389-393)
 
 ### 🟡 Moyenne
 

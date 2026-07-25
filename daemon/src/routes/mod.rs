@@ -6,6 +6,8 @@ pub mod sessions;
 pub mod system;
 pub mod users;
 
+use std::sync::Arc;
+
 use crate::config::DaemonConfig;
 use crate::docker::DockerManager;
 use axum::Router;
@@ -17,6 +19,7 @@ pub struct AppState {
     pub docker: DockerManager,
     pub start_time: std::time::Instant,
     pub db: sqlx::SqlitePool,
+    pub console_mgr: Arc<crate::console::ConsoleStreamManager>,
 }
 
 pub fn create_router(state: AppState) -> Router {

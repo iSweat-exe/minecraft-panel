@@ -1,21 +1,22 @@
 use anyhow::{Context, Result};
 use axum::Json;
 use protocol::{ApiResponse, CrontabUpdateRequest};
-use std::process::Command;
+use tokio::process::Command;
 
 use crate::auth::NodeAuth;
 
 pub async fn get_crontab(_auth: NodeAuth) -> Json<ApiResponse<String>> {
-    match get_crontab_impl().context("Failed to get crontab") {
+    match get_crontab_impl().await.context("Failed to get crontab") {
         Ok(s) => Json(ApiResponse::ok(s)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
 }
 
-fn get_crontab_impl() -> Result<String> {
+async fn get_crontab_impl() -> Result<String> {
     let output = Command::new("crontab")
         .arg("-l")
         .output()
+        .await
         .context("Failed to execute 'crontab -l' command")?;
 
     if output.status.success() {
@@ -34,22 +35,25 @@ pub async fn update_crontab(
     _auth: NodeAuth,
     Json(payload): Json<CrontabUpdateRequest>,
 ) -> Json<ApiResponse<String>> {
-    match update_crontab_impl(payload.content).context("Failed to update crontab") {
+    match update_crontab_impl(payload.content).await.context("Failed to update crontab") {
         Ok(s) => Json(ApiResponse::ok(s)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
     }
 }
 
-fn update_crontab_impl(content: String) -> Result<String> {
+async fn update_crontab_impl(content: String) -> Result<String> {
     let temp_file = std::env::temp_dir().join("daemon_crontab.tmp");
-    std::fs::write(&temp_file, &content).context("Failed to write crontab to temporary file")?;
+    tokio::fs::write(&temp_file, &content)
+        .await
+        .context("Failed to write crontab to temporary file")?;
 
     let output = Command::new("crontab")
         .arg(&temp_file)
         .output()
+        .await
         .context("Failed to execute 'crontab' command with temp file")?;
 
-    let _ = std::fs::remove_file(&temp_file);
+    let _ = tokio::fs::remove_file(&temp_file).await;
 
     if output.status.success() {
         Ok("Crontab updated".to_string())

@@ -7,7 +7,7 @@ use protocol::{
     ApiResponse, DockerConfigUpdateRequest, DockerContainerInfo, DockerImageInfo, DockerRunRequest,
     DockerUpdateRequest,
 };
-use std::process::Command as StdCommand;
+use tokio::process::Command as TokioCommand;
 
 use crate::{auth::UserAuth, AppState};
 
@@ -65,17 +65,29 @@ pub async fn container_action(
     }
 }
 
+#[derive(serde::Deserialize)]
+pub struct ContainerLogsQuery {
+    #[serde(default = "default_tail")]
+    pub tail: u32,
+}
+
+fn default_tail() -> u32 {
+    150
+}
+
 pub async fn container_logs(
     auth: UserAuth,
     Path(id): Path<String>,
+    axum::extract::Query(query): axum::extract::Query<ContainerLogsQuery>,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
     if let Err((_, msg)) = auth.require_permission("system:docker") {
         return axum::Json(protocol::ApiResponse::err(msg.to_string()));
     }
+    let tail_str = query.tail.to_string();
     match state
         .docker
-        .run_docker_command(&["logs", "--tail", "150", &id])
+        .run_docker_command(&["logs", "--tail", &tail_str, &id])
         .await
     {
         Ok(v) => Json(ApiResponse::ok(v)),
@@ -345,10 +357,11 @@ async fn update_docker_config_impl(new_config: serde_json::Value) -> Result<Stri
         .context("Failed to write to /etc/docker/daemon.json")?;
 
     // Reload docker daemon
-    let output = StdCommand::new("systemctl")
+    let output = TokioCommand::new("systemctl")
         .arg("reload")
         .arg("docker")
         .output()
+        .await
         .context("Failed to spawn systemctl reload docker command")?;
 
     if output.status.success() {

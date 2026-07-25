@@ -4,7 +4,7 @@ use axum::{
 };
 use protocol::ApiResponse;
 use serde::{Deserialize, Serialize};
-use std::process::Command as StdCommand;
+use tokio::process::Command as TokioCommand;
 
 use crate::{auth::NodeAuth, AppState};
 
@@ -64,13 +64,14 @@ pub async fn create_backup(
         .unwrap_or_else(|| format!("{}_{}.tar.gz", server_id, chrono::Utc::now().timestamp()));
     let backup_path = format!("{}/{}", backup_dir, backup_name);
 
-    let output = StdCommand::new("tar")
+    let output = TokioCommand::new("tar")
         .arg("-czf")
         .arg(&backup_path)
         .arg("-C")
         .arg(&source_dir)
         .arg(".")
-        .output();
+        .output()
+        .await;
 
     match output {
         Ok(out) if out.status.success() => Json(ApiResponse::ok("Backup created".to_string())),

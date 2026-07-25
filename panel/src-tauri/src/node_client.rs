@@ -333,8 +333,9 @@ impl DaemonClient {
         self.request(Method::POST, &format!("/api/v1/system/docker/containers/{}/action", id), Some(payload)).await
     }
 
-    pub async fn docker_container_logs(&self, id: &str) -> Result<String, AppError> {
-        self.request(Method::GET, &format!("/api/v1/system/docker/containers/{}/logs", id), None).await
+    pub async fn docker_container_logs(&self, id: &str, tail: Option<u32>) -> Result<String, AppError> {
+        let tail_str = tail.map(|t| t.to_string()).unwrap_or_else(|| "150".to_string());
+        self.request(Method::GET, &format!("/api/v1/system/docker/containers/{}/logs?tail={}", id, tail_str), None).await
     }
 
     pub async fn docker_container_inspect(&self, id: &str) -> Result<String, AppError> {

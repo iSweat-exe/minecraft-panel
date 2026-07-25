@@ -73,11 +73,16 @@ async fn main() -> Result<()> {
         eprintln!("Failed to start scheduler: {}", e);
     }
 
+    let console_mgr = std::sync::Arc::new(
+        console::ConsoleStreamManager::new(std::sync::Arc::new(docker_mgr.docker_client().clone())),
+    );
+
     let state = AppState {
         config: config.clone(),
         docker: docker_mgr,
         start_time: std::time::Instant::now(),
         db: db_pool,
+        console_mgr,
     };
 
     let router = create_router(state);

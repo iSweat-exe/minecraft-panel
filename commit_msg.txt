@@ -1,7 +1,0 @@
-﻿feat(users): migrate panel users to daemon SQL database
-
-- Refactor Panel Tauri backend to manage users via daemon API rather than local JSON
-- Allow admins to delete users in the UI
-- Update daemon SQLite to store data in `.panel_users/daemon.db` as requested
-- Fix 422 Unprocessable Entity on `/api/history` and `/api/users` endpoints caused by missing fields
-- Bump daemon version to 0.1.32
