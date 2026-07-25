@@ -149,15 +149,39 @@ impl axum::extract::FromRequestParts<crate::routes::AppState> for UserAuth {
             .and_then(|h| h.to_str().ok())
             .map(|s| s.to_string());
 
+        let mut using_jwt = false;
+        let mut jwt_username = None;
+
         match token {
-            Some(t) if t == node_token => {}
+            Some(ref t) if t == &node_token => {}
+            Some(ref t) if t.starts_with("ey") => {
+                let token_data = jsonwebtoken::decode::<protocol::auth::DaemonClaims>(
+                    t,
+                    &jsonwebtoken::DecodingKey::from_secret(state.config.jwt_secret.as_bytes()),
+                    &jsonwebtoken::Validation::default(),
+                );
+                match token_data {
+                    Ok(data) => {
+                        using_jwt = true;
+                        jwt_username = Some(data.claims.sub);
+                    }
+                    Err(e) => {
+                        tracing::warn!("UserAuth: Invalid JWT token: {}", e);
+                        return Err((StatusCode::UNAUTHORIZED, "Invalid or expired JWT token"));
+                    }
+                }
+            }
             _ => return Err((StatusCode::UNAUTHORIZED, "Invalid or missing node token")),
         }
 
-        let panel_user = parts
-            .headers
-            .get(protocol::PANEL_USER_HEADER)
-            .and_then(|h| h.to_str().ok());
+        let panel_user = if using_jwt {
+            jwt_username
+        } else {
+            parts
+                .headers
+                .get(protocol::PANEL_USER_HEADER)
+                .and_then(|h| h.to_str().ok().map(|s| s.to_string()))
+        };
 
         if let Some(username) = panel_user {
             // Load user from DB
@@ -169,7 +193,7 @@ impl axum::extract::FromRequestParts<crate::routes::AppState> for UserAuth {
             }
 
             match sqlx::query_as::<_, DbUser>("SELECT username, role, permissions FROM users WHERE username = ?")
-                .bind(username)
+                .bind(&username)
                 .fetch_optional(&state.db)
                 .await
             {

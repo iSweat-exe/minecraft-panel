@@ -143,6 +143,7 @@ export const ConsolePanel: React.FC = () => {
     const { host } = useConnectionStore();
     const port = localStorage.getItem('node_port') || '8080';
     const token = getToken();
+    const loginMode = localStorage.getItem('panel_login_mode') || 'admin';
     const { activeServerId, getActiveServerPath } = useActiveServerStore();
     
     const canSend = can('console.send');
@@ -204,9 +205,11 @@ export const ConsolePanel: React.FC = () => {
                             <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Terminal size={14} /> Console
                             </button>
-                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
-                                <Server size={14} /> Terminal Hôte
-                            </button>
+                            {loginMode === 'admin' && (
+                                <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                    <Server size={14} /> Terminal Hôte
+                                </button>
+                            )}
                             <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Bug size={14} /> Rapports de Crash
                             </button>
@@ -292,9 +295,11 @@ export const ConsolePanel: React.FC = () => {
                             <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Terminal size={14} /> Console
                             </button>
-                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
-                                <Server size={14} /> Terminal Hôte
-                            </button>
+                            {loginMode === 'admin' && (
+                                <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                    <Server size={14} /> Terminal Hôte
+                                </button>
+                            )}
                             <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Bug size={14} /> Rapports de Crash
                             </button>
@@ -345,9 +350,11 @@ export const ConsolePanel: React.FC = () => {
                             <button onClick={() => setViewMode('console')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'console' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Terminal size={14} /> Console
                             </button>
-                            <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
-                                <Server size={14} /> Terminal Hôte
-                            </button>
+                            {loginMode === 'admin' && (
+                                <button onClick={() => setViewMode('host')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'host' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
+                                    <Server size={14} /> Terminal Hôte
+                                </button>
+                            )}
                             <button onClick={() => setViewMode('crashes')} className={`flex items-center gap-1.5 px-3 py-1 rounded text-xs font-medium transition-colors ${viewMode === 'crashes' ? 'bg-primary/20 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'}`}>
                                 <Bug size={14} /> Rapports de Crash
                             </button>

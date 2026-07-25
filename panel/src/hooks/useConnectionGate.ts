@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { logAction } from '../lib/actionLogger';
-import { setCredentials, clearCredentials, getToken } from '../lib/connectionManager';
+import { setCredentials, clearCredentials } from '../lib/connectionManager';
 
 export function useConnectionGate() {
     const { sshStatus, setSshStatus, setHost: setStoreHost } = useConnectionStore();
@@ -46,6 +46,7 @@ export function useConnectionGate() {
                 // Verify Daemon Token
                 await tauriBridge.nodeGetInfo(nodeUrl, password);
                 setCredentials(host, port.toString(), password);
+                localStorage.setItem('node_admin_token', password);
 
                 // Fetch root admin profile from daemon
                 const users = await tauriBridge.getPanelUsers(nodeUrl, password);
@@ -66,16 +67,13 @@ export function useConnectionGate() {
                     localStorage.setItem('panel_display_name', 'iSweat');
                 }
             } else {
-                // For subusers, we need to read the users file from the daemon using the admin token
-                const adminToken = getToken();
-                if (!adminToken) {
-                    throw new Error("L'administrateur doit se connecter au moins une fois pour configurer le Daemon.");
-                }
+                // For subusers, we use the daemon's login route to get a JWT
+                const result = await tauriBridge.loginPanelUser(nodeUrl, subUsername, password);
+                const verifiedUser = result.user;
+                const jwtToken = result.token;
                 
-                const verifiedUser = await tauriBridge.verifyPanelUser(nodeUrl, adminToken, subUsername, password);
-                
-                // Store subuser connection using admin token (daemon will use x-panel-user header later)
-                setCredentials(host, port.toString(), adminToken, subUsername);
+                // Store subuser connection using the JWT
+                setCredentials(host, port.toString(), jwtToken, subUsername);
                 localStorage.setItem('panel_username', verifiedUser.username);
                 if (verifiedUser.display_name) {
                     localStorage.setItem('panel_display_name', verifiedUser.display_name);

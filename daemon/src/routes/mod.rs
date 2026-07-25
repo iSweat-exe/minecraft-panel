@@ -5,6 +5,7 @@ pub mod servers;
 pub mod sessions;
 pub mod system;
 pub mod users;
+pub mod auth_routes;
 
 use std::sync::Arc;
 
@@ -78,6 +79,7 @@ pub fn create_router(state: AppState) -> Router {
         .merge(sessions::router())
         .merge(history::router())
         .merge(automations::router())
+        .merge(auth_routes::router())
         .layer(middleware::from_fn(rate_limit_middleware))
         .layer(axum::Extension(rate_limit_state))
         .layer(axum::Extension(state.config.clone()))

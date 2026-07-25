@@ -96,3 +96,56 @@ pub async fn verify_panel_user(
         None => Err(AppError::Message("Utilisateur non trouvé".into())),
     }
 }
+#[derive(serde::Serialize)]
+struct LoginRequest {
+    username: String,
+    password: String,
+}
+
+#[derive(serde::Deserialize)]
+struct LoginResponse {
+    token: String,
+}
+
+#[derive(serde::Serialize)]
+pub struct LoginResult {
+    pub user: PanelUser,
+    pub token: String,
+}
+
+#[tauri::command]
+pub async fn login_panel_user(
+    node_url: String,
+    username: String,
+    password: String,
+) -> Result<LoginResult, AppError> {
+    let client = reqwest::Client::new();
+    let res = client
+        .post(&format!("{}/api/auth/login", node_url))
+        .json(&LoginRequest { username: username.clone(), password })
+        .send()
+        .await
+        .map_err(|e| AppError::Message(format!("Network error: {}", e)))?;
+
+    if !res.status().is_success() {
+        return Err(AppError::Message("Mot de passe incorrect".into()));
+    }
+
+    let login_res: LoginResponse = res
+        .json()
+        .await
+        .map_err(|_| AppError::Message("Invalid response format".into()))?;
+        
+    let daemon_client = DaemonClient::new(node_url, login_res.token.clone());
+    let users = daemon_client.get_users().await?;
+    
+    let target = users
+        .into_iter()
+        .find(|u| u.username.to_lowercase() == username.to_lowercase())
+        .ok_or_else(|| AppError::Message("Utilisateur non trouvé".into()))?;
+        
+    Ok(LoginResult {
+        user: target,
+        token: login_res.token,
+    })
+}

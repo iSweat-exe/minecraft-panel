@@ -137,6 +137,7 @@ export const tauriBridge = {
     savePanelUser: (nodeUrl: string, nodeToken: string, user: import('../types/permissions').PanelUser) => invoke<import('../types/permissions').PanelUser[]>('save_panel_user', { nodeUrl, nodeToken, user }),
     deletePanelUser: (nodeUrl: string, nodeToken: string, username: string) => invoke<import('../types/permissions').PanelUser[]>('delete_panel_user', { nodeUrl, nodeToken, username }),
     verifyPanelUser: (nodeUrl: string, nodeToken: string, username: string, password: string) => invoke<import('../types/permissions').PanelUser>('verify_panel_user', { nodeUrl, nodeToken, username, password }),
+    loginPanelUser: (nodeUrl: string, username: string, password: string) => invoke<{ user: import('../types/permissions').PanelUser, token: string }>('login_panel_user', { nodeUrl, username, password }),
 
     // Docker Management
     nodeDockerListContainers: (nodeUrl: string, nodeToken: string) => invoke<DockerContainerInfo[]>('node_docker_list_containers', { nodeUrl, nodeToken }),

@@ -23,6 +23,7 @@ pub fn run() {
             commands::users::save_panel_user,
             commands::users::delete_panel_user,
             commands::users::verify_panel_user,
+            commands::users::login_panel_user,
             commands::docker::node_docker_list_containers,
             commands::docker::node_docker_container_action,
             commands::docker::node_docker_system_prune,
