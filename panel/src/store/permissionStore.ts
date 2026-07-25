@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { PanelUser } from '../types/permissions';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
+import { getToken } from '../lib/connectionManager';
 
 interface PermissionStore {
     users: PanelUser[];
@@ -25,7 +26,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -60,7 +61,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -84,7 +85,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

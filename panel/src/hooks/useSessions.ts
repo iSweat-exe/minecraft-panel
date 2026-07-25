@@ -3,6 +3,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 
 import { useSessionStore } from '../store/sessionStore';
 import type { PanelSession } from '../store/sessionStore';
+import { getToken } from '../lib/connectionManager';
 
 export type { PanelSession };
 
@@ -54,7 +55,7 @@ export function useSessionPing() {
     const getCredentials = () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) throw new Error("Daemon credentials missing");
         return { nodeUrl: `http://${host}:${port}`, token };
     };

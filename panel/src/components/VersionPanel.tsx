@@ -5,6 +5,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
 import { Button } from './ui/Button';
 import { useActiveServerStore } from '../store/activeServerStore';
+import { getToken } from '../lib/connectionManager';
 
 export const VersionPanel: React.FC = () => {
     const [serverType, setServerType] = useState<string>('CUSTOM');
@@ -24,7 +25,7 @@ export const VersionPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -56,7 +57,7 @@ export const VersionPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

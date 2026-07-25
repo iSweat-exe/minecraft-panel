@@ -126,3 +126,94 @@ where
         }
     }
 }
+
+/// Extractor for requests that require user authorization (Daemon-side permissions)
+pub struct UserAuth {
+    pub username: String,
+    pub role: String,
+    pub permissions: Vec<String>,
+}
+
+impl axum::extract::FromRequestParts<crate::routes::AppState> for UserAuth {
+    type Rejection = (StatusCode, &'static str);
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &crate::routes::AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let node_token = state.config.node_token.clone();
+
+        let token = parts
+            .headers
+            .get(protocol::NODE_TOKEN_HEADER)
+            .and_then(|h| h.to_str().ok())
+            .map(|s| s.to_string());
+
+        match token {
+            Some(t) if t == node_token => {}
+            _ => return Err((StatusCode::UNAUTHORIZED, "Invalid or missing node token")),
+        }
+
+        let panel_user = parts
+            .headers
+            .get(protocol::PANEL_USER_HEADER)
+            .and_then(|h| h.to_str().ok());
+
+        if let Some(username) = panel_user {
+            // Load user from DB
+            #[derive(sqlx::FromRow)]
+            struct DbUser {
+                username: String,
+                role: String,
+                permissions: String,
+            }
+
+            match sqlx::query_as::<_, DbUser>("SELECT username, role, permissions FROM users WHERE username = ?")
+                .bind(username)
+                .fetch_optional(&state.db)
+                .await
+            {
+                Ok(Some(row)) => {
+                    let perms: Vec<String> = serde_json::from_str(&row.permissions).unwrap_or_default();
+                    return Ok(UserAuth {
+                        username: row.username,
+                        role: row.role,
+                        permissions: perms,
+                    });
+                }
+                Ok(None) => {
+                    tracing::warn!("UserAuth: User '{}' not found in database", username);
+                    return Err((StatusCode::FORBIDDEN, "User not found"));
+                }
+                Err(e) => {
+                    tracing::warn!("UserAuth: Failed to load user: {}", e);
+                    return Err((StatusCode::INTERNAL_SERVER_ERROR, "Database error"));
+                }
+            }
+        }
+
+        // If no user specified, it's the root admin
+        Ok(UserAuth {
+            username: "iSweat".to_string(),
+            role: "admin".to_string(),
+            permissions: vec!["*".to_string()],
+        })
+    }
+}
+
+impl UserAuth {
+    pub fn require_permission(&self, permission: &str) -> Result<(), (StatusCode, &'static str)> {
+        if self.role == "admin" || self.permissions.contains(&"*".to_string()) {
+            return Ok(());
+        }
+
+        if self.permissions.contains(&permission.to_string()) {
+            return Ok(());
+        }
+
+        Err((
+            StatusCode::FORBIDDEN,
+            "You do not have permission to perform this action",
+        ))
+    }
+}

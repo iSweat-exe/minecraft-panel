@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useConnectionStore } from '../store/connectionStore';
 import { logAction } from '../lib/actionLogger';
+import { setCredentials, clearCredentials, getToken } from '../lib/connectionManager';
 
 export function useConnectionGate() {
     const { sshStatus, setSshStatus, setHost: setStoreHost } = useConnectionStore();
@@ -40,7 +41,7 @@ export function useConnectionGate() {
             if (loginMode === 'admin') {
                 // Verify Daemon Token
                 await tauriBridge.nodeGetInfo(nodeUrl, password);
-                localStorage.setItem('node_token', password);
+                setCredentials(host, port.toString(), password);
 
                 // Fetch root admin profile from daemon
                 const users = await tauriBridge.getPanelUsers(nodeUrl, password);
@@ -62,12 +63,15 @@ export function useConnectionGate() {
                 }
             } else {
                 // For subusers, we need to read the users file from the daemon using the admin token
-                const adminToken = localStorage.getItem('node_token');
+                const adminToken = getToken();
                 if (!adminToken) {
                     throw new Error("L'administrateur doit se connecter au moins une fois pour configurer le Daemon.");
                 }
                 
                 const verifiedUser = await tauriBridge.verifyPanelUser(nodeUrl, adminToken, subUsername, password);
+                
+                // Store subuser connection using admin token (daemon will use x-panel-user header later)
+                setCredentials(host, port.toString(), adminToken, subUsername);
                 localStorage.setItem('panel_username', verifiedUser.username);
                 if (verifiedUser.display_name) {
                     localStorage.setItem('panel_display_name', verifiedUser.display_name);
@@ -101,6 +105,7 @@ export function useConnectionGate() {
 
     const disconnect = () => {
         setSshStatus('disconnected');
+        clearCredentials();
         localStorage.removeItem('node_auto_connect');
     };
 

@@ -9,6 +9,7 @@ import { ChevronRight, CornerDownLeft, ArrowDownToLine, Terminal, Bug, FileText,
 import { Terminal as XTerm } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import 'xterm/css/xterm.css';
+import { getToken } from '../lib/connectionManager';
 
 const LogLine: React.FC<{ line: string }> = React.memo(({ line }) => {
     const spans = colorizeLogLine(line);
@@ -141,7 +142,7 @@ export const ConsolePanel: React.FC = () => {
     const { can } = usePermissionStore();
     const { host } = useConnectionStore();
     const port = localStorage.getItem('node_port') || '8080';
-    const token = localStorage.getItem('node_token');
+    const token = getToken();
     const { activeServerId, getActiveServerPath } = useActiveServerStore();
     
     const canSend = can('console.send');

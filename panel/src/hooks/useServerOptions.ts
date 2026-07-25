@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { logAction } from '../lib/actionLogger';
 import { useActiveServerStore } from '../store/activeServerStore';
+import { getToken } from '../lib/connectionManager';
 
 export interface ServerProps {
     'max-players': string;
@@ -30,7 +31,7 @@ export function useServerOptions() {
     const getCredentials = () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) throw new Error("Daemon credentials missing");
         return { nodeUrl: `http://${host}:${port}`, token };
     };

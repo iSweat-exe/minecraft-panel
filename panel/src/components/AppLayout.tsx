@@ -34,6 +34,7 @@ import {
     Clock,
     Server
 } from 'lucide-react';
+import { getToken } from '../lib/connectionManager';
 
 const NAV_ITEMS = [
     { id: 'server', path: '/', label: 'Serveur', icon: Power },
@@ -86,7 +87,7 @@ export const AppLayout: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
             const list = await tauriBridge.nodeListServers(nodeUrl, token);
@@ -136,7 +137,7 @@ export const AppLayout: React.FC = () => {
             if (sessionUuid) {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (host && token) {
                     const nodeUrl = `http://${host}:${port}`;
                     tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});
@@ -162,7 +163,7 @@ export const AppLayout: React.FC = () => {
             if (sessionUuid) {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (host && token) {
                     const nodeUrl = `http://${host}:${port}`;
                     await tauriBridge.nodeApiRequest(nodeUrl, token, 'DELETE', `/api/v1/sessions/${sessionUuid}`).catch(() => {});

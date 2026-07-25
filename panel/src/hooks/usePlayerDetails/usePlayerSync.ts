@@ -3,6 +3,7 @@ import { tauriBridge } from '../../lib/tauriBridge';
 import * as nbt from 'nbtify';
 import { mc } from '../../lib/minecraftCommands';
 import { PlayerConfig } from './usePlayerConfig';
+import { getToken } from '../../lib/connectionManager';
 
 export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
     const [loading, setLoading] = useState(true);
@@ -26,7 +27,7 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                     try {
                         const host = localStorage.getItem('node_host');
                         const port = localStorage.getItem('node_port') || '8080';
-                        const token = localStorage.getItem('node_token');
+                        const token = getToken();
                         if (!host || !token) throw new Error("Daemon credentials missing");
                         const nodeUrl = `http://${host}:${port}`;
                         
@@ -58,7 +59,7 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
 
                         const host = localStorage.getItem('node_host');
                         const port = localStorage.getItem('node_port') || '8080';
-                        const token = localStorage.getItem('node_token');
+                        const token = getToken();
                         if (!host || !token) throw new Error("Daemon credentials missing for RCON");
                         const nodeUrl = `http://${host}:${port}`;
                         

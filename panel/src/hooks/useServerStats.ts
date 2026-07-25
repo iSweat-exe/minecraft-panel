@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { tauriBridge, SystemMetricsResponse } from '../lib/tauriBridge';
+import { getToken } from '../lib/connectionManager';
 
 export function useServerStats() {
     const [metrics, setMetrics] = useState<SystemMetricsResponse | null>(null);
@@ -15,7 +16,7 @@ export function useServerStats() {
         const fetchMetrics = async () => {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             
             if (!host || !token) return;
             

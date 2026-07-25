@@ -1,17 +1,21 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
+use axum::response::IntoResponse;
 use axum::Json;
 use protocol::{ApiResponse, PowerActionRequest, PowerActionResponse};
 
-use crate::auth::NodeAuth;
+use crate::auth::UserAuth;
 use crate::routes::AppState;
 
 pub async fn server_power(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(payload): Json<PowerActionRequest>,
-) -> Json<ApiResponse<PowerActionResponse>> {
+) -> axum::response::Response {
+    if let Err(rejection) = auth.require_permission("server:power") {
+        return (rejection.0, axum::Json(ApiResponse::<()>::err(rejection.1))).into_response();
+    }
     let action = payload.action;
     match state
         .docker
@@ -26,7 +30,7 @@ pub async fn server_power(
             action,
             success: true,
             message: "Action executed successfully".to_string(),
-        })),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        })).into_response(),
+        Err(e) => Json(ApiResponse::<PowerActionResponse>::err(format!("{:#}", e))).into_response(),
     }
 }

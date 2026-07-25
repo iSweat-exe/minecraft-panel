@@ -10,6 +10,7 @@ import { SwitchVersionModal } from '../dialogs/SwitchVersionModal';
 import { ModrinthProject, ModrinthVersion } from '../../api/modrinth';
 import { logAction } from '../../lib/actionLogger';
 import { EmptyState } from '../ui/EmptyState';
+import { getToken } from '../../lib/connectionManager';
 
 interface SftpFileListProps {
     entries: FileEntry[];
@@ -141,7 +142,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             try {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (!host || !token) return;
                 const nodeUrl = `http://${host}:${port}`;
 
@@ -196,7 +197,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

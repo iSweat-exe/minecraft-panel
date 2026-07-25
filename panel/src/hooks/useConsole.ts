@@ -3,6 +3,7 @@ import { tauriBridge } from '../lib/tauriBridge';
 import { useConsoleStore } from '../store/consoleStore';
 import { logAction } from '../lib/actionLogger';
 import { useActiveServerStore } from '../store/activeServerStore';
+import { getToken } from '../lib/connectionManager';
 
 export function useConsole() {
     const { lines, pushLine, pushLines, history, historyIndex, pushHistory, setHistoryIndex, clear, savedScrollTop, isScrolledUp: storeIsScrolledUp, setScrollState } = useConsoleStore();
@@ -23,7 +24,7 @@ export function useConsole() {
             try {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (!host || !token) return;
 
                 const serverId = activeServerId;

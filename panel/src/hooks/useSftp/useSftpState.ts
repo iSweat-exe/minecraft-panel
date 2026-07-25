@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { tauriBridge, FileEntry } from '../../lib/tauriBridge';
 import { SftpStateContext } from './types';
+import { getToken } from '../../lib/connectionManager';
 
 export function useSftpState(initialPath: string = '/') {
     const [currentPath, setCurrentPath] = useState<string>(initialPath);
@@ -51,7 +52,7 @@ export function useSftpState(initialPath: string = '/') {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

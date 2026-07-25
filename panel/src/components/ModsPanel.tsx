@@ -13,6 +13,7 @@ import { ClientModWarningModal } from './dialogs/ClientModWarningModal';
 import { ModDetailsModal } from './dialogs/ModDetailsModal';
 import type { ModrinthVersion } from '../api/modrinth';
 import { logAction } from '../lib/actionLogger';
+import { getToken } from '../lib/connectionManager';
 
 export const ModsPanel: React.FC = () => {
     const navigate = useNavigate();
@@ -76,7 +77,7 @@ export const ModsPanel: React.FC = () => {
             const resolvedPath = getResolvedModPath(modPath);
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
 
@@ -135,7 +136,7 @@ export const ModsPanel: React.FC = () => {
             const resolvedDir = getResolvedModPath(modPath);
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -170,7 +171,7 @@ export const ModsPanel: React.FC = () => {
             const resolvedPath = getResolvedModPath(modPath);
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

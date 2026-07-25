@@ -4,6 +4,7 @@ import { tauriBridge } from '../../lib/tauriBridge';
 import { useActiveServerStore } from '../../store/activeServerStore';
 import { logAction } from '../../lib/actionLogger';
 import { Button } from '../ui/Button';
+import { getToken } from '../../lib/connectionManager';
 
 const RAM_PRESETS = [2, 4, 6, 8, 12, 16, 24, 32];
 
@@ -17,7 +18,7 @@ export const DockerSettingsCard: React.FC = () => {
     useEffect(() => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) return;
         const nodeUrl = `http://${host}:${port}`;
 
@@ -55,7 +56,7 @@ export const DockerSettingsCard: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -82,7 +83,7 @@ export const DockerSettingsCard: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

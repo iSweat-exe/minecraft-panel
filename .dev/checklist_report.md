@@ -5,6 +5,7 @@
 
 ## 🚨 Priorités immédiates (avant toute mise en prod)
 
+- [x] **SEC-10** — `UserAuth` Extractor (Daemon) implémenté et testé
 - [x] **SEC-05** — Authentification manquante sur `/api/users`, `/api/sessions`, `/api/history`, `/api/automations`
 - [x] **SEC-04** — `SessionAuth` utilise `node_token` au lieu de `jwt_secret` (auth.rs)
 - [x] **SEC-03** — Refuser le démarrage du daemon si secrets non configurés (config.rs)
@@ -31,7 +32,7 @@
 - [ ] SEC-07 — `system_prune --volumes` supprime toutes les données (docker.rs L85-97)
 - [x] SEC-08 — Hash de mot de passe SHA-256 non salé (commands/users.rs L6-11)
 - [ ] SEC-09 — Tokens stockés en clair dans `localStorage` (permissionStore.ts L24-27)
-- [ ] SEC-10 — Permissions vérifiées uniquement côté frontend (permissionStore.ts L106-120)
+- [x] SEC-10 — Permissions vérifiées uniquement côté frontend (permissionStore.ts L106-120)
 - [x] SEC-11 — Fallback réseau accorde les droits admin par défaut (permissionStore.ts L38-54)
 
 ### 🟡 Moyenne

@@ -6,11 +6,12 @@ import { Button } from './ui/Button';
 import { Server, Activity, HardDrive, Cpu, Terminal, ShieldAlert, RefreshCw } from 'lucide-react';
 import { formatBytes } from '../lib/utils';
 import { useToastStore } from '../store/toastStore';
+import { getToken } from '../lib/connectionManager';
 
 export const SystemPanel: React.FC = () => {
     const { host } = useConnectionStore();
     const port = localStorage.getItem('node_port') || '8080';
-    const token = localStorage.getItem('node_token');
+    const token = getToken();
     const nodeUrl = host && port ? `http://${host}:${port}` : '';
     
     const [systemHost, setSystemHost] = useState<SystemHostResponse | null>(null);

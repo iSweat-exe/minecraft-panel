@@ -32,6 +32,7 @@ import { EmptyState } from './ui/EmptyState';
 import { Alert } from './ui/Alert';
 import { Spinner } from './ui/Spinner';
 import { DockerSettingsCard } from './options/DockerSettingsCard';
+import { getToken } from '../lib/connectionManager';
 
 export const DockerPanel: React.FC = () => {
     const [containers, setContainers] = useState<DockerContainerInfo[]>([]);
@@ -157,7 +158,7 @@ export const DockerPanel: React.FC = () => {
     const getCredentials = () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) throw new Error("Non connecté au Daemon Node");
         return { nodeUrl: `http://${host}:${port}`, token };
     };

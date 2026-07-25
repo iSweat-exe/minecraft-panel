@@ -8,6 +8,7 @@ import { ConfirmDialog } from './dialogs/ConfirmDialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/Select';
 import { logAction } from '../lib/actionLogger';
 import { useActiveServerStore } from '../store/activeServerStore';
+import { getToken } from '../lib/connectionManager';
 
 type JobType = 'restart' | 'start' | 'stop' | 'backup' | 'clean_backups' | 'clean_logs' | 'custom';
 
@@ -41,7 +42,7 @@ export const AutomationsPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
             
@@ -60,7 +61,7 @@ export const AutomationsPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
 
@@ -91,7 +92,7 @@ export const AutomationsPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -122,7 +123,7 @@ export const AutomationsPanel: React.FC = () => {
             try {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (!host || !token) throw new Error("Daemon credentials missing");
                 const nodeUrl = `http://${host}:${port}`;
 

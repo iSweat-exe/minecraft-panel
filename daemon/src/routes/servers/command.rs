@@ -1,10 +1,11 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
+use axum::response::IntoResponse;
 use axum::Json;
 use protocol::ApiResponse;
 use std::sync::Arc;
 
-use crate::auth::NodeAuth;
+use crate::auth::UserAuth;
 use crate::routes::AppState;
 
 #[derive(serde::Deserialize)]
@@ -18,11 +19,14 @@ pub struct ServerRconMultiRequest {
 }
 
 pub async fn server_command(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(payload): Json<ServerCommandRequest>,
-) -> Json<ApiResponse<String>> {
+) -> axum::response::Response {
+    if let Err(rejection) = auth.require_permission("server:console") {
+        return (rejection.0, axum::Json(ApiResponse::<()>::err(rejection.1))).into_response();
+    }
     let console_mgr =
         crate::console::ConsoleStreamManager::new(Arc::new(state.docker.docker_client().clone()));
     match console_mgr
@@ -30,17 +34,20 @@ pub async fn server_command(
         .await
         .context(format!("Failed to send command to server {}", id))
     {
-        Ok(_) => Json(ApiResponse::ok("Command sent".to_string())),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(_) => axum::Json(ApiResponse::ok("Command sent".to_string())).into_response(),
+        Err(e) => axum::Json(ApiResponse::<String>::err(format!("{:#}", e))).into_response(),
     }
 }
 
 pub async fn server_rcon_multi(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
     Json(payload): Json<ServerRconMultiRequest>,
-) -> Json<ApiResponse<Vec<String>>> {
+) -> axum::response::Response {
+    if let Err(rejection) = auth.require_permission("server:console") {
+        return (rejection.0, axum::Json(ApiResponse::<()>::err(rejection.1))).into_response();
+    }
     let mut responses = Vec::new();
     let container_name = format!("mc-server-{}", id);
 
@@ -49,13 +56,13 @@ pub async fn server_rcon_multi(
         match state.docker.run_docker_command(&args).await {
             Ok(output) => responses.push(output),
             Err(e) => {
-                return Json(ApiResponse::err(format!(
+                return axum::Json(ApiResponse::<Vec<String>>::err(format!(
                     "Failed to execute RCON command: {:#}",
                     e
-                )));
+                ))).into_response();
             }
         }
     }
 
-    Json(ApiResponse::ok(responses))
+    axum::Json(ApiResponse::ok(responses)).into_response()
 }

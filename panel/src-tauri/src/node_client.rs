@@ -3,7 +3,7 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use protocol::{
     ApiResponse, ContainerSpec, DaemonClaims, DaemonInfoResponse, PowerActionRequest,
     PowerActionResponse, ServerPowerAction, ServerStatusResponse, NODE_TOKEN_HEADER,
-    PROTOCOL_VERSION, PROTOCOL_VERSION_HEADER,
+    PROTOCOL_VERSION, PROTOCOL_VERSION_HEADER, PANEL_USER_HEADER,
 };
 use reqwest::{Client, Method};
 use std::sync::OnceLock;
@@ -11,10 +11,10 @@ use std::time::Duration;
 
 static HTTP_CLIENT: OnceLock<Client> = OnceLock::new();
 
-#[derive(Clone)]
 pub struct DaemonClient {
     node_url: String,
     node_token: String,
+    username: Option<String>,
     client: Client,
 }
 
@@ -32,9 +32,22 @@ impl DaemonClient {
             url.pop();
         }
 
+        let raw_token = node_token.into();
+        let mut actual_token = raw_token.clone();
+        let mut username = None;
+
+        if let Some(idx) = raw_token.find("::") {
+            actual_token = raw_token[..idx].to_string();
+            let user_part = &raw_token[idx + 2..];
+            if !user_part.is_empty() {
+                username = Some(user_part.to_string());
+            }
+        }
+
         Self {
             node_url: url,
-            node_token: node_token.into(),
+            node_token: actual_token,
+            username,
             client,
         }
     }
@@ -55,6 +68,10 @@ impl DaemonClient {
             .request(method, &url)
             .header(NODE_TOKEN_HEADER, &self.node_token)
             .header(PROTOCOL_VERSION_HEADER, PROTOCOL_VERSION.to_string());
+
+        if let Some(ref user) = self.username {
+            req = req.header(PANEL_USER_HEADER, user);
+        }
 
         if let Some(b) = body {
             req = req.json(&b);

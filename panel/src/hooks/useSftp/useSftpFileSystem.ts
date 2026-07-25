@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../../components/dialogs/PromptDialog';
 import { SftpStateContext, SftpSelectionContext } from './types';
 import { logAction } from '../../lib/actionLogger';
+import { getToken } from '../../lib/connectionManager';
 
 export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelectionContext) {
     const [editingFile, setEditingFile] = useState<{path: string, content: string} | null>(null);
@@ -11,7 +12,7 @@ export function useSftpFileSystem(state: SftpStateContext, selection: SftpSelect
     const getCredentials = () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) throw new Error("Daemon credentials missing");
         return { nodeUrl: `http://${host}:${port}`, token };
     };

@@ -5,14 +5,20 @@ use axum::{
     response::Response,
 };
 
-use crate::auth::NodeAuth;
+use crate::auth::UserAuth;
 
 use super::FileQuery;
 
 pub async fn download_file(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Query(query): Query<FileQuery>,
 ) -> Response {
+    if let Err((_, msg)) = auth.require_permission("server:files") {
+        return Response::builder()
+            .status(StatusCode::FORBIDDEN)
+            .body(Body::from(msg.to_string()))
+            .unwrap();
+    }
     match crate::files::read_file(&query.path).await {
         Ok(bytes) => {
             Response::builder()

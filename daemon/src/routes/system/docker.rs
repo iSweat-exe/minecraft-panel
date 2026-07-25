@@ -9,12 +9,15 @@ use protocol::{
 };
 use std::process::Command as StdCommand;
 
-use crate::{auth::NodeAuth, AppState};
+use crate::{auth::UserAuth, AppState};
 
 pub async fn list_all_containers(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<Vec<DockerContainerInfo>>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state.docker.list_all_containers().await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
@@ -22,9 +25,12 @@ pub async fn list_all_containers(
 }
 
 pub async fn list_all_images(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<Vec<DockerImageInfo>>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state.docker.list_all_images().await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
@@ -37,11 +43,14 @@ pub struct DockerActionPayload {
 }
 
 pub async fn container_action(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerActionPayload>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     let cmd = match payload.action.as_str() {
         "start" => vec!["start", &id],
         "stop" => vec!["stop", "-t", "10", &id],
@@ -57,10 +66,13 @@ pub async fn container_action(
 }
 
 pub async fn container_logs(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state
         .docker
         .run_docker_command(&["logs", "--tail", "150", &id])
@@ -72,10 +84,13 @@ pub async fn container_logs(
 }
 
 pub async fn container_inspect(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state.docker.run_docker_command(&["inspect", &id]).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
@@ -83,9 +98,12 @@ pub async fn container_inspect(
 }
 
 pub async fn system_prune(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state
         .docker
         .run_docker_command(&["system", "prune", "-af", "--volumes"])
@@ -102,10 +120,13 @@ pub struct PullImagePayload {
 }
 
 pub async fn pull_image(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
     Json(payload): Json<PullImagePayload>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state
         .docker
         .run_docker_command(&["pull", &payload.image_name])
@@ -117,10 +138,13 @@ pub async fn pull_image(
 }
 
 pub async fn remove_image(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match state.docker.run_docker_command(&["rmi", "-f", &id]).await {
         Ok(v) => Json(ApiResponse::ok(v)),
         Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
@@ -128,10 +152,13 @@ pub async fn remove_image(
 }
 
 pub async fn run_container(
-    _auth: NodeAuth,
+    auth: UserAuth,
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     let args = build_docker_run_args(&payload);
     let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
@@ -142,11 +169,14 @@ pub async fn run_container(
 }
 
 pub async fn update_container(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerUpdateRequest>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     let mut update_args = vec!["update"];
 
     if let Some(policy) = &payload.restart_policy {
@@ -199,11 +229,14 @@ pub async fn update_container(
 }
 
 pub async fn recreate_container(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     let _ = state.docker.run_docker_command(&["rm", "-f", &id]).await;
 
     let args = build_docker_run_args(&payload);
@@ -215,7 +248,10 @@ pub async fn recreate_container(
     }
 }
 
-pub async fn get_docker_config(_auth: NodeAuth) -> Json<ApiResponse<serde_json::Value>> {
+pub async fn get_docker_config(auth: UserAuth) -> Json<ApiResponse<serde_json::Value>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match get_docker_config_impl()
         .await
         .context("Failed to read Docker configuration")
@@ -240,9 +276,12 @@ async fn get_docker_config_impl() -> Result<serde_json::Value> {
 }
 
 pub async fn update_docker_config(
-    _auth: NodeAuth,
+    auth: UserAuth,
     Json(payload): Json<DockerConfigUpdateRequest>,
 ) -> Json<ApiResponse<String>> {
+    if let Err((_, msg)) = auth.require_permission("system:docker") {
+        return axum::Json(protocol::ApiResponse::err(msg.to_string()));
+    }
     match update_docker_config_impl(payload.config)
         .await
         .context("Failed to update Docker configuration")

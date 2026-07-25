@@ -46,6 +46,9 @@ impl DaemonClaims {
 
 pub const PROTOCOL_VERSION_HEADER: &str = "x-protocol-version";
 
+/// HTTP Header used for identifying the panel user
+pub const PANEL_USER_HEADER: &str = "x-panel-user";
+
 
 /// Embedded Ed25519 Public Key for release verification (32 bytes)
 pub const OFFICIAL_RELEASE_PUBLIC_KEY: [u8; 32] = [

@@ -7,6 +7,7 @@ import { ActionLog } from '../lib/actionLogger';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from './ui/Table';
 import { Button } from './ui/Button';
 import { SearchInput } from './ui/SearchInput';
+import { getToken } from '../lib/connectionManager';
 
 const formatTime = (ts: number) => {
     return new Date(ts).toLocaleString('fr-FR', {
@@ -84,7 +85,7 @@ export const HistoryPanel: React.FC = () => {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

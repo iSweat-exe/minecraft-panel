@@ -4,6 +4,7 @@ import { tauriBridge } from '../../lib/tauriBridge';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { PromptDialog } from '../../components/dialogs/PromptDialog';
 import { logAction } from '../../lib/actionLogger';
+import { getToken } from '../../lib/connectionManager';
 
 export function useSftpSelection(state: SftpStateContext) {
     const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -37,7 +38,7 @@ export function useSftpSelection(state: SftpStateContext) {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 
@@ -55,7 +56,7 @@ export function useSftpSelection(state: SftpStateContext) {
         try {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `http://${host}:${port}`;
 

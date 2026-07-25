@@ -1,4 +1,5 @@
 import { tauriBridge } from './tauriBridge';
+import { getToken } from '../lib/connectionManager';
 
 export interface ActionLog {
     id: string;
@@ -27,7 +28,7 @@ export async function logAction(action: string, details?: any) {
         
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) return;
         const nodeUrl = `http://${host}:${port}`;
 

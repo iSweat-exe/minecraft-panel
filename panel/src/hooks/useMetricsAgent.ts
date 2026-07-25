@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { tauriBridge } from '../lib/tauriBridge';
 import { useServerStatsStore } from '../store/serverStatsStore';
+import { getToken } from '../lib/connectionManager';
 
 export function useMetricsAgent() {
     useEffect(() => {
@@ -11,7 +12,7 @@ export function useMetricsAgent() {
             try {
                 const host = localStorage.getItem('node_host');
                 const port = localStorage.getItem('node_port') || '8080';
-                const token = localStorage.getItem('node_token');
+                const token = getToken();
                 if (!host || !token) return;
 
                 const nodeUrl = `http://${host}:${port}`;

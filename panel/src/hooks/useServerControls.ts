@@ -4,6 +4,7 @@ import { useConsoleStore } from '../store/consoleStore';
 import { useActiveServerStore } from '../store/activeServerStore';
 import { logAction } from '../lib/actionLogger';
 import { useState, useEffect } from 'react';
+import { getToken } from '../lib/connectionManager';
 
 export const ACTION_LABELS: Record<NonNullable<PendingAction>, string> = {
     starting: 'Démarrage…',
@@ -28,7 +29,7 @@ export function useServerControls() {
     const pollUntilSettled = async () => {
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) return;
         const nodeUrl = `http://${host}:${port}`;
 
@@ -74,7 +75,7 @@ export function useServerControls() {
         const fetchStatus = async () => {
             const host = localStorage.getItem('node_host');
             const port = localStorage.getItem('node_port') || '8080';
-            const token = localStorage.getItem('node_token');
+            const token = getToken();
             if (!host || !token) return;
             const nodeUrl = `http://${host}:${port}`;
             
@@ -123,7 +124,7 @@ export function useServerControls() {
         
         const host = localStorage.getItem('node_host');
         const port = localStorage.getItem('node_port') || '8080';
-        const token = localStorage.getItem('node_token');
+        const token = getToken();
         if (!host || !token) {
             setPendingAction(null);
             return;

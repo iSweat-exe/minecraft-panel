@@ -5,11 +5,14 @@ use axum::response::IntoResponse;
 use axum::Json;
 use protocol::ApiResponse;
 
-use crate::auth::NodeAuth;
+use crate::auth::UserAuth;
 
 use super::FileQuery;
 
-pub async fn read_file(_auth: NodeAuth, Query(query): Query<FileQuery>) -> impl IntoResponse {
+pub async fn read_file(auth: UserAuth, Query(query): Query<FileQuery>) -> impl IntoResponse {
+    if let Err((_, msg)) = auth.require_permission("server:files") {
+        return axum::Json(protocol::ApiResponse::<()>::err(msg.to_string())).into_response();
+    }
     match crate::files::read_file(&query.path)
         .await
         .context(format!("Failed to read file: {}", query.path))
