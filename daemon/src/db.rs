@@ -94,15 +94,19 @@ pub async fn init_db() -> Result<SqlitePool> {
     if root_exists == 0 {
         let root_uuid = uuid::Uuid::new_v4().to_string();
         let now = chrono::Utc::now().timestamp();
+        // Default password: "changeme" — must be changed on first login
+        let default_hash = bcrypt::hash("changeme", bcrypt::DEFAULT_COST)
+            .unwrap_or_else(|_| String::new());
         sqlx::query(
-            "INSERT INTO users (uuid, username, role, permissions, created_at, display_name) VALUES (?, 'iSweat', 'admin', '[\"*\"]', ?, 'iSweat')"
+            "INSERT INTO users (uuid, username, role, permissions, created_at, password_hash, display_name) VALUES (?, 'iSweat', 'admin', '[\"*\"]', ?, ?, 'iSweat')"
         )
         .bind(&root_uuid)
         .bind(now)
+        .bind(&default_hash)
         .execute(&pool)
         .await
         .context("Failed to seed root admin user")?;
-        tracing::info!("Root admin user 'iSweat' created");
+        tracing::info!("Root admin user 'iSweat' created with default password 'changeme'");
     }
 
     Ok(pool)

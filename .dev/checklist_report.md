@@ -44,9 +44,9 @@
 
 ### 🟢 Basse
 
-- [ ] SEC-17 — `password_hash` exposé dans les réponses `/api/users` (L67)
-- [ ] SEC-18 — `can()` retourne `true` si `currentUser` est `null` (permissionStore.ts L108)
-- [ ] SEC-19 — Utilisateur root "iSweat" créé sans mot de passe (db.rs L89-107)
+- [x] SEC-17 — `password_hash` exposé dans les réponses `/api/users` (L67)
+- [x] SEC-18 — `can()` retourne `true` si `currentUser` est `null` (permissionStore.ts L108)
+- [x] SEC-19 — Utilisateur root "iSweat" créé sans mot de passe (db.rs L89-107)
 
 ---
 

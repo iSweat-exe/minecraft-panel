@@ -17,7 +17,9 @@ pub struct PanelUser {
     pub role: String,
     pub permissions: Vec<String>,
     pub created_at: Option<i64>,
+    #[serde(skip_serializing)]
     pub password_hash: Option<String>,
+    #[serde(skip_serializing)]
     pub password: Option<String>,
     pub avatar_base64: Option<String>,
     pub display_name: Option<String>,
