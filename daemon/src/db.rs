@@ -39,8 +39,7 @@ pub async fn init_db() -> Result<SqlitePool> {
             display_name TEXT
         );
 
-        DROP TABLE IF EXISTS sessions;
-        CREATE TABLE sessions (
+        CREATE TABLE IF NOT EXISTS sessions (
             uuid TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             avatar TEXT,
