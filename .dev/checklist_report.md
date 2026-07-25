@@ -95,7 +95,7 @@
 
 - [x] REF-03 — Remplacer les 5 `ApiResponse` locaux par `protocol::ApiResponse`
 - [x] REF-04 — Créer un type `DaemonError` centralisé avec `IntoResponse`
-- [ ] REF-05 — Remplacer `lazy_static` + `Mutex` std par `tokio::sync::Mutex` (metrics.rs)
+- [x] REF-05 — Remplacer `lazy_static` + `Mutex` std par `tokio::sync::Mutex` (metrics.rs)
 - [ ] REF-06 — Séparer les DTOs `CreateUserRequest` (avec password) et `UserResponse` (sans)
 
 ### 🟢 Basse
