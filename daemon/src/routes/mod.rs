@@ -11,7 +11,6 @@ use std::sync::Arc;
 use crate::config::DaemonConfig;
 use crate::docker::DockerManager;
 use axum::Router;
-use axum::extract::DefaultBodyLimit;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -81,7 +80,6 @@ pub fn create_router(state: AppState) -> Router {
         .merge(automations::router())
         .layer(middleware::from_fn(rate_limit_middleware))
         .layer(axum::Extension(rate_limit_state))
-        .layer(DefaultBodyLimit::disable())
         .layer(axum::Extension(state.config.clone()))
         .with_state(state)
 }
