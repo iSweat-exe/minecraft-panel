@@ -55,7 +55,7 @@
 ### 🔴 Critique
 
 - [x] BUG-01 — `DROP TABLE sessions` à chaque démarrage (db.rs L42-43)
-- [ ] BUG-02 — `docker_version` codé en dur à "24.0" (info.rs L28)
+- [x] BUG-02 — `docker_version` codé en dur à "24.0" (info.rs L28)
 
 ### 🟠 Haute
 

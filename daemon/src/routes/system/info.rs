@@ -21,11 +21,20 @@ pub async fn get_info(
     };
     let running = servers.iter().filter(|s| s.state == "running").count();
 
+    let docker_version = state
+        .docker
+        .docker_client()
+        .version()
+        .await
+        .ok()
+        .and_then(|v| v.version)
+        .unwrap_or_else(|| "Unknown".to_string());
+
     Json(ApiResponse::ok(DaemonInfoResponse {
         version: env!("CARGO_PKG_VERSION").to_string(),
         protocol_version: protocol::PROTOCOL_VERSION,
         node_id: state.config.node_id.clone(),
-        docker_version: "24.0".to_string(), // In a real app we could fetch this dynamically
+        docker_version,
         total_servers: servers.len(),
         running_servers: running,
         uptime_seconds: state.start_time.elapsed().as_secs(),
