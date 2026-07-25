@@ -36,7 +36,7 @@ export function useConnectionGate() {
     const connect = async () => {
         try {
             setSshStatus('reconnecting');
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
             
             if (loginMode === 'admin') {
                 // Verify Daemon Token

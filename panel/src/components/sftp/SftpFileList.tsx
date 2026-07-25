@@ -144,7 +144,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
                 const port = localStorage.getItem('node_port') || '8080';
                 const token = getToken();
                 if (!host || !token) return;
-                const nodeUrl = `http://${host}:${port}`;
+                const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
                 const res = await tauriBridge.nodeApiRequest(
                     nodeUrl,
@@ -199,7 +199,7 @@ export const SftpFileList: React.FC<SftpFileListProps> = ({
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             // 1. Delete old file
             await tauriBridge.nodeFileAction(nodeUrl, token, oldPath, "delete");

@@ -17,7 +17,7 @@ export const fetchPlayersList = async (): Promise<PlayerInfo[]> => {
     const port = localStorage.getItem('node_port') || '8080';
     const token = getToken();
     if (!host || !token) throw new Error("Daemon credentials missing");
-    const nodeUrl = `http://${host}:${port}`;
+    const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
     
     const serverPath = useActiveServerStore.getState().getActiveServerPath();
     const data = await tauriBridge.getPlayersList(nodeUrl, token, serverPath);
@@ -41,7 +41,7 @@ export const useExecuteCommandMutation = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const serverId = useActiveServerStore.getState().activeServerId || 'default';
             await tauriBridge.nodeSendCommand(nodeUrl, token, serverId, command);

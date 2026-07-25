@@ -54,7 +54,7 @@ export function useSftpState(initialPath: string = '/') {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const data = await tauriBridge.nodeListDir(nodeUrl, token, path);
             setRawEntries(data);

@@ -34,7 +34,7 @@ export function useSftpUpload(state: SftpStateContext) {
                 const port = localStorage.getItem('node_port') || '8080';
                 const token = getToken();
                 if (!host || !token) throw new Error("Daemon credentials missing");
-                const nodeUrl = `http://${host}:${port}`;
+                const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
                 await tauriBridge.nodeUploadFile(nodeUrl, token, files[i].localPath, files[i].remotePath);
                 logAction('Upload d\'un fichier', { file: files[i].remotePath });
@@ -85,7 +85,7 @@ export function useSftpUpload(state: SftpStateContext) {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeUploadFile(nodeUrl, token, file.localPath, file.remotePath);
             logAction('Upload d\'un fichier (écrasement)', { file: file.remotePath });

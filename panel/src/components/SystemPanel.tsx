@@ -12,7 +12,7 @@ export const SystemPanel: React.FC = () => {
     const { host } = useConnectionStore();
     const port = localStorage.getItem('node_port') || '8080';
     const token = getToken();
-    const nodeUrl = host && port ? `http://${host}:${port}` : '';
+    const nodeUrl = host && port ? `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}` : '';
     
     const [systemHost, setSystemHost] = useState<SystemHostResponse | null>(null);
     const [systemHealth, setSystemHealth] = useState<SystemHealthResponse | null>(null);

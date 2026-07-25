@@ -156,7 +156,7 @@ export const ConsolePanel: React.FC = () => {
 
     const loadCrashes = React.useCallback(async () => {
         if (!host || !port || !token) return;
-        const nodeUrl = `http://${host}:${port}`;
+        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
         try {
             const res = await tauriBridge.nodeGetServerCrashes(nodeUrl, token, activeServerId);
             setCrashes(res.crash_reports || []);
@@ -173,7 +173,7 @@ export const ConsolePanel: React.FC = () => {
 
     const viewCrash = async (filename: string) => {
         if (!host || !port || !token) return;
-        const nodeUrl = `http://${host}:${port}`;
+        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
         setIsLoadingCrash(true);
         setSelectedCrashContent(null);
         try {

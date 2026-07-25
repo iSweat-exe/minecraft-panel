@@ -79,7 +79,7 @@ export const ModsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) return;
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, "mkdir").catch(() => {});
             const files = await tauriBridge.nodeListDir(nodeUrl, token, resolvedPath);
@@ -138,7 +138,7 @@ export const ModsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeFileAction(nodeUrl, token, resolvedDir, "mkdir").catch(() => {});
             const finalPath = resolvedDir.endsWith('/') ? `${resolvedDir}${file.filename}` : `${resolvedDir}/${file.filename}`;
@@ -173,7 +173,7 @@ export const ModsPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeFileAction(nodeUrl, token, resolvedPath, "mkdir").catch(() => {});
             await tauriBridge.nodeDownloadRemote(nodeUrl, token, primaryFile.url, `${resolvedPath}/${primaryFile.filename}`);

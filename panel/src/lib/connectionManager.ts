@@ -11,7 +11,7 @@ export function getCredentials() {
 
 export function getNodeUrl() {
     const { host, port } = getCredentials();
-    return `http://${host}:${port}`;
+    return `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 }
 
 export function getToken() {

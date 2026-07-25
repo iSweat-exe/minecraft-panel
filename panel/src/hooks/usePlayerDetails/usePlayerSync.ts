@@ -29,7 +29,7 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                         const port = localStorage.getItem('node_port') || '8080';
                         const token = getToken();
                         if (!host || !token) throw new Error("Daemon credentials missing");
-                        const nodeUrl = `http://${host}:${port}`;
+                        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                         
                         base64 = await tauriBridge.nodeReadFile(nodeUrl, token, config.actualFilePath);
                     } catch (e) {
@@ -61,7 +61,7 @@ export function usePlayerSync(playerName: string, config: PlayerConfig | null) {
                         const port = localStorage.getItem('node_port') || '8080';
                         const token = getToken();
                         if (!host || !token) throw new Error("Daemon credentials missing for RCON");
-                        const nodeUrl = `http://${host}:${port}`;
+                        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                         
                         const results = await tauriBridge.nodeRconExecuteMulti(nodeUrl, token, "default", commands);
                         const [rawHealth, rawFood, rawXp, rawInv, rawEnder] = results;

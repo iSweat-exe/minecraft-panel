@@ -28,7 +28,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const res = await tauriBridge.nodeApiRequest(nodeUrl, token, 'GET', '/api/users');
             const users = (res?.success && Array.isArray(res.data)) ? res.data : [];
@@ -63,7 +63,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const updated = await tauriBridge.savePanelUser(nodeUrl, token, user);
             await logAction(`Sauvegarde de l'utilisateur ${user.username}`, { role: user.role, permissions: user.permissions });
@@ -87,7 +87,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const updated = await tauriBridge.deletePanelUser(nodeUrl, token, username);
             await logAction(`Suppression de l'utilisateur ${username}`, { username });

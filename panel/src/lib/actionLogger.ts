@@ -30,7 +30,7 @@ export async function logAction(action: string, details?: any) {
         const port = localStorage.getItem('node_port') || '8080';
         const token = getToken();
         if (!host || !token) return;
-        const nodeUrl = `http://${host}:${port}`;
+        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
         await tauriBridge.nodeApiRequest(nodeUrl, token, 'POST', '/api/history', logEntry);
     } catch (e) {

@@ -30,7 +30,7 @@ export function useConsole() {
                 const serverId = activeServerId;
 
                 try {
-                    const nodeUrl = `http://${host}:${port}`;
+                    const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                     const staticLogs = await tauriBridge.nodeGetServerLogs(nodeUrl, token, serverId, 100);
                     if (isMounted && staticLogs && staticLogs.lines) {
                         clear(); // Clear existing to prevent duplicate appends on re-mount
@@ -46,7 +46,7 @@ export function useConsole() {
                 const jwtToken = await tauriBridge.nodeGenerateConsoleToken(serverId, token);
                 
                 // Use wss:// if connection is https, else ws://
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const protocol = Number(port) === 443 || Number(port) === 8443 ? 'wss:' : 'ws:';
                 const wsUrl = `${protocol}//${host}:${port}/api/v1/servers/${serverId}/ws?token=${jwtToken}`;
 
                 if (!isMounted) return;

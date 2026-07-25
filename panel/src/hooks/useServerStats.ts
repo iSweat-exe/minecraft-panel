@@ -21,7 +21,7 @@ export function useServerStats() {
             if (!host || !token) return;
             
             try {
-                const nodeUrl = `http://${host}:${port}`;
+                const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
                 const result = await tauriBridge.nodeGetMetrics(nodeUrl, token);
                 if (isMounted.current) {
                     handleMetrics(result);

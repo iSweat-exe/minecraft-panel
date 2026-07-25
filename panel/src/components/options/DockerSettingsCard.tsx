@@ -20,7 +20,7 @@ export const DockerSettingsCard: React.FC = () => {
         const port = localStorage.getItem('node_port') || '8080';
         const token = getToken();
         if (!host || !token) return;
-        const nodeUrl = `http://${host}:${port}`;
+        const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
         // Fetch host system total memory via metrics API
         tauriBridge.nodeGetMetrics(nodeUrl, token)
@@ -58,7 +58,7 @@ export const DockerSettingsCard: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeDockerUpdateContainer(nodeUrl, token, {
                 containerId: 'mc-server-default',
@@ -85,7 +85,7 @@ export const DockerSettingsCard: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             await tauriBridge.nodeApiRequest(nodeUrl, token, 'PUT', '/api/v1/system/docker-config', {
                 config: {

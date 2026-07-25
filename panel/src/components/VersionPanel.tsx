@@ -27,7 +27,7 @@ export const VersionPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const info = await tauriBridge.nodeInspectContainer(nodeUrl, token, activeServerId);
             const envVars: string[] = info?.Config?.Env || [];
@@ -59,7 +59,7 @@ export const VersionPanel: React.FC = () => {
             const port = localStorage.getItem('node_port') || '8080';
             const token = getToken();
             if (!host || !token) throw new Error("Daemon credentials missing");
-            const nodeUrl = `http://${host}:${port}`;
+            const nodeUrl = `\${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
             const image = `itzg/minecraft-server:${javaVersion}`;
             const newServerId = `minecraft-${serverType}-${mcVersion === 'LATEST' ? 'latest' : mcVersion}-${javaVersion}`.replace(/[^a-zA-Z0-9_.-]/g, '-');
