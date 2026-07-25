@@ -7,6 +7,7 @@ interface PermissionStore {
     users: PanelUser[];
     currentUser: PanelUser | null;
     loading: boolean;
+    fetchError: string | null;
     fetchUsers: () => Promise<void>;
     saveUser: (user: PanelUser) => Promise<void>;
     deleteUser: (username: string) => Promise<void>;
@@ -17,6 +18,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
     users: [],
     currentUser: null,
     loading: false,
+    fetchError: null,
 
     fetchUsers: async () => {
         set({ loading: true });
@@ -38,19 +40,18 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             if (!current) {
                 current = {
                     username: storedUsername,
-                    role: isSubuserMode ? 'subuser' : 'admin',
-                    permissions: isSubuserMode ? [] : ['*']
+                    role: 'unknown',
+                    permissions: []
                 };
             }
 
-            set({ users, currentUser: current, loading: false });
-        } catch {
-            const storedUsername = localStorage.getItem('panel_username') || 'admin';
-            const isSubuserMode = localStorage.getItem('panel_login_mode') === 'subuser';
+            set({ users, currentUser: current, loading: false, fetchError: null });
+        } catch (e: any) {
             set({
                 users: [],
-                currentUser: { username: storedUsername, role: isSubuserMode ? 'subuser' : 'admin', permissions: isSubuserMode ? [] : ['*'] },
-                loading: false
+                currentUser: null,
+                loading: false,
+                fetchError: e?.message || 'Failed to fetch users'
             });
         }
     },
@@ -70,7 +71,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
-                current = { username: storedUsername, role: 'admin', permissions: ['*'] };
+                current = { username: storedUsername, role: 'unknown', permissions: [] };
             }
             set({ users: updated, currentUser: current, loading: false });
         } catch (e: any) {
@@ -94,7 +95,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
             const storedUsername = localStorage.getItem('panel_username') || 'admin';
             let current = updated.find((u: any) => u.username.toLowerCase() === storedUsername.toLowerCase());
             if (!current) {
-                current = { username: storedUsername, role: 'admin', permissions: ['*'] };
+                current = { username: storedUsername, role: 'unknown', permissions: [] };
             }
             set({ users: updated, currentUser: current, loading: false });
         } catch (e: any) {
@@ -105,7 +106,7 @@ export const usePermissionStore = create<PermissionStore>((set, get) => ({
 
     can: (permission: string) => {
         const { currentUser } = get();
-        if (!currentUser) return true; // Default open if not logged in
+        if (!currentUser) return false; // Deny access if user not loaded
         if (currentUser.role === 'admin' || currentUser.permissions.includes('*')) return true;
         
         // Exact match or wildcard category match (e.g. 'control.*')

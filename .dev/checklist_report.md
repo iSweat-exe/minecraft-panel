@@ -32,7 +32,7 @@
 - [x] SEC-08 — Hash de mot de passe SHA-256 non salé (commands/users.rs L6-11)
 - [ ] SEC-09 — Tokens stockés en clair dans `localStorage` (permissionStore.ts L24-27)
 - [ ] SEC-10 — Permissions vérifiées uniquement côté frontend (permissionStore.ts L106-120)
-- [ ] SEC-11 — Fallback réseau accorde les droits admin par défaut (permissionStore.ts L38-54)
+- [x] SEC-11 — Fallback réseau accorde les droits admin par défaut (permissionStore.ts L38-54)
 
 ### 🟡 Moyenne
 
