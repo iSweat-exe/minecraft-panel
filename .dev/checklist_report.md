@@ -41,7 +41,7 @@
 - [x] SEC-13 — Communication daemon en HTTP non chiffré (permissionStore.ts, backupStore.ts)
 - [x] SEC-14 — Path traversal partiel dans `sanitize_path` (files/mod.rs L16-26)
 - [x] SEC-15 — `.unwrap()` sur le builder HTTP dans download.rs (L21-27)
-- [ ] SEC-16 — Aucun rate limiting sur les routes
+- [x] SEC-16 — Aucun rate limiting sur les routes
 
 ### 🟢 Basse
 

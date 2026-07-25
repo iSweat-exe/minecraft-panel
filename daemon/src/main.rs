@@ -90,7 +90,7 @@ async fn main() -> Result<()> {
     let listener = tokio::net::TcpListener::bind(&config.bind_addr).await?;
     info!("Daemon listening on http://{}", config.bind_addr);
 
-    axum::serve(listener, router).await?;
+    axum::serve(listener, router.into_make_service_with_connect_info::<std::net::SocketAddr>()).await?;
 
     Ok(())
 }
