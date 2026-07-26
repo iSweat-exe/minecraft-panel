@@ -1,13 +1,13 @@
 use axum::{
     extract::{Path, State},
-    routing::{delete, get},
+    routing::get,
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::auth::UserAuth;
 use crate::routes::AppState;
+use crate::services::auth::UserAuth;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct UserResponse {
@@ -35,12 +35,24 @@ pub struct CreateUserRequest {
     pub display_name: Option<String>,
 }
 
+#[derive(Deserialize, Clone)]
+pub struct PatchUserRequest {
+    pub role: Option<String>,
+    pub permissions: Option<Vec<String>>,
+    pub password_hash: Option<String>,
+    pub avatar_base64: Option<String>,
+    pub display_name: Option<String>,
+}
+
 use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/api/v1/users", get(list_users).post(save_user))
-        .route("/api/v1/users/{username}", delete(delete_user))
+        .route(
+            "/api/v1/users/{username}",
+            axum::routing::patch(patch_user).delete(delete_user),
+        )
 }
 
 #[derive(sqlx::FromRow)]
@@ -82,7 +94,7 @@ async fn list_users(
             is_superadmin: row.is_superadmin == 1,
         });
     }
-    
+
     Ok(Json(ApiResponse {
         success: true,
         data: Some(users),
@@ -98,7 +110,9 @@ async fn save_user(
     auth.require_permission("users.manage")?;
 
     if payload.username.trim().is_empty() || payload.username.len() < 3 {
-        return Err(crate::error::DaemonError::BadRequest("Le nom d'utilisateur doit faire au moins 3 caractères".into()));
+        return Err(crate::error::DaemonError::BadRequest(
+            "Le nom d'utilisateur doit faire au moins 3 caractères".into(),
+        ));
     }
 
     let now = chrono::Utc::now().timestamp();
@@ -112,14 +126,18 @@ async fn save_user(
         is_superadmin: i64,
     }
 
-    let existing = sqlx::query_as::<_, ExistingUserRow>("SELECT uuid, is_superadmin FROM users WHERE username = ?")
-        .bind(&payload.username)
-        .fetch_optional(&state.db)
-        .await?;
+    let existing = sqlx::query_as::<_, ExistingUserRow>(
+        "SELECT uuid, is_superadmin FROM users WHERE username = ?",
+    )
+    .bind(&payload.username)
+    .fetch_optional(&state.db)
+    .await?;
 
     if let Some(row) = existing {
         if row.is_superadmin == 1 && payload.role != "admin" {
-            return Err(crate::error::DaemonError::BadRequest("Impossible de retirer le rôle admin d'un superadmin".into()));
+            return Err(crate::error::DaemonError::BadRequest(
+                "Impossible de retirer le rôle admin d'un superadmin".into(),
+            ));
         }
 
         sqlx::query(
@@ -159,20 +177,83 @@ async fn delete_user(
 ) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
     auth.require_permission("users.manage")?;
 
-    let is_superadmin = sqlx::query_scalar::<_, i64>("SELECT is_superadmin FROM users WHERE username = ?")
-        .bind(&username)
-        .fetch_optional(&state.db)
-        .await?
-        .unwrap_or(0);
+    let is_superadmin =
+        sqlx::query_scalar::<_, i64>("SELECT is_superadmin FROM users WHERE username = ?")
+            .bind(&username)
+            .fetch_optional(&state.db)
+            .await?
+            .unwrap_or(0);
 
     if is_superadmin == 1 {
-        return Err(crate::error::DaemonError::BadRequest("Un compte superadmin ne peut pas être supprimé".into()));
+        return Err(crate::error::DaemonError::BadRequest(
+            "Un compte superadmin ne peut pas être supprimé".into(),
+        ));
     }
 
     sqlx::query("DELETE FROM users WHERE username = ?")
         .bind(&username)
         .execute(&state.db)
         .await?;
+
+    list_users(auth.clone(), State(state)).await
+}
+
+async fn patch_user(
+    auth: UserAuth,
+    State(state): State<AppState>,
+    Path(username): Path<String>,
+    Json(payload): Json<PatchUserRequest>,
+) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
+    auth.require_permission("users.manage")?;
+
+    #[derive(sqlx::FromRow)]
+    struct ExistingUserRow {
+        uuid: String,
+        is_superadmin: i64,
+        role: String,
+        permissions: String,
+        password_hash: Option<String>,
+        avatar_base64: Option<String>,
+        display_name: Option<String>,
+    }
+
+    let existing = sqlx::query_as::<_, ExistingUserRow>("SELECT uuid, is_superadmin, role, permissions, password_hash, avatar_base64, display_name FROM users WHERE username = ?")
+        .bind(&username)
+        .fetch_optional(&state.db)
+        .await?;
+
+    let row = match existing {
+        Some(r) => r,
+        None => return Err(crate::error::DaemonError::NotFound("User not found".into())),
+    };
+
+    let new_role = payload.role.unwrap_or(row.role);
+    if row.is_superadmin == 1 && new_role != "admin" {
+        return Err(crate::error::DaemonError::BadRequest(
+            "Impossible de retirer le rôle admin d'un superadmin".into(),
+        ));
+    }
+
+    let new_perms_json = match payload.permissions {
+        Some(p) => serde_json::to_string(&p).unwrap_or_else(|_| "[]".to_string()),
+        None => row.permissions,
+    };
+
+    let new_password_hash = payload.password_hash.or(row.password_hash);
+    let new_avatar_base64 = payload.avatar_base64.or(row.avatar_base64);
+    let new_display_name = payload.display_name.or(row.display_name);
+
+    sqlx::query(
+        "UPDATE users SET role = ?, permissions = ?, password_hash = ?, avatar_base64 = ?, display_name = ? WHERE uuid = ?"
+    )
+    .bind(&new_role)
+    .bind(&new_perms_json)
+    .bind(&new_password_hash)
+    .bind(&new_avatar_base64)
+    .bind(&new_display_name)
+    .bind(&row.uuid)
+    .execute(&state.db)
+    .await?;
 
     list_users(auth.clone(), State(state)).await
 }

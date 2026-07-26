@@ -32,10 +32,10 @@ impl IntoResponse for DaemonError {
             DaemonError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg.clone()),
             DaemonError::NotFound(msg) => (StatusCode::NOT_FOUND, msg.clone()),
             DaemonError::Sqlx(_) | DaemonError::Io(_) | DaemonError::Anyhow(_) => {
-                (StatusCode::INTERNAL_SERVER_ERROR, self.to_string())
+                (StatusCode::INTERNAL_SERVER_ERROR, format!("{:#}", self))
             }
         };
-        
+
         (
             status,
             Json(ApiResponse::<()> {

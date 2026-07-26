@@ -6,8 +6,8 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::auth::NodeAuth;
 use crate::routes::AppState;
+use crate::services::auth::NodeAuth;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Automation {
@@ -65,7 +65,7 @@ async fn list_automations(
         .await?;
 
     let automations = rows.into_iter().map(Automation::from).collect();
-    
+
     Ok(Json(ApiResponse {
         success: true,
         data: Some(automations),
@@ -97,6 +97,29 @@ async fn save_automation(
     .execute(&state.db)
     .await?;
 
+    // Dynamically update scheduler
+    if let Some(ref sched) = state.scheduler {
+        let mut map = state.automation_jobs.write().await;
+        if let Some(old_job_uuid) = map.remove(&id) {
+            let _ = sched.remove(&old_job_uuid).await;
+            tracing::info!("Removed old job for automation {}", id);
+        }
+    }
+
+    if let Err(e) = crate::services::scheduler::schedule_automation_job(
+        &state,
+        id.clone(),
+        payload.name.clone(),
+        payload.cron_expr.clone(),
+        payload.action_type.clone(),
+        payload.target_server.clone(),
+        payload.payload.clone(),
+    )
+    .await
+    {
+        tracing::error!("Failed to dynamically schedule automation {}: {}", id, e);
+    }
+
     Ok(Json(ApiResponse {
         success: true,
         data: Some(payload),
@@ -116,8 +139,10 @@ async fn delete_automation(
 
     // Dynamically remove scheduled job if scheduler is active
     if let Some(ref sched) = state.scheduler {
-        if let Ok(job_uuid) = uuid::Uuid::parse_str(&id) {
+        let mut map = state.automation_jobs.write().await;
+        if let Some(job_uuid) = map.remove(&id) {
             let _ = sched.remove(&job_uuid).await;
+            tracing::info!("Removed job for deleted automation {}", id);
         }
     }
 

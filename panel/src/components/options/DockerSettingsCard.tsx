@@ -87,7 +87,7 @@ export const DockerSettingsCard: React.FC = () => {
             if (!host || !token) throw new Error("Daemon credentials missing");
             const nodeUrl = `${Number(port) === 443 || Number(port) === 8443 ? 'https' : 'http'}://${host}:${port}`;
 
-            await tauriBridge.nodeApiRequest(nodeUrl, token, 'PUT', '/api/v1/system/docker-config', {
+            await tauriBridge.nodeApiRequest(nodeUrl, token, 'PUT', '/api/v1/docker-config', {
                 config: {
                     "dns": ["1.1.1.1", "8.8.8.8"]
                 }

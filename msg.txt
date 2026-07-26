@@ -1,4 +1,6 @@
-﻿feat(daemon): prepare release v0.1.44 and rename to vps-panel
+﻿build(daemon): bump version to 0.1.45 and release refactoring
 
-- rename internal references from minecraft-panel to vps-panel
-- add api_discovery route
+- Complete refactoring of daemon architecture
+- Moved business logic to services/
+- Cleaned up routing structure and endpoints
+- Updated dependencies and lockfiles

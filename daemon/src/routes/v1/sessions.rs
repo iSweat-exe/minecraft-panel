@@ -5,8 +5,8 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::auth::NodeAuth;
 use crate::routes::AppState;
+use crate::services::auth::NodeAuth;
 
 #[derive(Serialize, Deserialize)]
 pub struct Session {
@@ -67,7 +67,7 @@ async fn list_sessions(
         .await?;
 
     let sessions: Vec<Session> = rows.into_iter().map(Into::into).collect();
-    
+
     Ok(Json(ApiResponse {
         success: true,
         data: Some(sessions),

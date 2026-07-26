@@ -13,7 +13,7 @@ pub const LABEL_OWNER: &str = "vps-panel.owner";
 pub const LABEL_NAME: &str = "vps-panel.name";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContainerResources {
+pub struct ServerResources {
     pub memory_limit_bytes: Option<i64>,
     pub cpu_quota: Option<i64>,
     pub cpu_period: Option<i64>,
@@ -34,13 +34,13 @@ pub struct VolumeMapping {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ContainerSpec {
+pub struct ServerSpec {
     pub server_id: String,
     pub name: String,
     pub image: String,
     pub env: Vec<String>,
     pub ports: Vec<PortMapping>,
     pub volumes: Vec<VolumeMapping>,
-    pub resources: ContainerResources,
+    pub resources: ServerResources,
     pub owner: Option<String>,
 }

@@ -60,7 +60,7 @@ export interface PowerActionResponse {
     message: string;
 }
 
-export interface ContainerSpec {
+export interface ServerSpec {
     server_id: string;
     name: string;
     owner?: string;
@@ -215,7 +215,7 @@ export const tauriBridge = {
     // Daemon API
     nodeGetInfo: (nodeUrl: string, nodeToken: string) => invoke<DaemonInfoResponse>('node_get_info', { nodeUrl, nodeToken }),
     nodeListServers: (nodeUrl: string, nodeToken: string) => invoke<ServerStatusResponse[]>('node_list_servers', { nodeUrl, nodeToken }),
-    nodeCreateServer: (nodeUrl: string, nodeToken: string, spec: ContainerSpec) => invoke<string>('node_create_server', { nodeUrl, nodeToken, spec }),
+    nodeCreateServer: (nodeUrl: string, nodeToken: string, spec: ServerSpec) => invoke<string>('node_create_server', { nodeUrl, nodeToken, spec }),
     nodePowerAction: (nodeUrl: string, nodeToken: string, serverId: string, action: string) => invoke<PowerActionResponse>('node_power_action', { nodeUrl, nodeToken, serverId, action }),
     nodeSendCommand: (nodeUrl: string, nodeToken: string, serverId: string, command: string) => invoke<string>('node_send_command', { nodeUrl, nodeToken, serverId, command }),
     nodeRconExecuteMulti: (nodeUrl: string, nodeToken: string, serverId: string, commands: string[]) => invoke<string[]>('node_rcon_execute_multi', { nodeUrl, nodeToken, serverId, commands }),

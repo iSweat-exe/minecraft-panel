@@ -2,8 +2,8 @@ use axum::{extract::State, routing::get, Json, Router};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::auth::NodeAuth;
 use crate::routes::AppState;
+use crate::services::auth::NodeAuth;
 
 #[derive(Serialize, Deserialize)]
 pub struct HistoryEntry {
@@ -54,7 +54,7 @@ async fn list_history(
             .await?;
 
     let history: Vec<HistoryEntry> = rows.into_iter().map(Into::into).collect();
-    
+
     Ok(Json(ApiResponse {
         success: true,
         data: Some(history),
@@ -68,7 +68,10 @@ async fn save_history(
     Json(payload): Json<HistoryEntry>,
 ) -> Result<Json<ApiResponse<HistoryEntry>>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
-    let id = payload.id.clone().unwrap_or_else(|| Uuid::new_v4().to_string());
+    let id = payload
+        .id
+        .clone()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
 
     sqlx::query(
         "INSERT INTO history (id, user, user_id, action, details, timestamp) VALUES (?, ?, ?, ?, ?, ?)"

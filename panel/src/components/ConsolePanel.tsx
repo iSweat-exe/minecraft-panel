@@ -65,7 +65,7 @@ const HostTerminal: React.FC<{
         fitAddonRef.current = fitAddon;
         onClearRef.current = () => term.clear();
 
-        const wsUrl = `ws://${host}:${port}/api/v1/system/host/pty?token=${token}`;
+        const wsUrl = `ws://${host}:${port}/api/v1/node/host/pty?token=${token}`;
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 

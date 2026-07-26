@@ -26,6 +26,10 @@ pub enum DaemonWsMessage {
         cpu_percent: f64,
         memory_used_mb: u64,
         memory_total_mb: u64,
+        #[serde(default)]
+        network_rx_bytes: u64,
+        #[serde(default)]
+        network_tx_bytes: u64,
     },
     /// Heartbeat pong
     Pong,

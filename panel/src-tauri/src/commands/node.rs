@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use crate::node_client::DaemonClient;
 use protocol::{
-    ContainerSpec, DaemonInfoResponse, FileAction, FileEntry, MinecraftPingResponse,
+    ServerSpec, DaemonInfoResponse, FileAction, FileEntry, MinecraftPingResponse,
     PowerActionResponse, ServerCrashesResponse, ServerLogsResponse, ServerPowerAction,
     ServerStatusResponse, SystemHealthResponse, SystemHostResponse, SystemMetricsResponse,
 };
@@ -28,7 +28,7 @@ pub async fn node_list_servers(
 pub async fn node_create_server(
     node_url: String,
     node_token: String,
-    spec: ContainerSpec,
+    spec: ServerSpec,
 ) -> Result<String, AppError> {
     let client = DaemonClient::new(node_url, node_token);
     client.create_server(spec).await

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::docker::ContainerSpec;
+use crate::docker::ServerSpec;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
@@ -13,12 +13,12 @@ pub enum ServerPowerAction {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CreateServerRequest {
-    pub spec: ContainerSpec,
+    pub spec: ServerSpec,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateServerRequest {
-    pub spec: ContainerSpec,
+    pub spec: ServerSpec,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -28,7 +28,7 @@ pub struct PatchServerRequest {
     pub env: Option<Vec<String>>,
     pub ports: Option<Vec<crate::docker::PortMapping>>,
     pub volumes: Option<Vec<crate::docker::VolumeMapping>>,
-    pub resources: Option<crate::docker::ContainerResources>,
+    pub resources: Option<crate::docker::ServerResources>,
     pub owner: Option<String>,
 }
 
@@ -62,6 +62,29 @@ pub struct ServerStatusResponse {
     pub memory_used_bytes: u64,
     pub memory_limit_bytes: u64,
     pub cpu_percent: f64,
+    #[serde(default)]
+    pub network_rx_bytes: u64,
+    #[serde(default)]
+    pub network_tx_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerMetricsHistoryData {
+    pub timestamp: u64,
+    pub cpu_percent: f64,
+    pub memory_used_bytes: u64,
+    pub memory_limit_bytes: u64,
+    pub disk_used_bytes: u64,
+    #[serde(default)]
+    pub network_rx_bytes: u64,
+    #[serde(default)]
+    pub network_tx_bytes: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ServerMetricsHistoryResponse {
+    pub server_id: String,
+    pub history: Vec<ServerMetricsHistoryData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -101,8 +124,8 @@ pub struct SystemMetricsResponse {
     pub ram_total_mb: u64,
     pub disk_used_gb: f64,
     pub disk_total_gb: f64,
-    pub network_rx_bps: u64,
-    pub network_tx_bps: u64,
+    pub network_rx_bytes: u64,
+    pub network_tx_bytes: u64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

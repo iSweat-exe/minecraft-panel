@@ -1,6 +1,6 @@
 [package]
 name = "daemon"
-version = "0.1.43"
+version = "0.1.45"
 edition = "2021"
 description = "Node daemon for vps-panel managing Docker containers, console streams, and node security"
 authors = ["iSweat"]
@@ -9,7 +9,7 @@ authors = ["iSweat"]
 protocol = { path = "../protocol" }
 bollard = "0.18"
 tokio = { version = "1.42", features = ["full"] }
-tokio-stream = "0.1"
+tokio-stream = { version = "0.1", features = ["sync"] }
 axum = { version = "0.8", features = ["ws"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace"] }
@@ -40,3 +40,6 @@ bcrypt = "0.16"
 utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
 utoipa-axum = "0.2"
 utoipa-swagger-ui = { version = "8", features = ["axum"] }
+serde_yaml = "0.9.34"
+tokio-util = { version = "0.7.19", features = ["io-util"] }
+http-body-util = "0.1"

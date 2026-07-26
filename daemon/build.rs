@@ -8,7 +8,7 @@ fn main() {
             return;
         }
     }
-    
+
     // Fallback au cas où rustc n'est pas dans le PATH
     println!("cargo:rustc-env=RUSTC_VERSION=Unknown");
 }

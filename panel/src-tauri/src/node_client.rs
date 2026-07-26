@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use protocol::{
-    ApiResponse, ContainerSpec, DaemonClaims, DaemonInfoResponse, PowerActionRequest,
+    ApiResponse, ServerSpec, DaemonClaims, DaemonInfoResponse, PowerActionRequest,
     PowerActionResponse, ServerPowerAction, ServerStatusResponse, NODE_TOKEN_HEADER,
     PROTOCOL_VERSION, PROTOCOL_VERSION_HEADER, PANEL_USER_HEADER,
 };
@@ -117,7 +117,7 @@ impl DaemonClient {
     }
 
     /// Create a new server container on the node
-    pub async fn create_server(&self, spec: ContainerSpec) -> Result<String, AppError> {
+    pub async fn create_server(&self, spec: ServerSpec) -> Result<String, AppError> {
         let payload = serde_json::to_value(protocol::CreateServerRequest { spec })
             .map_err(|e| AppError::Message(e.to_string()))?;
         self.request(Method::POST, "/api/v1/servers", Some(payload)).await
@@ -276,11 +276,11 @@ impl DaemonClient {
     }
 
     pub async fn get_system_host(&self) -> Result<protocol::SystemHostResponse, AppError> {
-        self.request(Method::GET, "/api/v1/system/host", None).await
+        self.request(Method::GET, "/api/v1/node/host", None).await
     }
 
     pub async fn get_system_health(&self) -> Result<protocol::SystemHealthResponse, AppError> {
-        self.request(Method::GET, "/api/v1/system/health", None).await
+        self.request(Method::GET, "/api/v1/node/health", None).await
     }
 
     pub async fn get_system_logs(
@@ -288,7 +288,7 @@ impl DaemonClient {
         lines: Option<usize>,
     ) -> Result<protocol::ServerLogsResponse, AppError> {
         let lines_query = lines.unwrap_or(100);
-        self.request(Method::GET, &format!("/api/v1/system/logs?lines={}", lines_query), None).await
+        self.request(Method::GET, &format!("/api/v1/node/logs?lines={}", lines_query), None).await
     }
 
     pub async fn get_server_ping(
@@ -317,11 +317,11 @@ impl DaemonClient {
     pub async fn docker_list_containers(
         &self,
     ) -> Result<Vec<protocol::DockerContainerInfo>, AppError> {
-        self.request(Method::GET, "/api/v1/system/docker/containers", None).await
+        self.request(Method::GET, "/api/v1/docker/containers", None).await
     }
 
     pub async fn docker_list_images(&self) -> Result<Vec<protocol::DockerImageInfo>, AppError> {
-        self.request(Method::GET, "/api/v1/system/docker/images", None).await
+        self.request(Method::GET, "/api/v1/docker/images", None).await
     }
 
     pub async fn docker_container_action(
@@ -330,16 +330,16 @@ impl DaemonClient {
         action: &str,
     ) -> Result<String, AppError> {
         let payload = serde_json::json!({ "action": action });
-        self.request(Method::POST, &format!("/api/v1/system/docker/containers/{}/action", id), Some(payload)).await
+        self.request(Method::POST, &format!("/api/v1/docker/containers/{}/action", id), Some(payload)).await
     }
 
     pub async fn docker_container_logs(&self, id: &str, tail: Option<u32>) -> Result<String, AppError> {
         let tail_str = tail.map(|t| t.to_string()).unwrap_or_else(|| "150".to_string());
-        self.request(Method::GET, &format!("/api/v1/system/docker/containers/{}/logs?tail={}", id, tail_str), None).await
+        self.request(Method::GET, &format!("/api/v1/docker/containers/{}/logs?tail={}", id, tail_str), None).await
     }
 
     pub async fn docker_container_inspect(&self, id: &str) -> Result<String, AppError> {
-        self.request(Method::GET, &format!("/api/v1/system/docker/containers/{}/inspect", id), None).await
+        self.request(Method::GET, &format!("/api/v1/docker/containers/{}/inspect", id), None).await
     }
 
     pub async fn docker_run_container(
@@ -347,7 +347,7 @@ impl DaemonClient {
         req: protocol::DockerRunRequest,
     ) -> Result<String, AppError> {
         let payload = serde_json::to_value(req).map_err(|e| AppError::Message(e.to_string()))?;
-        self.request(Method::POST, "/api/v1/system/docker/containers", Some(payload)).await
+        self.request(Method::POST, "/api/v1/docker/containers", Some(payload)).await
     }
 
     pub async fn docker_update_container(
@@ -356,7 +356,7 @@ impl DaemonClient {
         req: protocol::DockerUpdateRequest,
     ) -> Result<String, AppError> {
         let payload = serde_json::to_value(req).map_err(|e| AppError::Message(e.to_string()))?;
-        self.request(Method::PUT, &format!("/api/v1/system/docker/containers/{}", id), Some(payload)).await
+        self.request(Method::PUT, &format!("/api/v1/docker/containers/{}", id), Some(payload)).await
     }
 
     pub async fn docker_recreate_container(
@@ -365,20 +365,20 @@ impl DaemonClient {
         req: protocol::DockerRunRequest,
     ) -> Result<String, AppError> {
         let payload = serde_json::to_value(req).map_err(|e| AppError::Message(e.to_string()))?;
-        self.request(Method::POST, &format!("/api/v1/system/docker/containers/{}/recreate", id), Some(payload)).await
+        self.request(Method::POST, &format!("/api/v1/docker/containers/{}/recreate", id), Some(payload)).await
     }
 
     pub async fn docker_pull_image(&self, image_name: &str) -> Result<String, AppError> {
         let payload = serde_json::json!({ "image_name": image_name });
-        self.request(Method::POST, "/api/v1/system/docker/images/pull", Some(payload)).await
+        self.request(Method::POST, "/api/v1/docker/images/pull", Some(payload)).await
     }
 
     pub async fn docker_remove_image(&self, id: &str) -> Result<String, AppError> {
-        self.request(Method::DELETE, &format!("/api/v1/system/docker/images/{}", id), None).await
+        self.request(Method::DELETE, &format!("/api/v1/docker/images/{}", id), None).await
     }
 
     pub async fn docker_system_prune(&self) -> Result<String, AppError> {
-        self.request(Method::POST, "/api/v1/system/docker/prune", None).await
+        self.request(Method::POST, "/api/v1/docker/prune", None).await
     }
 
     pub async fn api_request(

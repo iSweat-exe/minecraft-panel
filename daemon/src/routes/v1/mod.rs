@@ -1,25 +1,25 @@
+pub mod auth;
 pub mod automations;
-pub mod files;
+pub mod discovery;
+pub mod docker;
 pub mod history;
-pub mod containers;
+pub mod node;
+pub mod servers;
 pub mod sessions;
-pub mod system;
 pub mod users;
-pub mod auth_routes;
-pub mod api_discovery;
 
-use axum::Router;
 use crate::routes::AppState;
+use axum::Router;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .merge(system::router())
-        .merge(files::router())
-        .merge(containers::router())
-        .merge(users::router())
-        .merge(sessions::router())
-        .merge(history::router())
+        .merge(auth::router())
         .merge(automations::router())
-        .merge(auth_routes::router())
-        .merge(api_discovery::router())
+        .merge(discovery::router())
+        .merge(docker::router())
+        .merge(history::router())
+        .merge(node::router())
+        .merge(servers::router())
+        .merge(sessions::router())
+        .merge(users::router())
 }
