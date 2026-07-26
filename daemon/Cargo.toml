@@ -1,6 +1,6 @@
 [package]
 name = "daemon"
-version = "0.1.45"
+version = "0.1.46"
 edition = "2021"
 description = "Node daemon for vps-panel managing Docker containers, console streams, and node security"
 authors = ["iSweat"]
@@ -39,7 +39,7 @@ portable-pty = "0.9.0"
 bcrypt = "0.16"
 utoipa = { version = "5", features = ["axum_extras", "uuid", "chrono"] }
 utoipa-axum = "0.2"
-utoipa-swagger-ui = { version = "8", features = ["axum"] }
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
 serde_yaml = "0.9.34"
 tokio-util = { version = "0.7.19", features = ["io-util"] }
 http-body-util = "0.1"
