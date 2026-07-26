@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::{Path, Query, State};
 use axum::Json;
-use protocol::{ApiResponse, FileActionRequest};
+use protocol::{FileActionRequest};
 
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
@@ -18,7 +18,7 @@ use super::FileQuery;
     ),
     request_body = protocol::FileActionRequest,
     responses(
-        (status = 200, description = "Perform file action", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Perform file action", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -30,9 +30,9 @@ pub async fn file_action(
     Path(server_id): Path<String>,
     Query(query): Query<FileQuery>,
     Json(payload): Json<FileActionRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("server:files") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     let safe_path = match crate::services::files::sanitize_path(
@@ -41,7 +41,7 @@ pub async fn file_action(
         &query.path,
     ) {
         Ok(p) => p,
-        Err(e) => return axum::Json(ApiResponse::err(e.to_string())),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(e.to_string())),
     };
 
     match crate::services::files::perform_action(
@@ -55,7 +55,7 @@ pub async fn file_action(
         "Failed to perform file action on target: {}",
         query.path
     )) {
-        Ok(_) => Json(ApiResponse::ok("Action executed".to_string())),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(_) => Ok(Json("Action executed".to_string())),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }

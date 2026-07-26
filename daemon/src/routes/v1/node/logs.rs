@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::Query;
 use axum::Json;
-use protocol::{ApiResponse, ServerLogsResponse};
+use protocol::{ServerLogsResponse};
 
 use crate::services::auth::NodeAuth;
 
@@ -16,7 +16,7 @@ pub struct LogsQuery {
     get,
     path = "/api/v1/node/logs",
     responses(
-        (status = 200, description = "Get node logs", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Get node logs", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -25,12 +25,12 @@ pub struct LogsQuery {
 pub async fn get_logs(
     _auth: NodeAuth,
     Query(query): Query<LogsQuery>,
-) -> Json<ApiResponse<ServerLogsResponse>> {
+) -> Result<Json<ServerLogsResponse>, crate::error::DaemonError> {
     let lines_count = query.lines.unwrap_or(100);
 
     match get_logs_impl(lines_count).await {
-        Ok(lines) => Json(ApiResponse::ok(ServerLogsResponse { lines })),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(lines) => Ok(Json(ServerLogsResponse { lines })),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -40,7 +40,7 @@ pub async fn get_logs(
     get,
     path = "/api/v1/node/logs",
     responses(
-        (status = 200, description = "Get node logs", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Get node logs", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])

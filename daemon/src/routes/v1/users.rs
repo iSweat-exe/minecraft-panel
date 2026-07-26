@@ -44,7 +44,6 @@ pub struct PatchUserRequest {
     pub display_name: Option<String>,
 }
 
-use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -74,7 +73,7 @@ struct DbUser {
     get,
     path = "/api/v1/users",
     responses(
-        (status = 200, description = "List all users", body = inline(ApiResponse<Vec<UserResponse>>))
+        (status = 200, description = "List all users", body = inline(Vec<UserResponse>))
     ),
     security(
         ("bearer_auth" = [])
@@ -83,7 +82,7 @@ struct DbUser {
 async fn list_users(
     auth: UserAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<UserResponse>>, crate::error::DaemonError> {
     auth.require_permission("users.read")?;
 
     let rows = sqlx::query_as::<_, DbUser>("SELECT * FROM users")
@@ -107,11 +106,7 @@ async fn list_users(
         });
     }
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(users),
-        error: None,
-    }))
+    Ok(Json(users))
 }
 
 #[utoipa::path(
@@ -121,7 +116,7 @@ async fn list_users(
     path = "/api/v1/users",
     request_body = CreateUserRequest,
     responses(
-        (status = 200, description = "User created", body = inline(ApiResponse<Vec<UserResponse>>))
+        (status = 200, description = "User created", body = inline(Vec<UserResponse>))
     ),
     security(
         ("bearer_auth" = [])
@@ -131,7 +126,7 @@ async fn save_user(
     auth: UserAuth,
     State(state): State<AppState>,
     Json(payload): Json<CreateUserRequest>,
-) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<UserResponse>>, crate::error::DaemonError> {
     auth.require_permission("users.manage")?;
 
     if payload.username.trim().is_empty() || payload.username.len() < 3 {
@@ -204,7 +199,7 @@ async fn save_user(
         ("username" = String, Path, description = "Username of the user to delete")
     ),
     responses(
-        (status = 200, description = "User deleted", body = inline(ApiResponse<Vec<UserResponse>>))
+        (status = 200, description = "User deleted", body = inline(Vec<UserResponse>))
     ),
     security(
         ("bearer_auth" = [])
@@ -214,7 +209,7 @@ async fn delete_user(
     auth: UserAuth,
     State(state): State<AppState>,
     Path(username): Path<String>,
-) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<UserResponse>>, crate::error::DaemonError> {
     auth.require_permission("users.manage")?;
 
     let is_superadmin =
@@ -248,7 +243,7 @@ async fn delete_user(
         ("username" = String, Path, description = "Username of the user to update")
     ),
     responses(
-        (status = 200, description = "User updated", body = inline(ApiResponse<Vec<UserResponse>>))
+        (status = 200, description = "User updated", body = inline(Vec<UserResponse>))
     ),
     security(
         ("bearer_auth" = [])
@@ -259,7 +254,7 @@ async fn patch_user(
     State(state): State<AppState>,
     Path(username): Path<String>,
     Json(payload): Json<PatchUserRequest>,
-) -> Result<Json<ApiResponse<Vec<UserResponse>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<UserResponse>>, crate::error::DaemonError> {
     auth.require_permission("users.manage")?;
 
     #[derive(sqlx::FromRow)]

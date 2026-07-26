@@ -58,7 +58,7 @@ impl DockerManager {
                 names,
                 image,
                 status,
-                state,
+                state: state.as_str().into(),
                 ports: ports_str,
                 created,
             });

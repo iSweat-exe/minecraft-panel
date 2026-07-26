@@ -62,7 +62,7 @@ impl DockerManager {
                 container_id: Some(container_id),
                 name,
                 image,
-                state,
+                state: state.as_str().into(),
                 memory_used_bytes,
                 memory_limit_bytes,
                 cpu_percent,
@@ -127,7 +127,7 @@ impl DockerManager {
                 container_id: Some(container_id),
                 name,
                 image,
-                state,
+                state: state.as_str().into(),
                 memory_used_bytes,
                 memory_limit_bytes,
                 cpu_percent,
@@ -191,7 +191,7 @@ impl DockerManager {
                     ports.push(protocol::docker::PortMapping {
                         host_port,
                         container_port,
-                        protocol,
+                        protocol: protocol.as_str().into(),
                     });
                 }
             }

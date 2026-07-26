@@ -1,6 +1,6 @@
 use axum::extract::State;
 use axum::Json;
-use protocol::{ApiResponse, SystemHealthResponse};
+use protocol::{SystemHealthResponse};
 
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
@@ -11,7 +11,7 @@ use crate::services::auth::NodeAuth;
     get,
     path = "/api/v1/node/health",
     responses(
-        (status = 200, description = "Get node health", body = inline(protocol::ApiResponse<protocol::SystemHealthResponse>))
+        (status = 200, description = "Get node health", body = inline(protocol::SystemHealthResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -20,7 +20,7 @@ use crate::services::auth::NodeAuth;
 pub async fn get_health(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Json<ApiResponse<SystemHealthResponse>> {
+) -> Json<SystemHealthResponse> {
     let docker_responsive = state.docker.docker_client().ping().await.is_ok();
 
     let disks = sysinfo::Disks::new_with_refreshed_list();
@@ -39,8 +39,8 @@ pub async fn get_health(
         false
     };
 
-    Json(ApiResponse::ok(SystemHealthResponse {
+    Json(SystemHealthResponse {
         docker_responsive,
         disk_space_warning,
-    }))
+    })
 }

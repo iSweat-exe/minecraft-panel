@@ -3,7 +3,6 @@ use axum::{
     response::IntoResponse,
     Json,
 };
-use protocol::ApiResponse;
 use serde::{Deserialize, Serialize};
 use tokio::process::Command as TokioCommand;
 
@@ -25,7 +24,7 @@ pub struct BackupInfo {
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "List backups", body = inline(protocol::ApiResponse<Vec<BackupInfo>>))
+        (status = 200, description = "List backups", body = inline(protocol::Vec<BackupInfo>))
     ),
     security(
         ("bearer_auth" = [])
@@ -35,7 +34,7 @@ pub async fn list_backups(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(server_id): Path<String>,
-) -> Json<ApiResponse<Vec<BackupInfo>>> {
+) -> Json<Vec<BackupInfo>> {
     let mut backups = Vec::new();
 
     let path = format!("{}/backups/{}", state.config.data_dir, server_id);
@@ -58,7 +57,7 @@ pub async fn list_backups(
         }
     }
 
-    Json(ApiResponse::ok(backups))
+    Json(backups)
 }
 
 #[derive(Deserialize, utoipa::ToSchema)]
@@ -81,7 +80,7 @@ pub struct TaskResponse {
     ),
     request_body = CreateBackupRequest,
     responses(
-        (status = 202, description = "Create backup", body = inline(protocol::ApiResponse<TaskResponse>))
+        (status = 202, description = "Create backup", body = inline(TaskResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -156,7 +155,7 @@ pub async fn create_backup(
 
     (
         axum::http::StatusCode::ACCEPTED,
-        Json(ApiResponse::ok(TaskResponse { task_id })),
+        Json(TaskResponse { task_id }),
     )
         .into_response()
 }
@@ -171,7 +170,7 @@ pub async fn create_backup(
         ("backup_name" = String, Path, description = "Backup Name")
     ),
     responses(
-        (status = 200, description = "Delete backup", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Delete backup", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -181,7 +180,7 @@ pub async fn delete_backup(
     _auth: NodeAuth,
     Path((server_id, backup_name)): Path<(String, String)>,
     State(state): State<AppState>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     let backup_path = format!(
         "{}/backups/{}/{}",
         state.config.data_dir, server_id, backup_name
@@ -189,15 +188,15 @@ pub async fn delete_backup(
 
     // Prevent directory traversal
     if backup_name.contains('/') || backup_name.contains('\\') || backup_name.contains("..") {
-        return Json(ApiResponse::err("Invalid backup name"));
+        return Err(crate::error::DaemonError::BadRequest("Invalid backup name".to_string()));
     }
 
     match tokio::fs::remove_file(&backup_path).await {
         Ok(_) => {
             tracing::info!(server_id = %server_id, backup = %backup_name, "Deleted backup");
-            Json(ApiResponse::ok("Backup deleted".to_string()))
+            Ok(Json("Backup deleted".to_string()))
         }
-        Err(e) => Json(ApiResponse::err(e.to_string())),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(e.to_string())),
     }
 }
 
@@ -211,7 +210,7 @@ pub async fn delete_backup(
         ("backup_name" = String, Path, description = "Backup Name")
     ),
     responses(
-        (status = 202, description = "Restore backup", body = inline(protocol::ApiResponse<TaskResponse>))
+        (status = 202, description = "Restore backup", body = inline(TaskResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -232,7 +231,7 @@ pub async fn restore_backup(
     if backup_name.contains('/') || backup_name.contains('\\') || backup_name.contains("..") {
         return (
             axum::http::StatusCode::BAD_REQUEST,
-            Json(ApiResponse::<()>::err("Invalid backup name")),
+            Json(protocol::ApiErrorResponse { error: "Invalid backup name".to_string() }),
         )
             .into_response();
     }
@@ -240,7 +239,7 @@ pub async fn restore_backup(
     if !tokio::fs::try_exists(&backup_path).await.unwrap_or(false) {
         return (
             axum::http::StatusCode::NOT_FOUND,
-            Json(ApiResponse::<()>::err("Backup not found")),
+            Json(protocol::ApiErrorResponse { error: "Backup not found".to_string() }),
         )
             .into_response();
     }
@@ -311,7 +310,7 @@ pub async fn restore_backup(
 
     (
         axum::http::StatusCode::ACCEPTED,
-        Json(ApiResponse::ok(TaskResponse { task_id })),
+        Json(TaskResponse { task_id }),
     )
         .into_response()
 }

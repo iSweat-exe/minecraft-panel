@@ -1,6 +1,5 @@
 use axum::extract::State;
 use axum::Json;
-use protocol::ApiResponse;
 use serde::Serialize;
 
 use crate::error::DaemonError;
@@ -20,7 +19,7 @@ pub struct AllocationResponse {
     get,
     path = "/api/v1/node/allocations",
     responses(
-        (status = 200, description = "List node allocations", body = inline(protocol::ApiResponse<Vec<String>>))
+        (status = 200, description = "List node allocations", body = inline(protocol::Vec<String>))
     ),
     security(
         ("bearer_auth" = [])
@@ -29,7 +28,7 @@ pub struct AllocationResponse {
 pub async fn list_allocations(
     auth: UserAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<AllocationResponse>>>, DaemonError> {
+) -> Result<Json<Vec<AllocationResponse>>, DaemonError> {
     auth.require_permission("servers.read")?;
 
     #[derive(sqlx::FromRow)]
@@ -54,5 +53,5 @@ pub async fn list_allocations(
         });
     }
 
-    Ok(Json(ApiResponse::ok(allocations)))
+    Ok(Json(allocations))
 }

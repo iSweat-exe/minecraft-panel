@@ -6,7 +6,7 @@ description = "Node daemon for vps-panel managing Docker containers, console str
 authors = ["iSweat"]
 
 [dependencies]
-protocol = { path = "../protocol" }
+protocol = { path = "../protocol", features = ["openapi"] }
 bollard = "0.18"
 tokio = { version = "1.42", features = ["full"] }
 tokio-stream = { version = "0.1", features = ["sync"] }

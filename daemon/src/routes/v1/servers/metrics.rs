@@ -4,7 +4,7 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
-use protocol::{ApiResponse, ServerMetricsHistoryData, ServerMetricsHistoryResponse};
+use protocol::{ServerMetricsHistoryData, ServerMetricsHistoryResponse};
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -21,7 +21,7 @@ pub struct MetricsHistoryQuery {
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "Get server metrics history", body = inline(protocol::ApiResponse<protocol::ServerMetricsHistoryResponse>))
+        (status = 200, description = "Get server metrics history", body = inline(protocol::ServerMetricsHistoryResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -32,7 +32,7 @@ pub async fn server_metrics_history(
     _auth: NodeAuth,
     Path(server_id): Path<String>,
     Query(query): Query<MetricsHistoryQuery>,
-) -> Json<ApiResponse<ServerMetricsHistoryResponse>> {
+) -> Result<Json<ServerMetricsHistoryResponse>, crate::error::DaemonError> {
     // NodeAuth implies full daemon access. Panel handles sub-user auth.
 
     let hours = query.hours.unwrap_or(24);
@@ -65,7 +65,7 @@ pub async fn server_metrics_history(
         Ok(r) => r,
         Err(e) => {
             tracing::error!("Failed to fetch server metrics history: {}", e);
-            return Json(ApiResponse::err("Database error".to_string()));
+            return Err(crate::error::DaemonError::BadRequest("Database error".to_string()));
         }
     };
 
@@ -82,7 +82,7 @@ pub async fn server_metrics_history(
         })
         .collect();
 
-    Json(ApiResponse::ok(ServerMetricsHistoryResponse {
+    Ok(Json(ServerMetricsHistoryResponse {
         server_id,
         history,
     }))

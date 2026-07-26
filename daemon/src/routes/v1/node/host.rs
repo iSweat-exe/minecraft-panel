@@ -1,5 +1,5 @@
 use axum::Json;
-use protocol::{ApiResponse, SystemHostResponse};
+use protocol::{SystemHostResponse};
 
 use crate::services::auth::NodeAuth;
 use tokio::process::Command;
@@ -10,13 +10,13 @@ use tokio::process::Command;
     get,
     path = "/api/v1/node/host",
     responses(
-        (status = 200, description = "Get host info", body = inline(protocol::ApiResponse<protocol::SystemHostResponse>))
+        (status = 200, description = "Get host info", body = inline(protocol::SystemHostResponse))
     ),
     security(
         ("bearer_auth" = [])
     )
 )]
-pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> {
+pub async fn get_host(_auth: NodeAuth) -> Result<Json<SystemHostResponse>, crate::error::DaemonError> {
     let mut sys = sysinfo::System::new_with_specifics(
         sysinfo::RefreshKind::nothing().with_cpu(sysinfo::CpuRefreshKind::everything()),
     );
@@ -48,7 +48,7 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
         disk_free_mb += disk.available_space() / 1024 / 1024;
     }
 
-    Json(ApiResponse::ok(SystemHostResponse {
+    Ok(Json(SystemHostResponse {
         os_name,
         os_version,
         kernel_version,
@@ -67,7 +67,7 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
     path = "/api/v1/node/host/exec",
     request_body = protocol::HostExecRequest,
     responses(
-        (status = 200, description = "Execute command", body = inline(protocol::ApiResponse<protocol::HostExecResponse>))
+        (status = 200, description = "Execute command", body = inline(protocol::HostExecResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -76,7 +76,7 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
 pub async fn execute_command(
     _auth: NodeAuth,
     Json(payload): Json<protocol::HostExecRequest>,
-) -> Json<ApiResponse<protocol::HostExecResponse>> {
+) -> Result<Json<protocol::HostExecResponse>, crate::error::DaemonError> {
     tracing::warn!(command = %payload.command, "Action sensible: exécution de commande hôte");
 
     #[cfg(target_os = "windows")]
@@ -130,13 +130,13 @@ pub async fn execute_command(
             // script command often leaves \r\n, but sometimes we just want to pass the raw output to xterm.
             // xterm handles \r\n natively.
             let stderr = String::from_utf8_lossy(&output.stderr).to_string();
-            Json(ApiResponse::ok(protocol::HostExecResponse {
+            Ok(Json(protocol::HostExecResponse {
                 stdout,
                 stderr,
                 exit_code: output.status.code(),
             }))
         }
-        Err(e) => Json(ApiResponse::err(format!(
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!(
             "Failed to execute command: {}",
             e
         ))),

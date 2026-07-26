@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::State;
 use axum::Json;
-use protocol::{ApiResponse, DaemonInfoResponse};
+use protocol::{DaemonInfoResponse};
 
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
@@ -12,7 +12,7 @@ use crate::services::auth::NodeAuth;
     get,
     path = "/api/v1/node/info",
     responses(
-        (status = 200, description = "Get node info", body = inline(protocol::ApiResponse<protocol::DaemonInfoResponse>))
+        (status = 200, description = "Get node info", body = inline(protocol::DaemonInfoResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -21,7 +21,7 @@ use crate::services::auth::NodeAuth;
 pub async fn get_info(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Json<ApiResponse<DaemonInfoResponse>> {
+) -> Result<Json<DaemonInfoResponse>, crate::error::DaemonError> {
     let servers = match state
         .docker
         .list_managed_containers()
@@ -29,9 +29,9 @@ pub async fn get_info(
         .context("Failed to list managed containers")
     {
         Ok(s) => s,
-        Err(e) => return Json(ApiResponse::err(format!("{:#}", e))),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     };
-    let running = servers.iter().filter(|s| s.state == "running").count();
+    let running = servers.iter().filter(|s| s.state == protocol::docker::ServerState::Running).count();
 
     let docker_version = state
         .docker
@@ -42,7 +42,7 @@ pub async fn get_info(
         .and_then(|v| v.version)
         .unwrap_or_else(|| "Unknown".to_string());
 
-    Json(ApiResponse::ok(DaemonInfoResponse {
+    Ok(Json(DaemonInfoResponse {
         version: env!("CARGO_PKG_VERSION").to_string(),
         protocol_version: protocol::PROTOCOL_VERSION,
         node_id: state.config.node_id.clone(),

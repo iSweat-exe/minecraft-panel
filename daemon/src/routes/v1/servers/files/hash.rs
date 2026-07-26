@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::{Path, Query, State};
 use axum::Json;
-use protocol::{ApiResponse, FileHashResponse};
+use protocol::{FileHashResponse};
 
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
@@ -18,7 +18,7 @@ use super::FileQuery;
         ("path" = String, Query, description = "File path to hash")
     ),
     responses(
-        (status = 200, description = "Hash a single file", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Hash a single file", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -29,9 +29,9 @@ pub async fn hash_file(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Query(query): Query<FileQuery>,
-) -> Json<ApiResponse<FileHashResponse>> {
+) -> Result<Json<FileHashResponse>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("server:files") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     let safe_path = match crate::services::files::sanitize_path(
@@ -40,15 +40,15 @@ pub async fn hash_file(
         &query.path,
     ) {
         Ok(p) => p,
-        Err(e) => return axum::Json(ApiResponse::err(e.to_string())),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(e.to_string())),
     };
 
     match crate::services::files::hash_file(&safe_path)
         .await
         .context(format!("Failed to hash file: {}", query.path))
     {
-        Ok(hash_str) => Json(ApiResponse::ok(FileHashResponse { sha1_hex: hash_str })),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(hash_str) => Ok(Json(FileHashResponse { sha1_hex: hash_str })),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -62,7 +62,7 @@ pub async fn hash_file(
     ),
     request_body = protocol::FileHashMultipleRequest,
     responses(
-        (status = 200, description = "Hash multiple files", body = inline(protocol::ApiResponse<protocol::FileHashMultipleResponse>))
+        (status = 200, description = "Hash multiple files", body = inline(protocol::FileHashMultipleResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -73,9 +73,9 @@ pub async fn hash_multiple(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Json(payload): Json<protocol::FileHashMultipleRequest>,
-) -> Json<ApiResponse<protocol::FileHashMultipleResponse>> {
+) -> Result<Json<protocol::FileHashMultipleResponse>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("server:files") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     let safe_path = match crate::services::files::sanitize_path(
@@ -84,16 +84,16 @@ pub async fn hash_multiple(
         &payload.path,
     ) {
         Ok(p) => p,
-        Err(e) => return axum::Json(ApiResponse::err(e.to_string())),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(e.to_string())),
     };
 
     match crate::services::files::hash_multiple_files(&safe_path, &payload.patterns)
         .await
         .context(format!("Failed to hash files in: {}", payload.path))
     {
-        Ok(hashes) => Json(ApiResponse::ok(protocol::FileHashMultipleResponse {
+        Ok(hashes) => Ok(Json(protocol::FileHashMultipleResponse {
             hashes,
         })),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }

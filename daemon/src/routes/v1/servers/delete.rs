@@ -1,7 +1,6 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
 use axum::Json;
-use protocol::ApiResponse;
 
 use crate::error::DaemonError;
 use crate::routes::AppState;
@@ -16,7 +15,7 @@ use crate::services::auth::UserAuth;
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "Delete a server", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Delete a server", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -26,7 +25,7 @@ pub async fn delete_server(
     auth: UserAuth,
     State(state): State<AppState>,
     Path(server_id): Path<String>,
-) -> Result<Json<ApiResponse<String>>, DaemonError> {
+) -> Result<Json<String>, DaemonError> {
     auth.require_permission("servers.delete")?;
     tracing::warn!(server_id = %server_id, user = %auth.username, "Server deletion requested");
 
@@ -53,10 +52,10 @@ pub async fn delete_server(
 
             tx.commit().await?;
 
-            Ok(Json(ApiResponse::ok(format!(
+            Ok(Json(format!(
                 "Server {} removed",
                 server_id
-            ))))
+            )))
         }
         Err(e) => Err(DaemonError::Anyhow(e)),
     }

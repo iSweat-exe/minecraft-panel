@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, State},
     Json,
 };
-use protocol::{ApiResponse, DockerContainerInfo, DockerRunRequest, DockerUpdateRequest};
+use protocol::{DockerContainerInfo, DockerRunRequest, DockerUpdateRequest};
 
 use crate::{services::auth::UserAuth, AppState};
 
@@ -12,7 +12,7 @@ use crate::{services::auth::UserAuth, AppState};
     get,
     path = "/api/v1/docker/containers",
     responses(
-        (status = 200, description = "List all docker containers", body = inline(ApiResponse<Vec<DockerContainerInfo>>))
+        (status = 200, description = "List all docker containers", body = inline(Vec<DockerContainerInfo>))
     ),
     security(
         ("bearer_auth" = [])
@@ -21,13 +21,13 @@ use crate::{services::auth::UserAuth, AppState};
 pub async fn list_all_containers(
     auth: UserAuth,
     State(state): State<AppState>,
-) -> Json<ApiResponse<Vec<DockerContainerInfo>>> {
+) -> Result<Json<Vec<DockerContainerInfo>>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     match state.docker.list_all_containers().await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -46,7 +46,7 @@ pub struct DockerActionPayload {
     ),
     request_body = DockerActionPayload,
     responses(
-        (status = 200, description = "Perform action on container", body = inline(ApiResponse<String>))
+        (status = 200, description = "Perform action on container", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -57,21 +57,21 @@ pub async fn container_action(
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerActionPayload>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     let cmd = match payload.action.as_str() {
         "start" => vec!["start", &id],
         "stop" => vec!["stop", "-t", "10", &id],
         "restart" => vec!["restart", "-t", "10", &id],
         "remove" => vec!["rm", "-f", &id],
-        _ => return Json(ApiResponse::err("Action non reconnue")),
+        _ => return Err(crate::error::DaemonError::BadRequest("Action non reconnue".to_string())),
     };
 
     match state.docker.run_docker_command(&cmd).await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -95,7 +95,7 @@ fn default_tail() -> u32 {
         ("tail" = Option<u32>, Query, description = "Number of lines to tail")
     ),
     responses(
-        (status = 200, description = "Get container logs", body = inline(ApiResponse<String>))
+        (status = 200, description = "Get container logs", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -106,9 +106,9 @@ pub async fn container_logs(
     Path(id): Path<String>,
     axum::extract::Query(query): axum::extract::Query<ContainerLogsQuery>,
     State(state): State<AppState>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     let tail_str = query.tail.to_string();
     match state
@@ -116,8 +116,8 @@ pub async fn container_logs(
         .run_docker_command(&["logs", "--tail", &tail_str, &id])
         .await
     {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -130,7 +130,7 @@ pub async fn container_logs(
         ("id" = String, Path, description = "Container ID")
     ),
     responses(
-        (status = 200, description = "Inspect container", body = inline(ApiResponse<String>))
+        (status = 200, description = "Inspect container", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -140,13 +140,13 @@ pub async fn container_inspect(
     auth: UserAuth,
     Path(id): Path<String>,
     State(state): State<AppState>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     match state.docker.run_docker_command(&["inspect", &id]).await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -163,7 +163,7 @@ pub struct SystemPrunePayload {
     path = "/api/v1/docker/prune",
     request_body(content = Option<SystemPrunePayload>),
     responses(
-        (status = 200, description = "System prune", body = inline(ApiResponse<String>))
+        (status = 200, description = "System prune", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -173,9 +173,9 @@ pub async fn system_prune(
     auth: UserAuth,
     State(state): State<AppState>,
     body: Option<Json<SystemPrunePayload>>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     let include_volumes = body.is_some_and(|b| b.0.include_volumes);
     let mut cmd = vec!["system", "prune", "-af"];
@@ -183,8 +183,8 @@ pub async fn system_prune(
         cmd.push("--volumes");
     }
     match state.docker.run_docker_command(&cmd).await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -195,7 +195,7 @@ pub async fn system_prune(
     path = "/api/v1/docker/containers",
     request_body = DockerRunRequest,
     responses(
-        (status = 200, description = "Run a new container", body = inline(ApiResponse<String>))
+        (status = 200, description = "Run a new container", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -205,16 +205,16 @@ pub async fn run_container(
     auth: UserAuth,
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     let args = build_docker_run_args(&payload);
     let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
     match state.docker.run_docker_command(&str_args).await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -228,7 +228,7 @@ pub async fn run_container(
     ),
     request_body = DockerUpdateRequest,
     responses(
-        (status = 200, description = "Update a container", body = inline(ApiResponse<String>))
+        (status = 200, description = "Update a container", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -239,9 +239,9 @@ pub async fn update_container(
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerUpdateRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     let mut update_args = vec!["update"];
 
@@ -274,7 +274,7 @@ pub async fn update_container(
     if needs_restart {
         update_args.push(&id);
         if let Err(e) = state.docker.run_docker_command(&update_args).await {
-            return Json(ApiResponse::err(format!("docker update failed: {:#}", e)));
+            return Err(crate::error::DaemonError::BadRequest(format!("docker update failed: {:#}", e)));
         }
     }
 
@@ -286,7 +286,7 @@ pub async fn update_container(
                 .run_docker_command(&["rename", &id, clean])
                 .await
             {
-                return Json(ApiResponse::err(format!("docker rename failed: {:#}", e)));
+                return Err(crate::error::DaemonError::BadRequest(format!("docker rename failed: {:#}", e)));
             }
         }
     }
@@ -297,11 +297,11 @@ pub async fn update_container(
             .run_docker_command(&["restart", "-t", "10", &id])
             .await
         {
-            Ok(v) => Json(ApiResponse::ok(v)),
-            Err(e) => Json(ApiResponse::err(format!("docker restart failed: {:#}", e))),
+            Ok(v) => Ok(Json(v)),
+            Err(e) => Err(crate::error::DaemonError::BadRequest(format!("docker restart failed: {:#}", e))),
         }
     } else {
-        Json(ApiResponse::ok("Container updated".to_string()))
+        Ok(Json("Container updated".to_string()))
     }
 }
 
@@ -315,7 +315,7 @@ pub async fn update_container(
     ),
     request_body = DockerRunRequest,
     responses(
-        (status = 200, description = "Recreate a container", body = inline(ApiResponse<String>))
+        (status = 200, description = "Recreate a container", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -326,12 +326,12 @@ pub async fn recreate_container(
     Path(id): Path<String>,
     State(state): State<AppState>,
     Json(payload): Json<DockerRunRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     if let Err(e) = state.docker.run_docker_command(&["rm", "-f", &id]).await {
-        return Json(ApiResponse::err(format!(
+        return Err(crate::error::DaemonError::BadRequest(format!(
             "Failed to remove old container: {:#}",
             e
         )));
@@ -341,8 +341,8 @@ pub async fn recreate_container(
     let str_args: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
 
     match state.docker.run_docker_command(&str_args).await {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 

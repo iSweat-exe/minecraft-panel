@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::{Path, Query, State};
 use axum::Json;
-use protocol::{ApiResponse, FileEntry};
+use protocol::{FileEntry};
 
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
@@ -18,7 +18,7 @@ use super::FileQuery;
         ("path" = String, Query, description = "Directory path to list")
     ),
     responses(
-        (status = 200, description = "List files", body = inline(protocol::ApiResponse<Vec<protocol::FileEntry>>))
+        (status = 200, description = "List files", body = inline(protocol::Vec<protocol::FileEntry>))
     ),
     security(
         ("bearer_auth" = [])
@@ -29,9 +29,9 @@ pub async fn list_files(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Query(query): Query<FileQuery>,
-) -> Json<ApiResponse<Vec<FileEntry>>> {
+) -> Result<Json<Vec<FileEntry>>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("server:files") {
-        return Json(ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     let safe_path = match crate::services::files::sanitize_path(
@@ -40,14 +40,14 @@ pub async fn list_files(
         &query.path,
     ) {
         Ok(p) => p,
-        Err(e) => return axum::Json(ApiResponse::err(e.to_string())),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(e.to_string())),
     };
 
     match crate::services::files::list_dir(&safe_path)
         .await
         .context(format!("Failed to list directory: {}", query.path))
     {
-        Ok(entries) => Json(ApiResponse::ok(entries)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(entries) => Ok(Json(entries)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }

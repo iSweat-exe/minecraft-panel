@@ -1,6 +1,6 @@
 use axum::extract::{Path, State};
 use axum::Json;
-use protocol::{ApiResponse, ServerCrashesResponse};
+use protocol::{ServerCrashesResponse};
 
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
@@ -16,7 +16,7 @@ use futures_util::StreamExt;
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "Get server crashes", body = inline(protocol::ApiResponse<protocol::ServerCrashesResponse>))
+        (status = 200, description = "Get server crashes", body = inline(protocol::ServerCrashesResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -26,7 +26,7 @@ pub async fn server_crashes(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(server_id): Path<String>,
-) -> Json<ApiResponse<ServerCrashesResponse>> {
+) -> Result<Json<ServerCrashesResponse>, crate::error::DaemonError> {
     let container_name = crate::services::docker::DockerManager::container_name(&server_id);
     let docker = state.docker.docker_client();
 
@@ -47,7 +47,7 @@ pub async fn server_crashes(
         .await
     {
         Ok(e) => e,
-        Err(_) => return Json(ApiResponse::err("Failed to create exec in container")),
+        Err(_) => return Err(crate::error::DaemonError::BadRequest("Failed to create exec in container".to_string())),
     };
 
     let mut output = Vec::new();
@@ -67,7 +67,7 @@ pub async fn server_crashes(
         .map(|s| s.to_string())
         .collect();
 
-    Json(ApiResponse::ok(ServerCrashesResponse {
+    Ok(Json(ServerCrashesResponse {
         crash_reports: crashes,
     }))
 }

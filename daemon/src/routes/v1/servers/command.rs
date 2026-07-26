@@ -1,7 +1,6 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
 use axum::Json;
-use protocol::ApiResponse;
 
 use crate::error::DaemonError;
 use crate::routes::AppState;
@@ -27,7 +26,7 @@ pub struct ServerRconMultiRequest {
     ),
     request_body = ServerCommandRequest,
     responses(
-        (status = 200, description = "Send command to server console", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Send command to server console", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -38,7 +37,7 @@ pub async fn server_command(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Json(payload): Json<ServerCommandRequest>,
-) -> Result<Json<ApiResponse<String>>, DaemonError> {
+) -> Result<Json<String>, DaemonError> {
     auth.require_permission("server:console")?;
     tracing::info!(server_id = %server_id, user = %auth.username, command = %payload.command, "Sending command to server");
     state
@@ -46,7 +45,7 @@ pub async fn server_command(
         .send_command(&server_id, &payload.command)
         .await
         .context(format!("Failed to send command to server {}", server_id))?;
-    Ok(Json(ApiResponse::ok("Command sent".to_string())))
+    Ok(Json("Command sent".to_string()))
 }
 
 #[utoipa::path(
@@ -59,7 +58,7 @@ pub async fn server_command(
     ),
     request_body = ServerRconMultiRequest,
     responses(
-        (status = 200, description = "Send RCON command", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Send RCON command", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -70,7 +69,7 @@ pub async fn server_rcon_multi(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Json(payload): Json<ServerRconMultiRequest>,
-) -> Result<Json<ApiResponse<Vec<String>>>, DaemonError> {
+) -> Result<Json<Vec<String>>, DaemonError> {
     auth.require_permission("server:console")?;
     tracing::info!(server_id = %server_id, user = %auth.username, count = payload.commands.len(), "Executing RCON multi commands");
     let mut responses = Vec::new();
@@ -86,5 +85,5 @@ pub async fn server_rcon_multi(
         responses.push(output);
     }
 
-    Ok(Json(ApiResponse::ok(responses)))
+    Ok(Json(responses))
 }

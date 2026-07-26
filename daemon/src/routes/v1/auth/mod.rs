@@ -36,14 +36,14 @@ fn hash_password(password: &str) -> anyhow::Result<String> {
     path = "/api/v1/auth/login",
     request_body = LoginRequest,
     responses(
-        (status = 200, description = "Login successful", body = inline(protocol::ApiResponse<LoginResponse>)),
+        (status = 200, description = "Login successful", body = inline(LoginResponse)),
         (status = 401, description = "Unauthorized")
     )
 )]
 pub async fn login(
     State(state): State<AppState>,
     Json(payload): Json<LoginRequest>,
-) -> Result<Json<protocol::ApiResponse<LoginResponse>>, crate::error::DaemonError> {
+) -> Result<Json<LoginResponse>, crate::error::DaemonError> {
     let row =
         sqlx::query("SELECT username, password_hash, permissions FROM users WHERE username = ?")
             .bind(&payload.username)
@@ -99,11 +99,7 @@ pub async fn login(
                     ))
                 })?;
 
-                return Ok(Json(protocol::ApiResponse {
-                    success: true,
-                    data: Some(LoginResponse { token }),
-                    error: None,
-                }));
+                return Ok(Json(LoginResponse { token }));
             }
         }
     }

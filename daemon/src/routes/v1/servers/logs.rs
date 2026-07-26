@@ -1,6 +1,6 @@
 use axum::extract::{Path, Query, State};
 use axum::Json;
-use protocol::{ApiResponse, ServerLogsResponse};
+use protocol::{ServerLogsResponse};
 
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
@@ -21,7 +21,7 @@ pub struct LogsQuery {
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "Get server logs", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Get server logs", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -32,7 +32,7 @@ pub async fn server_logs(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Query(query): Query<LogsQuery>,
-) -> Json<ApiResponse<ServerLogsResponse>> {
+) -> Json<ServerLogsResponse> {
     let container_name = crate::services::docker::DockerManager::container_name(&server_id);
     let lines = query.lines.unwrap_or(100).to_string();
 
@@ -55,5 +55,5 @@ pub async fn server_logs(
         log_lines.push(line.trim_end().to_string());
     }
 
-    Json(ApiResponse::ok(ServerLogsResponse { lines: log_lines }))
+    Json(ServerLogsResponse { lines: log_lines })
 }

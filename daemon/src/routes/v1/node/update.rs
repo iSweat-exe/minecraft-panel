@@ -1,6 +1,6 @@
 use anyhow::Context;
 use axum::Json;
-use protocol::{ApiResponse, UpdateDaemonRequest, UpdateDaemonResponse};
+use protocol::{UpdateDaemonRequest, UpdateDaemonResponse};
 
 use crate::services::auth::NodeAuth;
 
@@ -11,7 +11,7 @@ use crate::services::auth::NodeAuth;
     path = "/api/v1/node/update",
     request_body = UpdateDaemonRequest,
     responses(
-        (status = 200, description = "Trigger node update", body = inline(protocol::ApiResponse<UpdateDaemonResponse>))
+        (status = 200, description = "Trigger node update", body = inline(protocol::UpdateDaemonResponse))
     ),
     security(
         ("bearer_auth" = [])
@@ -20,12 +20,12 @@ use crate::services::auth::NodeAuth;
 pub async fn trigger_update(
     _auth: NodeAuth,
     Json(payload): Json<UpdateDaemonRequest>,
-) -> Json<ApiResponse<UpdateDaemonResponse>> {
+) -> Result<Json<UpdateDaemonResponse>, crate::error::DaemonError> {
     match crate::services::update::AutoUpdater::apply_update(payload)
         .await
         .context("Failed to apply daemon auto-update")
     {
-        Ok(res) => Json(ApiResponse::ok(res)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(res) => Ok(Json(res)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }

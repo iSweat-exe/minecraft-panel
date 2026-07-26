@@ -38,7 +38,6 @@ impl From<DbHistory> for HistoryEntry {
     }
 }
 
-use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new().route("/api/v1/history", get(list_history).post(save_history))
@@ -50,7 +49,7 @@ pub fn router() -> Router<AppState> {
     get,
     path = "/api/v1/history",
     responses(
-        (status = 200, description = "List history entries", body = inline(ApiResponse<Vec<HistoryEntry>>))
+        (status = 200, description = "List history entries", body = inline(Vec<HistoryEntry>))
     ),
     security(
         ("bearer_auth" = [])
@@ -59,7 +58,7 @@ pub fn router() -> Router<AppState> {
 async fn list_history(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<HistoryEntry>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<HistoryEntry>>, crate::error::DaemonError> {
     let rows =
         sqlx::query_as::<_, DbHistory>("SELECT * FROM history ORDER BY timestamp DESC LIMIT 50")
             .fetch_all(&state.db)
@@ -67,11 +66,7 @@ async fn list_history(
 
     let history: Vec<HistoryEntry> = rows.into_iter().map(Into::into).collect();
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(history),
-        error: None,
-    }))
+    Ok(Json(history))
 }
 
 #[utoipa::path(
@@ -81,7 +76,7 @@ async fn list_history(
     path = "/api/v1/history",
     request_body = HistoryEntry,
     responses(
-        (status = 200, description = "Save a history entry", body = inline(ApiResponse<HistoryEntry>))
+        (status = 200, description = "Save a history entry", body = inline(HistoryEntry))
     ),
     security(
         ("bearer_auth" = [])
@@ -91,7 +86,7 @@ async fn save_history(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<HistoryEntry>,
-) -> Result<Json<ApiResponse<HistoryEntry>>, crate::error::DaemonError> {
+) -> Result<Json<HistoryEntry>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
     let id = payload
         .id
@@ -110,9 +105,5 @@ async fn save_history(
     .execute(&state.db)
     .await?;
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(payload),
-        error: None,
-    }))
+    Ok(Json(payload))
 }

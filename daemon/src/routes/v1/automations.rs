@@ -45,7 +45,6 @@ impl From<DbAutomation> for Automation {
     }
 }
 
-use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -62,7 +61,7 @@ pub fn router() -> Router<AppState> {
     get,
     path = "/api/v1/automations",
     responses(
-        (status = 200, description = "List all automations", body = inline(ApiResponse<Vec<Automation>>))
+        (status = 200, description = "List all automations", body = inline(Vec<Automation>))
     ),
     security(
         ("bearer_auth" = [])
@@ -71,18 +70,14 @@ pub fn router() -> Router<AppState> {
 async fn list_automations(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<Automation>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<Automation>>, crate::error::DaemonError> {
     let rows = sqlx::query_as::<_, DbAutomation>("SELECT * FROM automations")
         .fetch_all(&state.db)
         .await?;
 
     let automations = rows.into_iter().map(Automation::from).collect();
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(automations),
-        error: None,
-    }))
+    Ok(Json(automations))
 }
 
 #[utoipa::path(
@@ -92,7 +87,7 @@ async fn list_automations(
     path = "/api/v1/automations",
     request_body = Automation,
     responses(
-        (status = 200, description = "Create or update an automation", body = inline(ApiResponse<Automation>))
+        (status = 200, description = "Create or update an automation", body = inline(Automation))
     ),
     security(
         ("bearer_auth" = [])
@@ -102,7 +97,7 @@ async fn save_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Automation>,
-) -> Result<Json<ApiResponse<Automation>>, crate::error::DaemonError> {
+) -> Result<Json<Automation>, crate::error::DaemonError> {
     let now = chrono::Utc::now().timestamp();
     let id = payload
         .id
@@ -145,11 +140,7 @@ async fn save_automation(
         tracing::error!("Failed to dynamically schedule automation {}: {}", id, e);
     }
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(payload),
-        error: None,
-    }))
+    Ok(Json(payload))
 }
 
 #[utoipa::path(
@@ -161,7 +152,7 @@ async fn save_automation(
         ("id" = String, Path, description = "Automation ID")
     ),
     responses(
-        (status = 200, description = "Automation deleted", body = inline(ApiResponse<Vec<Automation>>))
+        (status = 200, description = "Automation deleted", body = inline(Vec<Automation>))
     ),
     security(
         ("bearer_auth" = [])
@@ -171,7 +162,7 @@ async fn delete_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<ApiResponse<Vec<Automation>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<Automation>>, crate::error::DaemonError> {
     sqlx::query("DELETE FROM automations WHERE id = ?")
         .bind(&id)
         .execute(&state.db)

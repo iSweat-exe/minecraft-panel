@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
 use axum::Json;
-use protocol::{docker::ServerSpec, ApiResponse, PatchServerRequest};
+use protocol::{docker::ServerSpec, PatchServerRequest};
 
 use crate::error::DaemonError;
 use crate::routes::AppState;
@@ -17,7 +17,7 @@ use crate::services::auth::UserAuth;
     ),
     request_body = protocol::ServerSpec,
     responses(
-        (status = 200, description = "Update a server", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Update a server", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -28,7 +28,7 @@ pub async fn patch_server(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Json(payload): Json<PatchServerRequest>,
-) -> Result<Json<ApiResponse<String>>, DaemonError> {
+) -> Result<Json<String>, DaemonError> {
     auth.require_permission("servers.update")?;
     tracing::info!(server_id = %server_id, user = %auth.username, "Patching server configuration");
     // 1. Charger le Spec existant
@@ -107,7 +107,7 @@ pub async fn patch_server(
     {
         Ok(container_id) => {
             tracing::info!(server_id = %server_id, spec_version = spec_version + 1, "Serveur mis à jour (PATCH) avec succès");
-            Ok(Json(ApiResponse::ok(container_id)))
+            Ok(Json(container_id))
         }
         Err(e) => Err(DaemonError::Anyhow(e)),
     }

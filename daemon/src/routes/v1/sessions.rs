@@ -21,7 +21,6 @@ pub struct Session {
     pub os: String,
 }
 
-use protocol::ApiResponse;
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -64,7 +63,7 @@ impl From<DbSession> for Session {
     get,
     path = "/api/v1/sessions",
     responses(
-        (status = 200, description = "List all sessions", body = inline(ApiResponse<Vec<Session>>))
+        (status = 200, description = "List all sessions", body = inline(Vec<Session>))
     ),
     security(
         ("bearer_auth" = [])
@@ -73,18 +72,14 @@ impl From<DbSession> for Session {
 async fn list_sessions(
     _auth: NodeAuth,
     State(state): State<AppState>,
-) -> Result<Json<ApiResponse<Vec<Session>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<Session>>, crate::error::DaemonError> {
     let rows = sqlx::query_as::<_, DbSession>("SELECT * FROM sessions")
         .fetch_all(&state.db)
         .await?;
 
     let sessions: Vec<Session> = rows.into_iter().map(Into::into).collect();
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(sessions),
-        error: None,
-    }))
+    Ok(Json(sessions))
 }
 
 #[utoipa::path(
@@ -94,7 +89,7 @@ async fn list_sessions(
     path = "/api/v1/sessions",
     request_body = Session,
     responses(
-        (status = 200, description = "Save a session", body = inline(ApiResponse<Session>))
+        (status = 200, description = "Save a session", body = inline(Session))
     ),
     security(
         ("bearer_auth" = [])
@@ -104,7 +99,7 @@ async fn save_session(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Json(payload): Json<Session>,
-) -> Result<Json<ApiResponse<Session>>, crate::error::DaemonError> {
+) -> Result<Json<Session>, crate::error::DaemonError> {
     sqlx::query(
         "INSERT INTO sessions (uuid, name, avatar, connected_at, last_seen, ip, ipv6, location, os) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) 
@@ -122,11 +117,7 @@ async fn save_session(
     .execute(&state.db)
     .await?;
 
-    Ok(Json(ApiResponse {
-        success: true,
-        data: Some(payload),
-        error: None,
-    }))
+    Ok(Json(payload))
 }
 
 #[utoipa::path(
@@ -138,7 +129,7 @@ async fn save_session(
         ("id" = String, Path, description = "Session UUID to delete")
     ),
     responses(
-        (status = 200, description = "Session deleted", body = inline(ApiResponse<Vec<Session>>))
+        (status = 200, description = "Session deleted", body = inline(Vec<Session>))
     ),
     security(
         ("bearer_auth" = [])
@@ -148,7 +139,7 @@ async fn delete_session(
     _auth: NodeAuth,
     State(state): State<AppState>,
     Path(id): Path<String>,
-) -> Result<Json<ApiResponse<Vec<Session>>>, crate::error::DaemonError> {
+) -> Result<Json<Vec<Session>>, crate::error::DaemonError> {
     sqlx::query("DELETE FROM sessions WHERE uuid = ?")
         .bind(&id)
         .execute(&state.db)

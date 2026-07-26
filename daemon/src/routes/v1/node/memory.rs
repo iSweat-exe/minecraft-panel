@@ -1,5 +1,5 @@
 use axum::Json;
-use protocol::{ApiResponse, SystemMemoryResponse};
+use protocol::{SystemMemoryResponse};
 
 use crate::services::auth::NodeAuth;
 
@@ -9,13 +9,13 @@ use crate::services::auth::NodeAuth;
     get,
     path = "/api/v1/node/memory",
     responses(
-        (status = 200, description = "Get node memory", body = inline(protocol::ApiResponse<protocol::SystemMemoryResponse>))
+        (status = 200, description = "Get node memory", body = inline(protocol::SystemMemoryResponse))
     ),
     security(
         ("bearer_auth" = [])
     )
 )]
-pub async fn get_memory(_auth: NodeAuth) -> Json<ApiResponse<SystemMemoryResponse>> {
+pub async fn get_memory(_auth: NodeAuth) -> Json<SystemMemoryResponse> {
     let mut sys = sysinfo::System::new_with_specifics(
         sysinfo::RefreshKind::nothing().with_memory(sysinfo::MemoryRefreshKind::everything()),
     );
@@ -24,9 +24,9 @@ pub async fn get_memory(_auth: NodeAuth) -> Json<ApiResponse<SystemMemoryRespons
     let used_mb = sys.used_memory() / 1024 / 1024;
     let free_mb = total_mb.saturating_sub(used_mb);
 
-    Json(ApiResponse::ok(SystemMemoryResponse {
+    Json(SystemMemoryResponse {
         total_mb,
         free_mb,
         used_mb,
-    }))
+    })
 }

@@ -1,5 +1,0 @@
-﻿build(daemon): bump version to 0.1.49 and group swagger endpoints
-
-- Replaced auto-generated Swagger endpoint summaries with descriptive English summaries
-- Added `tag` attributes to properly categorize endpoints in the Swagger UI (e.g. Node Management, Docker, Servers)
-- Bumped daemon version to 0.1.49 for release

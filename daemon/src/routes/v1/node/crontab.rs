@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use axum::Json;
-use protocol::{ApiResponse, CrontabUpdateRequest};
+use protocol::{CrontabUpdateRequest};
 use tokio::process::Command;
 
 use crate::services::auth::NodeAuth;
@@ -11,16 +11,16 @@ use crate::services::auth::NodeAuth;
     get,
     path = "/api/v1/node/crontab",
     responses(
-        (status = 200, description = "Get node crontab", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Get node crontab", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
     )
 )]
-pub async fn get_crontab(_auth: NodeAuth) -> Json<ApiResponse<String>> {
+pub async fn get_crontab(_auth: NodeAuth) -> Result<Json<String>, crate::error::DaemonError> {
     match get_crontab_impl().await.context("Failed to get crontab") {
-        Ok(s) => Json(ApiResponse::ok(s)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(s) => Ok(Json(s)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -50,7 +50,7 @@ async fn get_crontab_impl() -> Result<String> {
     path = "/api/v1/node/crontab",
     request_body = protocol::CrontabUpdateRequest,
     responses(
-        (status = 200, description = "Update node crontab", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Update node crontab", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -59,13 +59,13 @@ async fn get_crontab_impl() -> Result<String> {
 pub async fn update_crontab(
     _auth: NodeAuth,
     Json(payload): Json<CrontabUpdateRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     match update_crontab_impl(payload.content)
         .await
         .context("Failed to update crontab")
     {
-        Ok(s) => Json(ApiResponse::ok(s)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(s) => Ok(Json(s)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 

@@ -3,7 +3,6 @@ use axum::{
     Json,
 };
 use futures_util::StreamExt;
-use protocol::ApiResponse;
 use tokio::io::AsyncWriteExt;
 
 use crate::routes::AppState;
@@ -22,7 +21,7 @@ use super::FileQuery;
     ),
     request_body(content = String, description = "Multipart form data with file", content_type = "multipart/form-data"),
     responses(
-        (status = 200, description = "Upload file", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Upload file", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -34,9 +33,9 @@ pub async fn upload_file(
     Path(server_id): Path<String>,
     Query(query): Query<FileQuery>,
     body: axum::body::Body,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("server:files") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     let safe_path = match crate::services::files::sanitize_path(
@@ -45,12 +44,12 @@ pub async fn upload_file(
         &query.path,
     ) {
         Ok(p) => p,
-        Err(e) => return axum::Json(ApiResponse::err(e.to_string())),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(e.to_string())),
     };
 
     let mut file = match tokio::fs::File::create(&safe_path).await {
         Ok(f) => f,
-        Err(e) => return Json(ApiResponse::err(format!("Failed to create file: {}", e))),
+        Err(e) => return Err(crate::error::DaemonError::BadRequest(format!("Failed to create file: {}", e))),
     };
 
     let mut stream = body.into_data_stream();
@@ -60,15 +59,15 @@ pub async fn upload_file(
             Ok(data) => {
                 if let Err(e) = file.write_all(&data).await {
                     let _ = tokio::fs::remove_file(&safe_path).await; // Clean up partial file
-                    return Json(ApiResponse::err(format!("Failed to write to file: {}", e)));
+                    return Err(crate::error::DaemonError::BadRequest(format!("Failed to write to file: {}", e)));
                 }
             }
             Err(e) => {
                 let _ = tokio::fs::remove_file(&safe_path).await;
-                return Json(ApiResponse::err(format!("Failed to read stream: {}", e)));
+                return Err(crate::error::DaemonError::BadRequest(format!("Failed to read stream: {}", e)));
             }
         }
     }
 
-    Json(ApiResponse::ok("File uploaded".to_string()))
+    Ok(Json("File uploaded".to_string()))
 }

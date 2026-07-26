@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::{Path, State};
 use axum::Json;
-use protocol::{ApiResponse, PowerActionRequest, PowerActionResponse};
+use protocol::{PowerActionRequest, PowerActionResponse};
 
 use crate::error::DaemonError;
 use crate::routes::AppState;
@@ -17,7 +17,7 @@ use crate::services::auth::UserAuth;
     ),
     request_body = protocol::PowerActionRequest,
     responses(
-        (status = 200, description = "Change server power state", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Change server power state", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -28,7 +28,7 @@ pub async fn server_power(
     State(state): State<AppState>,
     Path(server_id): Path<String>,
     Json(payload): Json<PowerActionRequest>,
-) -> Result<Json<ApiResponse<PowerActionResponse>>, DaemonError> {
+) -> Result<Json<PowerActionResponse>, DaemonError> {
     auth.require_permission("server:power")?;
     tracing::info!(server_id = %server_id, user = %auth.username, action = ?payload.action, "Power action requested");
     let action = payload.action;
@@ -41,10 +41,10 @@ pub async fn server_power(
             action, server_id
         ))?;
 
-    Ok(Json(ApiResponse::ok(PowerActionResponse {
+    Ok(Json(PowerActionResponse {
         server_id,
         action,
         success: true,
         message: "Action executed successfully".to_string(),
-    })))
+    }))
 }

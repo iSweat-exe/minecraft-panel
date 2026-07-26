@@ -3,7 +3,7 @@ use axum::{
     response::{IntoResponse, Response},
     Json,
 };
-use protocol::ApiResponse;
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -38,10 +38,8 @@ impl IntoResponse for DaemonError {
 
         (
             status,
-            Json(ApiResponse::<()> {
-                success: false,
-                data: None,
-                error: Some(msg),
+            Json(protocol::ApiErrorResponse {
+                error: msg,
             }),
         )
             .into_response()

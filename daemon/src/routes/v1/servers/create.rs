@@ -1,7 +1,7 @@
 use anyhow::Context;
 use axum::extract::State;
 use axum::Json;
-use protocol::{ApiResponse, CreateServerRequest};
+use protocol::{CreateServerRequest};
 
 use crate::error::DaemonError;
 use crate::routes::AppState;
@@ -14,7 +14,7 @@ use crate::services::auth::UserAuth;
     path = "/api/v1/servers",
     request_body = protocol::ServerSpec,
     responses(
-        (status = 200, description = "Create a server", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Create a server", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -24,7 +24,7 @@ pub async fn create_server(
     auth: UserAuth,
     State(state): State<AppState>,
     Json(payload): Json<CreateServerRequest>,
-) -> Result<Json<ApiResponse<String>>, DaemonError> {
+) -> Result<Json<String>, DaemonError> {
     auth.require_permission("servers.create")?;
     tracing::info!(
         user = %auth.username,
@@ -55,7 +55,7 @@ pub async fn create_server(
         .await
         .context("Failed to create server container")
     {
-        Ok(container_id) => Ok(Json(ApiResponse::ok(container_id))),
+        Ok(container_id) => Ok(Json(container_id)),
         Err(e) => {
             let _ = sqlx::query("DELETE FROM server_allocations WHERE server_id = ?")
                 .bind(&payload.spec.server_id)

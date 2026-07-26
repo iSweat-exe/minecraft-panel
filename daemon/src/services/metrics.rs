@@ -106,7 +106,7 @@ pub async fn start_metrics_collector(
         match docker.list_managed_containers().await {
             Ok(containers) => {
                 for c in containers {
-                    if c.state != "running" {
+                    if c.state != "running".into() {
                         continue;
                     }
 

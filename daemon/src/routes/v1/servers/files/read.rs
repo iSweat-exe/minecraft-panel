@@ -3,7 +3,6 @@ use axum::extract::{Path, Query, State};
 use axum::http::{header, StatusCode};
 use axum::response::IntoResponse;
 use axum::Json;
-use protocol::ApiResponse;
 
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
@@ -20,7 +19,7 @@ use super::FileQuery;
         ("path" = String, Query, description = "File path to read")
     ),
     responses(
-        (status = 200, description = "Read file", body = inline(protocol::ApiResponse<String>))
+        (status = 200, description = "Read file", body = inline(protocol::String))
     ),
     security(
         ("bearer_auth" = [])
@@ -45,7 +44,7 @@ pub async fn read_file(
         Err(e) => {
             return (
                 StatusCode::FORBIDDEN,
-                Json(ApiResponse::<()>::err(e.to_string())),
+                Json(protocol::ApiErrorResponse { error: e.to_string() }),
             )
                 .into_response()
         }
@@ -63,7 +62,7 @@ pub async fn read_file(
             .into_response(),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<()>::err(format!("{:#}", e))),
+            Json(protocol::ApiErrorResponse { error: format!("{:#}", e) }),
         )
             .into_response(),
     }

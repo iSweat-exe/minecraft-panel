@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use axum::Json;
-use protocol::{ApiResponse, DockerConfigUpdateRequest};
+use protocol::{DockerConfigUpdateRequest};
 use tokio::process::Command as TokioCommand;
 
 use crate::services::auth::UserAuth;
@@ -11,22 +11,22 @@ use crate::services::auth::UserAuth;
     get,
     path = "/api/v1/docker/config",
     responses(
-        (status = 200, description = "Get Docker configuration", body = inline(ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get Docker configuration", body = inline(serde_json::Value))
     ),
     security(
         ("bearer_auth" = [])
     )
 )]
-pub async fn get_docker_config(auth: UserAuth) -> Json<ApiResponse<serde_json::Value>> {
+pub async fn get_docker_config(auth: UserAuth) -> Result<Json<serde_json::Value>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
     match get_docker_config_impl()
         .await
         .context("Failed to read Docker configuration")
     {
-        Ok(v) => Json(ApiResponse::ok(v)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(v) => Ok(Json(v)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
@@ -51,7 +51,7 @@ async fn get_docker_config_impl() -> Result<serde_json::Value> {
     path = "/api/v1/docker/config",
     request_body = DockerConfigUpdateRequest,
     responses(
-        (status = 200, description = "Update Docker configuration", body = inline(ApiResponse<String>))
+        (status = 200, description = "Update Docker configuration", body = inline(String))
     ),
     security(
         ("bearer_auth" = [])
@@ -60,9 +60,9 @@ async fn get_docker_config_impl() -> Result<serde_json::Value> {
 pub async fn update_docker_config(
     auth: UserAuth,
     Json(payload): Json<DockerConfigUpdateRequest>,
-) -> Json<ApiResponse<String>> {
+) -> Result<Json<String>, crate::error::DaemonError> {
     if let Err(e) = auth.require_permission("system:docker") {
-        return axum::Json(protocol::ApiResponse::err(e.to_string()));
+        return Err(crate::error::DaemonError::BadRequest(e.to_string()));
     }
 
     tracing::warn!(user = %auth.username, "Action sensible: modification de la configuration Docker");
@@ -71,8 +71,8 @@ pub async fn update_docker_config(
         .await
         .context("Failed to update Docker configuration")
     {
-        Ok(msg) => Json(ApiResponse::ok(msg)),
-        Err(e) => Json(ApiResponse::err(format!("{:#}", e))),
+        Ok(msg) => Ok(Json(msg)),
+        Err(e) => Err(crate::error::DaemonError::BadRequest(format!("{:#}", e))),
     }
 }
 
