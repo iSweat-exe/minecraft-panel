@@ -5,10 +5,11 @@ use protocol::{ApiResponse, SystemMetricsResponse};
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
+    summary = "Get Metrics",
     get,
     path = "/api/v1/node/metrics",
     responses(
-        (status = 200, description = "Get node metrics", body = inline(protocol::ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get node metrics", body = inline(protocol::ApiResponse<protocol::SystemMetricsResponse>))
     ),
     security(
         ("bearer_auth" = [])

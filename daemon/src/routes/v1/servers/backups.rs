@@ -17,6 +17,7 @@ pub struct BackupInfo {
 }
 
 #[utoipa::path(
+    summary = "List Backups",
     get,
     path = "/api/v1/servers/{server_id}/backups",
     params(
@@ -70,6 +71,7 @@ pub struct TaskResponse {
 }
 
 #[utoipa::path(
+    summary = "Create Backup",
     post,
     path = "/api/v1/servers/{server_id}/backups",
     params(
@@ -158,6 +160,7 @@ pub async fn create_backup(
 }
 
 #[utoipa::path(
+    summary = "Delete Backup",
     delete,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}",
     params(
@@ -196,6 +199,7 @@ pub async fn delete_backup(
 }
 
 #[utoipa::path(
+    summary = "Restore Backup",
     post,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}/restore",
     params(
@@ -309,6 +313,7 @@ pub async fn restore_backup(
 }
 
 #[utoipa::path(
+    summary = "Download Backup",
     get,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}/download",
     params(

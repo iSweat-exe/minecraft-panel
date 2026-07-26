@@ -15,6 +15,7 @@ pub struct AllocationResponse {
 }
 
 #[utoipa::path(
+    summary = "List Allocations",
     get,
     path = "/api/v1/node/allocations",
     responses(

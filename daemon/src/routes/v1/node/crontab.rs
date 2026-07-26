@@ -6,6 +6,7 @@ use tokio::process::Command;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
+    summary = "Get Crontab",
     get,
     path = "/api/v1/node/crontab",
     responses(
@@ -42,6 +43,7 @@ async fn get_crontab_impl() -> Result<String> {
 }
 
 #[utoipa::path(
+    summary = "Update Crontab",
     put,
     path = "/api/v1/node/crontab",
     request_body = protocol::CrontabUpdateRequest,

@@ -11,6 +11,7 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
+    summary = "Read File",
     get,
     path = "/api/v1/servers/{server_id}/files/read",
     params(

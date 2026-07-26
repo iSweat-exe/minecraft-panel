@@ -13,13 +13,14 @@ pub struct MetricsHistoryQuery {
 }
 
 #[utoipa::path(
+    summary = "Server Metrics History",
     get,
     path = "/api/v1/servers/{server_id}/metrics/history",
     params(
         ("server_id" = String, Path, description = "Server ID")
     ),
     responses(
-        (status = 200, description = "Get server metrics history", body = inline(protocol::ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get server metrics history", body = inline(protocol::ApiResponse<protocol::ServerMetricsHistoryResponse>))
     ),
     security(
         ("bearer_auth" = [])

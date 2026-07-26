@@ -9,6 +9,7 @@ use crate::routes::AppState;
 use crate::services::auth::SessionAuth;
 
 #[utoipa::path(
+    summary = "Ws Stream Handler",
     get,
     path = "/api/v1/servers/{server_id}/stream",
     params(

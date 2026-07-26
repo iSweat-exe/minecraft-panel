@@ -8,6 +8,7 @@ use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
+    summary = "Delete Server",
     delete,
     path = "/api/v1/servers/{server_id}",
     params(

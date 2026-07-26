@@ -8,6 +8,7 @@ use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
+    summary = "Create Server",
     post,
     path = "/api/v1/servers",
     request_body = protocol::ServerSpec,

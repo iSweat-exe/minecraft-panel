@@ -8,6 +8,7 @@ use bollard::exec::{CreateExecOptions, StartExecResults};
 use futures_util::StreamExt;
 
 #[utoipa::path(
+    summary = "Server Crashes",
     get,
     path = "/api/v1/servers/{server_id}/crashes",
     params(

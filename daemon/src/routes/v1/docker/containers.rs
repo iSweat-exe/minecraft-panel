@@ -7,6 +7,7 @@ use protocol::{ApiResponse, DockerContainerInfo, DockerRunRequest, DockerUpdateR
 use crate::{services::auth::UserAuth, AppState};
 
 #[utoipa::path(
+    summary = "List All Containers",
     get,
     path = "/api/v1/docker/containers",
     responses(
@@ -35,6 +36,7 @@ pub struct DockerActionPayload {
 }
 
 #[utoipa::path(
+    summary = "Container Action",
     post,
     path = "/api/v1/docker/containers/{id}/action",
     params(
@@ -82,6 +84,7 @@ fn default_tail() -> u32 {
 }
 
 #[utoipa::path(
+    summary = "Container Logs",
     get,
     path = "/api/v1/docker/containers/{id}/logs",
     params(
@@ -116,6 +119,7 @@ pub async fn container_logs(
 }
 
 #[utoipa::path(
+    summary = "Container Inspect",
     get,
     path = "/api/v1/docker/containers/{id}/inspect",
     params(
@@ -149,6 +153,7 @@ pub struct SystemPrunePayload {
 }
 
 #[utoipa::path(
+    summary = "System Prune",
     post,
     path = "/api/v1/docker/prune",
     request_body(content = Option<SystemPrunePayload>),
@@ -179,6 +184,7 @@ pub async fn system_prune(
 }
 
 #[utoipa::path(
+    summary = "Run Container",
     post,
     path = "/api/v1/docker/containers",
     request_body = DockerRunRequest,
@@ -207,6 +213,7 @@ pub async fn run_container(
 }
 
 #[utoipa::path(
+    summary = "Update Container",
     put,
     path = "/api/v1/docker/containers/{id}",
     params(
@@ -292,6 +299,7 @@ pub async fn update_container(
 }
 
 #[utoipa::path(
+    summary = "Recreate Container",
     post,
     path = "/api/v1/docker/containers/{id}/recreate",
     params(

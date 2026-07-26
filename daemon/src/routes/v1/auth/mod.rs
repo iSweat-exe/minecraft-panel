@@ -30,6 +30,7 @@ fn hash_password(password: &str) -> anyhow::Result<String> {
 }
 
 #[utoipa::path(
+    summary = "Login",
     post,
     path = "/api/v1/auth/login",
     request_body = LoginRequest,

@@ -18,6 +18,7 @@ fn error_response(status: StatusCode, msg: String) -> Response {
 }
 
 #[utoipa::path(
+    summary = "Download File",
     get,
     path = "/api/v1/servers/{server_id}/files/download",
     params(

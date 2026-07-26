@@ -45,6 +45,7 @@ pub fn router() -> Router<AppState> {
 }
 
 #[utoipa::path(
+    summary = "List History",
     get,
     path = "/api/v1/history",
     responses(
@@ -73,6 +74,7 @@ async fn list_history(
 }
 
 #[utoipa::path(
+    summary = "Save History",
     post,
     path = "/api/v1/history",
     request_body = HistoryEntry,

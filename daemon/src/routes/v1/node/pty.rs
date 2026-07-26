@@ -17,6 +17,7 @@ pub enum PtyControlMessage {
 }
 
 #[utoipa::path(
+    summary = "Host Pty Ws",
     get,
     path = "/api/v1/node/host/pty",
     responses(

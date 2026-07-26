@@ -8,6 +8,7 @@ use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
+    summary = "Server Power",
     post,
     path = "/api/v1/servers/{server_id}/power",
     params(

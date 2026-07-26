@@ -69,6 +69,7 @@ struct DbUser {
 }
 
 #[utoipa::path(
+    summary = "List Users",
     get,
     path = "/api/v1/users",
     responses(
@@ -113,6 +114,7 @@ async fn list_users(
 }
 
 #[utoipa::path(
+    summary = "Save User",
     post,
     path = "/api/v1/users",
     request_body = CreateUserRequest,
@@ -192,6 +194,7 @@ async fn save_user(
 }
 
 #[utoipa::path(
+    summary = "Delete User",
     delete,
     path = "/api/v1/users/{username}",
     params(
@@ -233,6 +236,7 @@ async fn delete_user(
 }
 
 #[utoipa::path(
+    summary = "Patch User",
     patch,
     path = "/api/v1/users/{username}",
     request_body = PatchUserRequest,

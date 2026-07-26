@@ -12,6 +12,7 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
+    summary = "Stream Task",
     get,
     path = "/api/v1/servers/{server_id}/tasks/{task_id}/stream",
     params(

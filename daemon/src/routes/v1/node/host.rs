@@ -5,10 +5,11 @@ use crate::services::auth::NodeAuth;
 use tokio::process::Command;
 
 #[utoipa::path(
+    summary = "Get Host",
     get,
     path = "/api/v1/node/host",
     responses(
-        (status = 200, description = "Get host info", body = inline(protocol::ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get host info", body = inline(protocol::ApiResponse<protocol::SystemHostResponse>))
     ),
     security(
         ("bearer_auth" = [])
@@ -59,6 +60,7 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
 }
 
 #[utoipa::path(
+    summary = "Execute Command",
     post,
     path = "/api/v1/node/host/exec",
     request_body = protocol::HostExecRequest,

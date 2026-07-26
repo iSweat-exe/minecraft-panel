@@ -4,10 +4,11 @@ use protocol::{ApiResponse, SystemMemoryResponse};
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
+    summary = "Get Memory",
     get,
     path = "/api/v1/node/memory",
     responses(
-        (status = 200, description = "Get node memory", body = inline(protocol::ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get node memory", body = inline(protocol::ApiResponse<protocol::SystemMemoryResponse>))
     ),
     security(
         ("bearer_auth" = [])

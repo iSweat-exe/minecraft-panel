@@ -9,6 +9,7 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
+    summary = "File Action",
     post,
     path = "/api/v1/servers/{server_id}/files/action",
     params(

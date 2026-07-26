@@ -18,6 +18,7 @@ pub struct ServerRconMultiRequest {
 }
 
 #[utoipa::path(
+    summary = "Server Command",
     post,
     path = "/api/v1/servers/{server_id}/command",
     params(
@@ -48,6 +49,7 @@ pub async fn server_command(
 }
 
 #[utoipa::path(
+    summary = "Server Rcon Multi",
     post,
     path = "/api/v1/servers/{server_id}/rcon",
     params(

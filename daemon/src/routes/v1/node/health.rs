@@ -6,10 +6,11 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
+    summary = "Get Health",
     get,
     path = "/api/v1/node/health",
     responses(
-        (status = 200, description = "Get node health", body = inline(protocol::ApiResponse<serde_json::Value>))
+        (status = 200, description = "Get node health", body = inline(protocol::ApiResponse<protocol::SystemHealthResponse>))
     ),
     security(
         ("bearer_auth" = [])

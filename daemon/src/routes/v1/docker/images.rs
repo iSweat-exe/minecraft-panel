@@ -7,6 +7,7 @@ use protocol::{ApiResponse, DockerImageInfo};
 use crate::{services::auth::UserAuth, AppState};
 
 #[utoipa::path(
+    summary = "List All Images",
     get,
     path = "/api/v1/docker/images",
     responses(
@@ -35,6 +36,7 @@ pub struct PullImagePayload {
 }
 
 #[utoipa::path(
+    summary = "Pull Image",
     post,
     path = "/api/v1/docker/images/pull",
     request_body = PullImagePayload,
@@ -64,6 +66,7 @@ pub async fn pull_image(
 }
 
 #[utoipa::path(
+    summary = "Remove Image",
     delete,
     path = "/api/v1/docker/images/{id}",
     params(

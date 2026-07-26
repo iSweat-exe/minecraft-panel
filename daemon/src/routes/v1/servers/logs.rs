@@ -13,6 +13,7 @@ pub struct LogsQuery {
 }
 
 #[utoipa::path(
+    summary = "Server Logs",
     get,
     path = "/api/v1/servers/{server_id}/logs",
     params(

@@ -59,6 +59,7 @@ impl From<DbSession> for Session {
 }
 
 #[utoipa::path(
+    summary = "List Sessions",
     get,
     path = "/api/v1/sessions",
     responses(
@@ -86,6 +87,7 @@ async fn list_sessions(
 }
 
 #[utoipa::path(
+    summary = "Save Session",
     post,
     path = "/api/v1/sessions",
     request_body = Session,
@@ -126,6 +128,7 @@ async fn save_session(
 }
 
 #[utoipa::path(
+    summary = "Delete Session",
     delete,
     path = "/api/v1/sessions/{id}",
     params(
