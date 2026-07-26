@@ -30,7 +30,8 @@ fn hash_password(password: &str) -> anyhow::Result<String> {
 }
 
 #[utoipa::path(
-    summary = "Login",
+    tag = "Authentication",
+    summary = "Authenticate a user and create a session token",
     post,
     path = "/api/v1/auth/login",
     request_body = LoginRequest,

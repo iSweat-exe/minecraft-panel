@@ -57,7 +57,8 @@ pub fn router() -> Router<AppState> {
 }
 
 #[utoipa::path(
-    summary = "List Automations",
+    tag = "Automations",
+    summary = "Retrieve a list of all configured automations",
     get,
     path = "/api/v1/automations",
     responses(
@@ -85,7 +86,8 @@ async fn list_automations(
 }
 
 #[utoipa::path(
-    summary = "Save Automation",
+    tag = "Automations",
+    summary = "Create a new automation or update an existing one",
     post,
     path = "/api/v1/automations",
     request_body = Automation,
@@ -151,7 +153,8 @@ async fn save_automation(
 }
 
 #[utoipa::path(
-    summary = "Delete Automation",
+    tag = "Automations",
+    summary = "Permanently delete a specified automation",
     delete,
     path = "/api/v1/automations/{id}",
     params(

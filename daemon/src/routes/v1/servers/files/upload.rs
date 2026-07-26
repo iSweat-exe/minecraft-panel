@@ -12,7 +12,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "Upload File",
+    tag = "Server Files",
+    summary = "Upload a file to a specific path on a server's filesystem",
     post,
     path = "/api/v1/servers/{server_id}/files/upload",
     params(

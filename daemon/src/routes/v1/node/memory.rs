@@ -4,7 +4,8 @@ use protocol::{ApiResponse, SystemMemoryResponse};
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Get Memory",
+    tag = "Node Management",
+    summary = "Retrieve current memory usage and limits of the host",
     get,
     path = "/api/v1/node/memory",
     responses(

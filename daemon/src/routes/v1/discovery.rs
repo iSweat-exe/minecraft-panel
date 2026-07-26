@@ -12,7 +12,8 @@ pub fn router() -> Router<AppState> {
 
 /// Retourne la liste de tous les endpoints disponibles dans l'API v1
 #[utoipa::path(
-    summary = "Get Api Endpoints",
+    tag = "Discovery",
+    summary = "Retrieve a list of all available API endpoints",
     get,
     path = "/api/v1",
     responses(
@@ -113,7 +114,8 @@ async fn get_api_endpoints(_auth: NodeAuth) -> Json<Value> {
 
 /// Retourne des métadonnées sur le daemon et les capacités du système
 #[utoipa::path(
-    summary = "Get Metadata",
+    tag = "Discovery",
+    summary = "Retrieve application and node metadata",
     get,
     path = "/api/v1/metadata",
     responses(

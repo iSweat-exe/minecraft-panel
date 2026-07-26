@@ -7,7 +7,8 @@ use protocol::{ApiResponse, DockerContainerInfo, DockerRunRequest, DockerUpdateR
 use crate::{services::auth::UserAuth, AppState};
 
 #[utoipa::path(
-    summary = "List All Containers",
+    tag = "Docker",
+    summary = "Retrieve a list of all Docker containers on the node",
     get,
     path = "/api/v1/docker/containers",
     responses(
@@ -36,7 +37,8 @@ pub struct DockerActionPayload {
 }
 
 #[utoipa::path(
-    summary = "Container Action",
+    tag = "Docker",
+    summary = "Perform an action (start, stop, restart, kill) on a container",
     post,
     path = "/api/v1/docker/containers/{id}/action",
     params(
@@ -84,7 +86,8 @@ fn default_tail() -> u32 {
 }
 
 #[utoipa::path(
-    summary = "Container Logs",
+    tag = "Docker",
+    summary = "Retrieve the standard output and error logs of a container",
     get,
     path = "/api/v1/docker/containers/{id}/logs",
     params(
@@ -119,7 +122,8 @@ pub async fn container_logs(
 }
 
 #[utoipa::path(
-    summary = "Container Inspect",
+    tag = "Docker",
+    summary = "Retrieve detailed low-level information about a container",
     get,
     path = "/api/v1/docker/containers/{id}/inspect",
     params(
@@ -153,7 +157,8 @@ pub struct SystemPrunePayload {
 }
 
 #[utoipa::path(
-    summary = "System Prune",
+    tag = "Docker",
+    summary = "Remove unused Docker data (containers, networks, images, volumes)",
     post,
     path = "/api/v1/docker/prune",
     request_body(content = Option<SystemPrunePayload>),
@@ -184,7 +189,8 @@ pub async fn system_prune(
 }
 
 #[utoipa::path(
-    summary = "Run Container",
+    tag = "Docker",
+    summary = "Create and start a new Docker container",
     post,
     path = "/api/v1/docker/containers",
     request_body = DockerRunRequest,
@@ -213,7 +219,8 @@ pub async fn run_container(
 }
 
 #[utoipa::path(
-    summary = "Update Container",
+    tag = "Docker",
+    summary = "Update the configuration of an existing Docker container",
     put,
     path = "/api/v1/docker/containers/{id}",
     params(
@@ -299,7 +306,8 @@ pub async fn update_container(
 }
 
 #[utoipa::path(
-    summary = "Recreate Container",
+    tag = "Docker",
+    summary = "Recreate a Docker container with updated configuration or image",
     post,
     path = "/api/v1/docker/containers/{id}/recreate",
     params(

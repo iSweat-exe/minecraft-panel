@@ -17,7 +17,8 @@ pub struct BackupInfo {
 }
 
 #[utoipa::path(
-    summary = "List Backups",
+    tag = "Server Backups",
+    summary = "Retrieve a list of all backups for a specific server",
     get,
     path = "/api/v1/servers/{server_id}/backups",
     params(
@@ -71,7 +72,8 @@ pub struct TaskResponse {
 }
 
 #[utoipa::path(
-    summary = "Create Backup",
+    tag = "Server Backups",
+    summary = "Create a new backup archive for a specific server",
     post,
     path = "/api/v1/servers/{server_id}/backups",
     params(
@@ -160,7 +162,8 @@ pub async fn create_backup(
 }
 
 #[utoipa::path(
-    summary = "Delete Backup",
+    tag = "Server Backups",
+    summary = "Permanently delete a specific server backup",
     delete,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}",
     params(
@@ -199,7 +202,8 @@ pub async fn delete_backup(
 }
 
 #[utoipa::path(
-    summary = "Restore Backup",
+    tag = "Server Backups",
+    summary = "Restore a server's state from a specific backup archive",
     post,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}/restore",
     params(
@@ -313,7 +317,8 @@ pub async fn restore_backup(
 }
 
 #[utoipa::path(
-    summary = "Download Backup",
+    tag = "Server Backups",
+    summary = "Download a specific server backup archive file",
     get,
     path = "/api/v1/servers/{server_id}/backups/{backup_name}/download",
     params(

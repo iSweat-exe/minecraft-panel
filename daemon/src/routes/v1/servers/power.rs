@@ -8,7 +8,8 @@ use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
-    summary = "Server Power",
+    tag = "Servers",
+    summary = "Send a power action (start, stop, restart, kill) to a server",
     post,
     path = "/api/v1/servers/{server_id}/power",
     params(

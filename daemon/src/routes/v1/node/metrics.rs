@@ -5,7 +5,8 @@ use protocol::{ApiResponse, SystemMetricsResponse};
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Get Metrics",
+    tag = "Node Management",
+    summary = "Retrieve system performance and resource utilization metrics",
     get,
     path = "/api/v1/node/metrics",
     responses(

@@ -11,7 +11,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "Read File",
+    tag = "Server Files",
+    summary = "Read the text contents of a specific file on a server",
     get,
     path = "/api/v1/servers/{server_id}/files/read",
     params(

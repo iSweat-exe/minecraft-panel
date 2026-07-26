@@ -7,7 +7,8 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Get Info",
+    tag = "Node Management",
+    summary = "Retrieve general node information and capabilities",
     get,
     path = "/api/v1/node/info",
     responses(

@@ -17,7 +17,8 @@ pub enum PtyControlMessage {
 }
 
 #[utoipa::path(
-    summary = "Host Pty Ws",
+    tag = "Node Management",
+    summary = "Establish a WebSocket connection for a pseudo-terminal on the host",
     get,
     path = "/api/v1/node/host/pty",
     responses(

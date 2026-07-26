@@ -9,7 +9,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "File Action",
+    tag = "Server Files",
+    summary = "Perform a file operation (copy, move, rename, delete) on a server",
     post,
     path = "/api/v1/servers/{server_id}/files/action",
     params(

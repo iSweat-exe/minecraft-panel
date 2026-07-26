@@ -11,7 +11,8 @@ pub struct LogsQuery {
 }
 
 #[utoipa::path(
-    summary = "Get Logs",
+    tag = "Node Management",
+    summary = "Retrieve daemon system logs",
     get,
     path = "/api/v1/node/logs",
     responses(
@@ -34,7 +35,8 @@ pub async fn get_logs(
 }
 
 #[utoipa::path(
-    summary = "Get Logs Impl",
+    tag = "Node Management",
+    summary = "Internal implementation for retrieving daemon logs",
     get,
     path = "/api/v1/node/logs",
     responses(

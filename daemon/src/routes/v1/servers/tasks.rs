@@ -12,7 +12,8 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Stream Task",
+    tag = "Servers",
+    summary = "Establish a WebSocket connection to stream the output of a background task",
     get,
     path = "/api/v1/servers/{server_id}/tasks/{task_id}/stream",
     params(

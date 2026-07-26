@@ -9,7 +9,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "List Files",
+    tag = "Server Files",
+    summary = "Retrieve a listing of files and directories in a specific server path",
     get,
     path = "/api/v1/servers/{server_id}/files/list",
     params(

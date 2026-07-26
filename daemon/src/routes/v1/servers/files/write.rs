@@ -9,7 +9,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "Write File",
+    tag = "Server Files",
+    summary = "Write or overwrite the text contents of a specific file on a server",
     post,
     path = "/api/v1/servers/{server_id}/files/write",
     params(

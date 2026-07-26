@@ -7,7 +7,8 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "List Servers",
+    tag = "Servers",
+    summary = "Retrieve a list of all configured servers on the node",
     get,
     path = "/api/v1/servers",
     responses(
@@ -26,7 +27,8 @@ pub async fn list_servers(
 }
 
 #[utoipa::path(
-    summary = "Get Server",
+    tag = "Servers",
+    summary = "Retrieve detailed information about a specific server",
     get,
     path = "/api/v1/servers/{server_id}",
     params(

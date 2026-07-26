@@ -13,7 +13,8 @@ pub struct MetricsHistoryQuery {
 }
 
 #[utoipa::path(
-    summary = "Server Metrics History",
+    tag = "Servers",
+    summary = "Retrieve historical performance metrics for a specific server",
     get,
     path = "/api/v1/servers/{server_id}/metrics/history",
     params(

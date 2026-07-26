@@ -15,7 +15,8 @@ pub struct AllocationResponse {
 }
 
 #[utoipa::path(
-    summary = "List Allocations",
+    tag = "Node Management",
+    summary = "Retrieve a list of all port and resource allocations",
     get,
     path = "/api/v1/node/allocations",
     responses(

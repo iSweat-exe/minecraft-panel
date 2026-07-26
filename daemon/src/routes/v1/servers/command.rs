@@ -18,7 +18,8 @@ pub struct ServerRconMultiRequest {
 }
 
 #[utoipa::path(
-    summary = "Server Command",
+    tag = "Servers",
+    summary = "Execute a console command on a specific server",
     post,
     path = "/api/v1/servers/{server_id}/command",
     params(
@@ -49,7 +50,8 @@ pub async fn server_command(
 }
 
 #[utoipa::path(
-    summary = "Server Rcon Multi",
+    tag = "Servers",
+    summary = "Execute multiple RCON commands on a specific server",
     post,
     path = "/api/v1/servers/{server_id}/rcon",
     params(

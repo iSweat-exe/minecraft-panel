@@ -8,7 +8,8 @@ use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
-    summary = "Patch Server",
+    tag = "Servers",
+    summary = "Partially update the configuration of a specific server",
     patch,
     path = "/api/v1/servers/{server_id}",
     params(

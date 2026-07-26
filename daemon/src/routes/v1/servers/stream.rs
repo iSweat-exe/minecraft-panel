@@ -9,7 +9,8 @@ use crate::routes::AppState;
 use crate::services::auth::SessionAuth;
 
 #[utoipa::path(
-    summary = "Ws Stream Handler",
+    tag = "Servers",
+    summary = "Establish a WebSocket connection for real-time server console stream",
     get,
     path = "/api/v1/servers/{server_id}/stream",
     params(

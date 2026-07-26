@@ -5,7 +5,8 @@ use crate::services::auth::NodeAuth;
 use tokio::process::Command;
 
 #[utoipa::path(
-    summary = "Get Host",
+    tag = "Node Management",
+    summary = "Retrieve system and host environment information",
     get,
     path = "/api/v1/node/host",
     responses(
@@ -60,7 +61,8 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
 }
 
 #[utoipa::path(
-    summary = "Execute Command",
+    tag = "Node Management",
+    summary = "Execute a shell command directly on the host system",
     post,
     path = "/api/v1/node/host/exec",
     request_body = protocol::HostExecRequest,

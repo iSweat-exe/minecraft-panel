@@ -6,7 +6,8 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Get Health",
+    tag = "Node Management",
+    summary = "Retrieve the overall health status of the daemon node",
     get,
     path = "/api/v1/node/health",
     responses(

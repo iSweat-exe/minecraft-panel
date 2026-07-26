@@ -9,7 +9,8 @@ use crate::services::auth::UserAuth;
 use super::FileQuery;
 
 #[utoipa::path(
-    summary = "Hash File",
+    tag = "Server Files",
+    summary = "Calculate the cryptographic hash of a specific file on a server",
     get,
     path = "/api/v1/servers/{server_id}/files/hash",
     params(
@@ -52,7 +53,8 @@ pub async fn hash_file(
 }
 
 #[utoipa::path(
-    summary = "Hash Multiple",
+    tag = "Server Files",
+    summary = "Calculate the cryptographic hashes of multiple files on a server",
     post,
     path = "/api/v1/servers/{server_id}/files/hash_multiple",
     params(

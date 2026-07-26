@@ -6,7 +6,8 @@ use tokio::process::Command as TokioCommand;
 use crate::services::auth::UserAuth;
 
 #[utoipa::path(
-    summary = "Get Docker Config",
+    tag = "Docker",
+    summary = "Retrieve the current Docker daemon configuration",
     get,
     path = "/api/v1/docker/config",
     responses(
@@ -44,7 +45,8 @@ async fn get_docker_config_impl() -> Result<serde_json::Value> {
 }
 
 #[utoipa::path(
-    summary = "Update Docker Config",
+    tag = "Docker",
+    summary = "Update the Docker daemon configuration settings",
     put,
     path = "/api/v1/docker/config",
     request_body = DockerConfigUpdateRequest,

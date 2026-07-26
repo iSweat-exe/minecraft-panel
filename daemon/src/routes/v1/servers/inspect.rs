@@ -8,7 +8,8 @@ use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
 #[utoipa::path(
-    summary = "Server Inspect",
+    tag = "Servers",
+    summary = "Retrieve detailed configuration and status information for a server",
     get,
     path = "/api/v1/servers/{server_id}/inspect",
     params(
