@@ -7,6 +7,19 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/inspect",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Inspect server container")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_inspect(
     _auth: NodeAuth,
     State(state): State<AppState>,

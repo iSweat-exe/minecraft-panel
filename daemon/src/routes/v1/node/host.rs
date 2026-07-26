@@ -4,6 +4,16 @@ use protocol::{ApiResponse, SystemHostResponse};
 use crate::services::auth::NodeAuth;
 use tokio::process::Command;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/host",
+    responses(
+        (status = 200, description = "Get host info", body = inline(protocol::ApiResponse<serde_json::Value>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> {
     let mut sys = sysinfo::System::new_with_specifics(
         sysinfo::RefreshKind::nothing().with_cpu(sysinfo::CpuRefreshKind::everything()),
@@ -48,6 +58,17 @@ pub async fn get_host(_auth: NodeAuth) -> Json<ApiResponse<SystemHostResponse>> 
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/node/host/exec",
+    request_body = protocol::HostExecRequest,
+    responses(
+        (status = 200, description = "Execute command", body = inline(protocol::ApiResponse<protocol::HostExecResponse>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn execute_command(
     _auth: NodeAuth,
     Json(payload): Json<protocol::HostExecRequest>,

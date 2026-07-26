@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct Session {
     pub uuid: String,
     pub name: String,
@@ -58,6 +58,16 @@ impl From<DbSession> for Session {
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/sessions",
+    responses(
+        (status = 200, description = "List all sessions", body = inline(ApiResponse<Vec<Session>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn list_sessions(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -75,6 +85,17 @@ async fn list_sessions(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/sessions",
+    request_body = Session,
+    responses(
+        (status = 200, description = "Save a session", body = inline(ApiResponse<Session>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn save_session(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -104,6 +125,19 @@ async fn save_session(
     }))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/sessions/{id}",
+    params(
+        ("id" = String, Path, description = "Session UUID to delete")
+    ),
+    responses(
+        (status = 200, description = "Session deleted", body = inline(ApiResponse<Vec<Session>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn delete_session(
     _auth: NodeAuth,
     State(state): State<AppState>,

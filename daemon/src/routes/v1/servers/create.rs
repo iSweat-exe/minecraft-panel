@@ -7,6 +7,17 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers",
+    request_body = protocol::ServerSpec,
+    responses(
+        (status = 200, description = "Create a server", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn create_server(
     auth: UserAuth,
     State(state): State<AppState>,

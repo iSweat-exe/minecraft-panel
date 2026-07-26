@@ -16,6 +16,16 @@ pub enum PtyControlMessage {
     Resize { cols: u16, rows: u16 },
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/host/pty",
+    responses(
+        (status = 101, description = "Upgrade to websocket")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn host_pty_ws(ws: WebSocketUpgrade, _auth: crate::services::auth::NodeAuth) -> Response {
     ws.on_upgrade(handle_pty_socket)
 }

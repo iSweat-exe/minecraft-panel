@@ -8,6 +8,21 @@ use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/files/write",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "File path to write")
+    ),
+    request_body(content = String, description = "File content"),
+    responses(
+        (status = 200, description = "Write file", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn write_file(
     auth: UserAuth,
     State(state): State<AppState>,

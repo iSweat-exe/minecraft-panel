@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct UserResponse {
     pub uuid: Option<String>,
     pub username: String,
@@ -24,7 +24,7 @@ pub struct UserResponse {
     pub is_superadmin: bool,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, utoipa::ToSchema)]
 pub struct CreateUserRequest {
     pub uuid: Option<String>,
     pub username: String,
@@ -35,7 +35,7 @@ pub struct CreateUserRequest {
     pub display_name: Option<String>,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Clone, utoipa::ToSchema)]
 pub struct PatchUserRequest {
     pub role: Option<String>,
     pub permissions: Option<Vec<String>>,
@@ -68,6 +68,16 @@ struct DbUser {
     is_superadmin: i64,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/users",
+    responses(
+        (status = 200, description = "List all users", body = inline(ApiResponse<Vec<UserResponse>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn list_users(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -102,6 +112,17 @@ async fn list_users(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/users",
+    request_body = CreateUserRequest,
+    responses(
+        (status = 200, description = "User created", body = inline(ApiResponse<Vec<UserResponse>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn save_user(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -170,6 +191,19 @@ async fn save_user(
     list_users(auth.clone(), State(state)).await
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/users/{username}",
+    params(
+        ("username" = String, Path, description = "Username of the user to delete")
+    ),
+    responses(
+        (status = 200, description = "User deleted", body = inline(ApiResponse<Vec<UserResponse>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn delete_user(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -198,6 +232,20 @@ async fn delete_user(
     list_users(auth.clone(), State(state)).await
 }
 
+#[utoipa::path(
+    patch,
+    path = "/api/v1/users/{username}",
+    request_body = PatchUserRequest,
+    params(
+        ("username" = String, Path, description = "Username of the user to update")
+    ),
+    responses(
+        (status = 200, description = "User updated", body = inline(ApiResponse<Vec<UserResponse>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn patch_user(
     auth: UserAuth,
     State(state): State<AppState>,

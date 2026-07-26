@@ -7,6 +7,20 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
+#[utoipa::path(
+    patch,
+    path = "/api/v1/servers/{server_id}",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = protocol::ServerSpec,
+    responses(
+        (status = 200, description = "Update a server", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn patch_server(
     auth: UserAuth,
     State(state): State<AppState>,

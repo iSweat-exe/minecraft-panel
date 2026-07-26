@@ -8,6 +8,20 @@ use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/files/list",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "Directory path to list")
+    ),
+    responses(
+        (status = 200, description = "List files", body = inline(protocol::ApiResponse<Vec<protocol::FileEntry>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_files(
     auth: UserAuth,
     State(state): State<AppState>,

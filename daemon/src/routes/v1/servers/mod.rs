@@ -1,6 +1,5 @@
 pub mod backups;
 pub mod command;
-pub mod stream;
 pub mod crashes;
 pub mod create;
 pub mod delete;
@@ -10,6 +9,7 @@ pub mod list;
 pub mod logs;
 pub mod patch;
 pub mod power;
+pub mod stream;
 pub mod tasks;
 
 pub mod metrics;

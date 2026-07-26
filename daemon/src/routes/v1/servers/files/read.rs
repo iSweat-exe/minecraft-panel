@@ -10,6 +10,20 @@ use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/files/read",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "File path to read")
+    ),
+    responses(
+        (status = 200, description = "Read file", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn read_file(
     auth: UserAuth,
     State(state): State<AppState>,

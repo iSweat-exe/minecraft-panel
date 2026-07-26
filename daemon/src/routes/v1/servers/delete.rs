@@ -7,6 +7,19 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/servers/{server_id}",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Delete a server", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn delete_server(
     auth: UserAuth,
     State(state): State<AppState>,

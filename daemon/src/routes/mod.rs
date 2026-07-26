@@ -1,3 +1,4 @@
+pub mod openapi;
 pub mod v1;
 
 use std::sync::Arc;
@@ -67,6 +68,9 @@ async fn rate_limit_middleware(
     next.run(request).await.into_response()
 }
 
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
+
 pub fn create_router(state: AppState) -> Router {
     let rate_limit_state: RateLimitState = Arc::new(Mutex::new(HashMap::new()));
 
@@ -80,10 +84,15 @@ pub fn create_router(state: AppState) -> Router {
         }
     });
 
-    Router::new()
-        .merge(v1::router())
+    let api_router = v1::router()
         .layer(middleware::from_fn(rate_limit_middleware))
         .layer(axum::Extension(rate_limit_state))
         .layer(axum::Extension(state.config.clone()))
-        .with_state(state)
+        .with_state(state);
+
+    Router::new()
+        .merge(
+            SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", openapi::ApiDoc::openapi()),
+        )
+        .merge(api_router)
 }

@@ -7,6 +7,20 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/power",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = protocol::PowerActionRequest,
+    responses(
+        (status = 200, description = "Change server power state", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_power(
     auth: UserAuth,
     State(state): State<AppState>,

@@ -7,6 +7,19 @@ use crate::services::auth::NodeAuth;
 use bollard::exec::{CreateExecOptions, StartExecResults};
 use futures_util::StreamExt;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/crashes",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Get server crashes", body = inline(protocol::ApiResponse<protocol::ServerCrashesResponse>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_crashes(
     _auth: NodeAuth,
     State(state): State<AppState>,

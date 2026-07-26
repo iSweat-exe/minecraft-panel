@@ -7,16 +7,30 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::ToSchema)]
 pub struct ServerCommandRequest {
     pub command: String,
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::ToSchema)]
 pub struct ServerRconMultiRequest {
     pub commands: Vec<String>,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/command",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = ServerCommandRequest,
+    responses(
+        (status = 200, description = "Send command to server console", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_command(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -33,6 +47,20 @@ pub async fn server_command(
     Ok(Json(ApiResponse::ok("Command sent".to_string())))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/rcon",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = ServerRconMultiRequest,
+    responses(
+        (status = 200, description = "Send RCON command", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_rcon_multi(
     auth: UserAuth,
     State(state): State<AppState>,

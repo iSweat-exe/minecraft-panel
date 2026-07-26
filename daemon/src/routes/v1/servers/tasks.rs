@@ -11,6 +11,20 @@ use uuid::Uuid;
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/tasks/{task_id}/stream",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("task_id" = String, Path, description = "Task ID")
+    ),
+    responses(
+        (status = 101, description = "Upgrade to websocket")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn stream_task(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -27,39 +41,42 @@ pub async fn stream_task(
     };
 
     let t_read = task.read().await;
-    
+
     if t_read.server_id != server_id {
         return (axum::http::StatusCode::NOT_FOUND, "Task not found").into_response();
     }
 
     let is_done = matches!(
         t_read.status,
-        crate::services::tasks::TaskStatus::Completed | crate::services::tasks::TaskStatus::Failed(_)
+        crate::services::tasks::TaskStatus::Completed
+            | crate::services::tasks::TaskStatus::Failed(_)
     );
     let final_status = t_read.status.clone();
-    
+
     let rx = t_read.tx.subscribe();
     drop(t_read);
 
     if is_done {
         let stream = tokio_stream::once(Ok::<_, Infallible>(
-            Event::default()
-                .data(serde_json::to_string(&crate::services::tasks::TaskEvent::Status(final_status)).unwrap_or_default())
+            Event::default().data(
+                serde_json::to_string(&crate::services::tasks::TaskEvent::Status(final_status))
+                    .unwrap_or_default(),
+            ),
         ));
-        return Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default()).into_response();
+        return Sse::new(stream)
+            .keep_alive(axum::response::sse::KeepAlive::default())
+            .into_response();
     }
 
-    let stream = BroadcastStream::new(rx).map(|res| {
-        match res {
-            Ok(event) => {
-                let json = serde_json::to_string(&event).unwrap_or_default();
-                Ok::<_, Infallible>(Event::default().data(json))
-            }
-            Err(_) => {
-                Ok::<_, Infallible>(Event::default().event("error").data("lagged"))
-            }
+    let stream = BroadcastStream::new(rx).map(|res| match res {
+        Ok(event) => {
+            let json = serde_json::to_string(&event).unwrap_or_default();
+            Ok::<_, Infallible>(Event::default().data(json))
         }
+        Err(_) => Ok::<_, Infallible>(Event::default().event("error").data("lagged")),
     });
 
-    Sse::new(stream).keep_alive(axum::response::sse::KeepAlive::default()).into_response()
+    Sse::new(stream)
+        .keep_alive(axum::response::sse::KeepAlive::default())
+        .into_response()
 }

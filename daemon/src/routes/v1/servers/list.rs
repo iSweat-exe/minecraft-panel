@@ -6,6 +6,16 @@ use crate::error::DaemonError;
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers",
+    responses(
+        (status = 200, description = "List servers", body = inline(protocol::ApiResponse<Vec<protocol::ServerSpec>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_servers(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -14,6 +24,19 @@ pub async fn list_servers(
     Ok(Json(ApiResponse::ok(list)))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Get server details", body = inline(protocol::ApiResponse<protocol::ServerSpec>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_server(
     _auth: NodeAuth,
     Path(server_id): axum::extract::Path<String>,

@@ -5,6 +5,16 @@ use protocol::{ApiResponse, SystemHealthResponse};
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/health",
+    responses(
+        (status = 200, description = "Get node health", body = inline(protocol::ApiResponse<serde_json::Value>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_health(
     _auth: NodeAuth,
     State(state): State<AppState>,

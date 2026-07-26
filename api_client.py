@@ -5,7 +5,7 @@ import time
 # Configuration
 # Change l'URL si tu l'exécutes depuis ton PC vers ton VPS distant (remplace 127.0.0.1 par l'IP du VPS)
 DAEMON_URL = "http://145.239.78.165:8080" 
-NODE_TOKEN = "123" # Le token défini dans DAEMON_NODE_TOKEN au lancement du daemon
+NODE_TOKEN = "196ca0284e296bf4e85006770cbf1f34bb635915812e3d668f607c9ea830173e" # Le token défini dans DAEMON_NODE_TOKEN au lancement du daemon
 
 headers = {
     "X-Node-Token": NODE_TOKEN,

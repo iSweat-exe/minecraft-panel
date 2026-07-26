@@ -8,6 +8,20 @@ use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/files/action",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = protocol::FileActionRequest,
+    responses(
+        (status = 200, description = "Perform file action", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn file_action(
     auth: UserAuth,
     State(state): State<AppState>,

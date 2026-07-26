@@ -12,6 +12,19 @@ pub struct LogsQuery {
     pub lines: Option<usize>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/logs",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Get server logs", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_logs(
     _auth: NodeAuth,
     State(state): State<AppState>,

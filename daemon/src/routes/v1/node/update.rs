@@ -4,6 +4,17 @@ use protocol::{ApiResponse, UpdateDaemonRequest, UpdateDaemonResponse};
 
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/node/update",
+    request_body = UpdateDaemonRequest,
+    responses(
+        (status = 200, description = "Trigger node update", body = inline(protocol::ApiResponse<UpdateDaemonResponse>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn trigger_update(
     _auth: NodeAuth,
     Json(payload): Json<UpdateDaemonRequest>,

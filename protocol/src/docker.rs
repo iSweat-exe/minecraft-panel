@@ -12,28 +12,28 @@ pub const LABEL_OWNER: &str = "vps-panel.owner";
 /// Standard label key for server name
 pub const LABEL_NAME: &str = "vps-panel.name";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct ServerResources {
     pub memory_limit_bytes: Option<i64>,
     pub cpu_quota: Option<i64>,
     pub cpu_period: Option<i64>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct PortMapping {
     pub host_port: u16,
     pub container_port: u16,
     pub protocol: String, // "tcp" or "udp"
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct VolumeMapping {
     pub host_path: String,
     pub container_path: String,
     pub read_only: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct ServerSpec {
     pub server_id: String,
     pub name: String,

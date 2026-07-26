@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct HistoryEntry {
     pub id: Option<String>,
     pub user: Option<String>,
@@ -44,6 +44,16 @@ pub fn router() -> Router<AppState> {
     Router::new().route("/api/v1/history", get(list_history).post(save_history))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/history",
+    responses(
+        (status = 200, description = "List history entries", body = inline(ApiResponse<Vec<HistoryEntry>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn list_history(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -62,6 +72,17 @@ async fn list_history(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/history",
+    request_body = HistoryEntry,
+    responses(
+        (status = 200, description = "Save a history entry", body = inline(ApiResponse<HistoryEntry>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn save_history(
     _auth: NodeAuth,
     State(state): State<AppState>,

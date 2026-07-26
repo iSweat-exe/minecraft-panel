@@ -8,6 +8,19 @@ use tracing::info;
 use crate::routes::AppState;
 use crate::services::auth::SessionAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/stream",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 101, description = "Upgrade to websocket")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn ws_stream_handler(
     ws: WebSocketUpgrade,
     Path(server_id): Path<String>,

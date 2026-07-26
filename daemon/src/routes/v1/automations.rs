@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, utoipa::ToSchema)]
 pub struct Automation {
     pub id: Option<String>,
     pub name: String,
@@ -56,6 +56,16 @@ pub fn router() -> Router<AppState> {
         .route("/api/v1/automations/{id}", delete(delete_automation))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/automations",
+    responses(
+        (status = 200, description = "List all automations", body = inline(ApiResponse<Vec<Automation>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn list_automations(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -73,6 +83,17 @@ async fn list_automations(
     }))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/automations",
+    request_body = Automation,
+    responses(
+        (status = 200, description = "Create or update an automation", body = inline(ApiResponse<Automation>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn save_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,
@@ -127,6 +148,19 @@ async fn save_automation(
     }))
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/automations/{id}",
+    params(
+        ("id" = String, Path, description = "Automation ID")
+    ),
+    responses(
+        (status = 200, description = "Automation deleted", body = inline(ApiResponse<Vec<Automation>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn delete_automation(
     _auth: NodeAuth,
     State(state): State<AppState>,

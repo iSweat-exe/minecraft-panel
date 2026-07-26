@@ -6,6 +6,16 @@ use protocol::{ApiResponse, DockerContainerInfo, DockerRunRequest, DockerUpdateR
 
 use crate::{services::auth::UserAuth, AppState};
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/docker/containers",
+    responses(
+        (status = 200, description = "List all docker containers", body = inline(ApiResponse<Vec<DockerContainerInfo>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_all_containers(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -19,11 +29,25 @@ pub async fn list_all_containers(
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::ToSchema)]
 pub struct DockerActionPayload {
     pub action: String,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/docker/containers/{id}/action",
+    params(
+        ("id" = String, Path, description = "Container ID")
+    ),
+    request_body = DockerActionPayload,
+    responses(
+        (status = 200, description = "Perform action on container", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn container_action(
     auth: UserAuth,
     Path(id): Path<String>,
@@ -47,7 +71,7 @@ pub async fn container_action(
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::ToSchema)]
 pub struct ContainerLogsQuery {
     #[serde(default = "default_tail")]
     pub tail: u32,
@@ -57,6 +81,20 @@ fn default_tail() -> u32 {
     150
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/docker/containers/{id}/logs",
+    params(
+        ("id" = String, Path, description = "Container ID"),
+        ("tail" = Option<u32>, Query, description = "Number of lines to tail")
+    ),
+    responses(
+        (status = 200, description = "Get container logs", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn container_logs(
     auth: UserAuth,
     Path(id): Path<String>,
@@ -77,6 +115,19 @@ pub async fn container_logs(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/docker/containers/{id}/inspect",
+    params(
+        ("id" = String, Path, description = "Container ID")
+    ),
+    responses(
+        (status = 200, description = "Inspect container", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn container_inspect(
     auth: UserAuth,
     Path(id): Path<String>,
@@ -91,12 +142,23 @@ pub async fn container_inspect(
     }
 }
 
-#[derive(serde::Deserialize, Default)]
+#[derive(serde::Deserialize, Default, utoipa::ToSchema)]
 pub struct SystemPrunePayload {
     #[serde(default)]
     pub include_volumes: bool,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/docker/prune",
+    request_body(content = Option<SystemPrunePayload>),
+    responses(
+        (status = 200, description = "System prune", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn system_prune(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -116,6 +178,17 @@ pub async fn system_prune(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/docker/containers",
+    request_body = DockerRunRequest,
+    responses(
+        (status = 200, description = "Run a new container", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn run_container(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -133,6 +206,20 @@ pub async fn run_container(
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/docker/containers/{id}",
+    params(
+        ("id" = String, Path, description = "Container ID")
+    ),
+    request_body = DockerUpdateRequest,
+    responses(
+        (status = 200, description = "Update a container", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn update_container(
     auth: UserAuth,
     Path(id): Path<String>,
@@ -204,6 +291,20 @@ pub async fn update_container(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/docker/containers/{id}/recreate",
+    params(
+        ("id" = String, Path, description = "Container ID")
+    ),
+    request_body = DockerRunRequest,
+    responses(
+        (status = 200, description = "Recreate a container", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn recreate_container(
     auth: UserAuth,
     Path(id): Path<String>,

@@ -12,6 +12,19 @@ pub struct MetricsHistoryQuery {
     pub hours: Option<u32>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/metrics/history",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    responses(
+        (status = 200, description = "Get server metrics history", body = inline(protocol::ApiResponse<serde_json::Value>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn server_metrics_history(
     State(state): State<AppState>,
     _auth: NodeAuth,

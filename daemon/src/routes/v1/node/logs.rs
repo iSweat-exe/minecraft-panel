@@ -10,6 +10,16 @@ pub struct LogsQuery {
     pub lines: Option<usize>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/logs",
+    responses(
+        (status = 200, description = "Get node logs", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_logs(
     _auth: NodeAuth,
     Query(query): Query<LogsQuery>,
@@ -22,6 +32,16 @@ pub async fn get_logs(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/logs",
+    responses(
+        (status = 200, description = "Get node logs", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn get_logs_impl(lines_count: usize) -> anyhow::Result<Vec<String>> {
     use tokio::io::{AsyncReadExt, AsyncSeekExt};
 

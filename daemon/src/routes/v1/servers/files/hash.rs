@@ -8,6 +8,20 @@ use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/files/hash",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "File path to hash")
+    ),
+    responses(
+        (status = 200, description = "Hash a single file", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn hash_file(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -36,6 +50,20 @@ pub async fn hash_file(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/files/hash_multiple",
+    params(
+        ("server_id" = String, Path, description = "Server ID")
+    ),
+    request_body = protocol::FileHashMultipleRequest,
+    responses(
+        (status = 200, description = "Hash multiple files", body = inline(protocol::ApiResponse<protocol::FileHashMultipleResponse>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn hash_multiple(
     auth: UserAuth,
     State(state): State<AppState>,

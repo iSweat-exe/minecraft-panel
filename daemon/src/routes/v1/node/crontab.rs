@@ -5,6 +5,16 @@ use tokio::process::Command;
 
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/crontab",
+    responses(
+        (status = 200, description = "Get node crontab", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_crontab(_auth: NodeAuth) -> Json<ApiResponse<String>> {
     match get_crontab_impl().await.context("Failed to get crontab") {
         Ok(s) => Json(ApiResponse::ok(s)),
@@ -31,6 +41,17 @@ async fn get_crontab_impl() -> Result<String> {
     }
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/node/crontab",
+    request_body = protocol::CrontabUpdateRequest,
+    responses(
+        (status = 200, description = "Update node crontab", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn update_crontab(
     _auth: NodeAuth,
     Json(payload): Json<CrontabUpdateRequest>,

@@ -5,6 +5,16 @@ use tokio::process::Command as TokioCommand;
 
 use crate::services::auth::UserAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/docker/config",
+    responses(
+        (status = 200, description = "Get Docker configuration", body = inline(ApiResponse<serde_json::Value>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_docker_config(auth: UserAuth) -> Json<ApiResponse<serde_json::Value>> {
     if let Err(e) = auth.require_permission("system:docker") {
         return axum::Json(protocol::ApiResponse::err(e.to_string()));
@@ -32,6 +42,17 @@ async fn get_docker_config_impl() -> Result<serde_json::Value> {
     Ok(json)
 }
 
+#[utoipa::path(
+    put,
+    path = "/api/v1/docker/config",
+    request_body = DockerConfigUpdateRequest,
+    responses(
+        (status = 200, description = "Update Docker configuration", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn update_docker_config(
     auth: UserAuth,
     Json(payload): Json<DockerConfigUpdateRequest>,

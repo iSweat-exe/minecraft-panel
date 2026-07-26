@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub const NODE_TOKEN_HEADER: &str = "x-node-token";
 
 /// JWT Claims for browser/client short-lived WebSocket & direct session tokens
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, utoipa::ToSchema)]
 pub struct DaemonClaims {
     /// Subject (User ID or Session ID)
     pub sub: String,

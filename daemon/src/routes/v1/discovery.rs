@@ -11,6 +11,16 @@ pub fn router() -> Router<AppState> {
 }
 
 /// Retourne la liste de tous les endpoints disponibles dans l'API v1
+#[utoipa::path(
+    get,
+    path = "/api/v1",
+    responses(
+        (status = 200, description = "List all API endpoints", body = inline(Value))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn get_api_endpoints(_auth: NodeAuth) -> Json<Value> {
     Json(json!({
         "version": "v1",
@@ -101,6 +111,16 @@ async fn get_api_endpoints(_auth: NodeAuth) -> Json<Value> {
 }
 
 /// Retourne des métadonnées sur le daemon et les capacités du système
+#[utoipa::path(
+    get,
+    path = "/api/v1/metadata",
+    responses(
+        (status = 200, description = "Get daemon metadata", body = inline(Value))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 async fn get_metadata(
     _auth: NodeAuth,
     axum::extract::State(state): axum::extract::State<AppState>,

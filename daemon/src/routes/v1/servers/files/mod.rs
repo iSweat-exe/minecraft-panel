@@ -11,7 +11,7 @@ use axum::routing::{get, post};
 use axum::Router;
 use serde::Deserialize;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, utoipa::ToSchema)]
 pub struct FileQuery {
     pub path: String,
 }

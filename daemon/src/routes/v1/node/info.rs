@@ -6,6 +6,16 @@ use protocol::{ApiResponse, DaemonInfoResponse};
 use crate::routes::AppState;
 use crate::services::auth::NodeAuth;
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/info",
+    responses(
+        (status = 200, description = "Get node info", body = inline(protocol::ApiResponse<serde_json::Value>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn get_info(
     _auth: NodeAuth,
     State(state): State<AppState>,

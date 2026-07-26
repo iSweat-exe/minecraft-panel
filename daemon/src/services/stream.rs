@@ -1,7 +1,7 @@
+use protocol::DaemonWsMessage;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
-use protocol::DaemonWsMessage;
 
 pub struct StreamManager {
     buses: RwLock<HashMap<String, broadcast::Sender<DaemonWsMessage>>>,
@@ -29,25 +29,25 @@ impl StreamManager {
         // Create new bus
         let (tx, rx) = broadcast::channel(500);
         buses.insert(server_id.to_string(), tx.clone());
-        
+
         let s_id = server_id.to_string();
         let tx_clone = tx.clone();
         let stream_mgr = self.clone();
-        
+
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(std::time::Duration::from_secs(3));
-            
+
             // Console sub-stream
             let (console_tx, mut console_rx) = broadcast::channel::<String>(100);
             let _ = console_mgr.attach_and_broadcast(&s_id, console_tx).await;
-            
+
             loop {
                 tokio::select! {
                     _ = interval.tick() => {
                         if tx_clone.receiver_count() == 0 {
                             break;
                         }
-                        
+
                         let c_name = crate::services::docker::DockerManager::container_name(&s_id);
                         if let Ok((cpu, mem_used, mem_limit, net_rx, net_tx)) = docker.get_container_metrics(&c_name).await {
                             let _ = tx_clone.send(DaemonWsMessage::StatsEvent {
@@ -78,7 +78,7 @@ impl StreamManager {
                     }
                 }
             }
-            
+
             // Cleanup when all clients disconnected
             let mut buses = stream_mgr.buses.write().await;
             if let Some(current_tx) = buses.get(&s_id) {

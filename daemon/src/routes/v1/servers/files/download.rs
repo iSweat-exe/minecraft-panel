@@ -17,6 +17,20 @@ fn error_response(status: StatusCode, msg: String) -> Response {
         .expect("Building basic status response cannot fail")
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/servers/{server_id}/files/download",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "File path to download")
+    ),
+    responses(
+        (status = 200, description = "Download file stream")
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn download_file(
     auth: UserAuth,
     State(state): State<AppState>,

@@ -14,6 +14,16 @@ pub struct AllocationResponse {
     pub host_port: i32,
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/node/allocations",
+    responses(
+        (status = 200, description = "List node allocations", body = inline(protocol::ApiResponse<Vec<String>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_allocations(
     auth: UserAuth,
     State(state): State<AppState>,

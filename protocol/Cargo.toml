@@ -13,3 +13,5 @@ jsonwebtoken = "9.3"
 thiserror = "2.0"
 ed25519-dalek = { version = "2.1", features = ["alloc"] }
 base64 = "0.22"
+utoipa = "5"
+

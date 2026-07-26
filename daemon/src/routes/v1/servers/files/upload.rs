@@ -2,15 +2,30 @@ use axum::{
     extract::{Path, Query, State},
     Json,
 };
+use futures_util::StreamExt;
 use protocol::ApiResponse;
 use tokio::io::AsyncWriteExt;
-use futures_util::StreamExt;
 
 use crate::routes::AppState;
 use crate::services::auth::UserAuth;
 
 use super::FileQuery;
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/servers/{server_id}/files/upload",
+    params(
+        ("server_id" = String, Path, description = "Server ID"),
+        ("path" = String, Query, description = "Target directory path")
+    ),
+    request_body(content = String, description = "Multipart form data with file", content_type = "multipart/form-data"),
+    responses(
+        (status = 200, description = "Upload file", body = inline(protocol::ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn upload_file(
     auth: UserAuth,
     State(state): State<AppState>,

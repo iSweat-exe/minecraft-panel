@@ -6,6 +6,16 @@ use protocol::{ApiResponse, DockerImageInfo};
 
 use crate::{services::auth::UserAuth, AppState};
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/docker/images",
+    responses(
+        (status = 200, description = "List all docker images", body = inline(ApiResponse<Vec<DockerImageInfo>>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn list_all_images(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -19,11 +29,22 @@ pub async fn list_all_images(
     }
 }
 
-#[derive(serde::Deserialize)]
+#[derive(serde::Deserialize, utoipa::ToSchema)]
 pub struct PullImagePayload {
     pub image_name: String,
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/docker/images/pull",
+    request_body = PullImagePayload,
+    responses(
+        (status = 200, description = "Pull a docker image", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn pull_image(
     auth: UserAuth,
     State(state): State<AppState>,
@@ -42,6 +63,19 @@ pub async fn pull_image(
     }
 }
 
+#[utoipa::path(
+    delete,
+    path = "/api/v1/docker/images/{id}",
+    params(
+        ("id" = String, Path, description = "Image ID")
+    ),
+    responses(
+        (status = 200, description = "Remove a docker image", body = inline(ApiResponse<String>))
+    ),
+    security(
+        ("bearer_auth" = [])
+    )
+)]
 pub async fn remove_image(
     auth: UserAuth,
     Path(id): Path<String>,

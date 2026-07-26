@@ -38,7 +38,11 @@ impl TaskManager {
         }
     }
 
-    pub async fn create_task(&self, server_id: String, name: String) -> (Uuid, broadcast::Receiver<TaskEvent>) {
+    pub async fn create_task(
+        &self,
+        server_id: String,
+        name: String,
+    ) -> (Uuid, broadcast::Receiver<TaskEvent>) {
         let id = Uuid::new_v4();
         let (tx, rx) = broadcast::channel(100);
         let task = Arc::new(RwLock::new(Task {
@@ -48,7 +52,7 @@ impl TaskManager {
             status: TaskStatus::Running,
             tx,
         }));
-        
+
         self.tasks.write().await.insert(id, task);
         (id, rx)
     }
